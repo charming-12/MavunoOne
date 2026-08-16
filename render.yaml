@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: mavuno-one
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: NEXTSMS_USERNAME
+        sync: false
+      - key: NEXTSMS_PASSWORD
+        sync: false
+      - key: NEXTSMS_TOKEN
+        sync: false
+      - key: NEXTSMS_API_URL
+        value: https://api.nextsms.com/sms/send
+      - key: MAVUNO_SUPER_ADMIN_EMAIL
+        sync: false
+      - key: MAVUNO_SUPER_ADMIN_PASSWORD
+        sync: false
+      - key: MAVUNO_BOSS_EMAIL
+        sync: false
+      - key: MAVUNO_BOSS_PASSWORD
+        sync: false
