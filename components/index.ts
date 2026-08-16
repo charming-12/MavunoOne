@@ -8,3 +8,4 @@ export { Modal } from "./Modal";
 export { Alert } from "./Alert";
 export { Table } from "./Table";
 export { Button } from "./Button";
+export { ImageCard, ImageCardGrid, FeaturedImageCard } from "./ImageCard";

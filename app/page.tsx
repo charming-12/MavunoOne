@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowRight, Leaf, Zap, Truck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LandingPage() {
   return (
@@ -71,24 +72,51 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Features Overview */}
+            {/* Features Overview - Real Images */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-              <div className="bg-white bg-opacity-10 backdrop-blur rounded-xl p-6 hover:bg-opacity-20 transition border border-white/10">
-                <Leaf className="mx-auto mb-4 text-yellow-300" size={32} />
-                <h3 className="text-xl font-bold mb-2">Mahindi & Alizeti</h3>
-                <p className="text-green-100">Usimamizi wa stock, bei, mauzo na rekodi ya bidhaa muhimu za kilimo.</p>
+              {/* Agriculture Card */}
+              <div className="relative h-80 rounded-xl overflow-hidden group cursor-pointer hover:shadow-2xl transition">
+                <Image
+                  src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=600&h=400&fit=crop"
+                  alt="Mahindi & Alizeti - Green agricultural fields"
+                  fill
+                  className="object-cover group-hover:scale-110 transition duration-300"
+                />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <h3 className="text-2xl font-bold mb-2 text-white">Mahindi & Alizeti</h3>
+                  <p className="text-gray-100 text-sm">Usimamizi wa stock, bei, mauzo na rekodi ya bidhaa muhimu za kilimo.</p>
+                </div>
               </div>
 
-              <div className="bg-white bg-opacity-10 backdrop-blur rounded-xl p-6 hover:bg-opacity-20 transition border border-white/10">
-                <Zap className="mx-auto mb-4 text-yellow-300" size={32} />
-                <h3 className="text-xl font-bold mb-2">Mifugo & Feed</h3>
-                <p className="text-green-100">Mifumo ya chakula cha wanyama, uduvi, chokaa na bidhaa za majaribio ya kisasa.</p>
+              {/* Livestock & Feed Card */}
+              <div className="relative h-80 rounded-xl overflow-hidden group cursor-pointer hover:shadow-2xl transition">
+                <Image
+                  src="https://images.unsplash.com/photo-1560493676-04071c5f467b?w=600&h=400&fit=crop"
+                  alt="Mifugo - Livestock and animal feed"
+                  fill
+                  className="object-cover group-hover:scale-110 transition duration-300"
+                />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <h3 className="text-2xl font-bold mb-2 text-white">Mifugo & Feed</h3>
+                  <p className="text-gray-100 text-sm">Mifumo ya chakula cha wanyama, uduvi, chokaa na bidhaa za majaribio ya kisasa.</p>
+                </div>
               </div>
 
-              <div className="bg-white bg-opacity-10 backdrop-blur rounded-xl p-6 hover:bg-opacity-20 transition border border-white/10">
-                <Truck className="mx-auto mb-4 text-yellow-300" size={32} />
-                <h3 className="text-xl font-bold mb-2">Uwasilishaji</h3>
-                <p className="text-green-100">GPS ya magari, taarifa za usafiri na usimamizi wa uhasibu wa haraka.</p>
+              {/* Logistics Card */}
+              <div className="relative h-80 rounded-xl overflow-hidden group cursor-pointer hover:shadow-2xl transition">
+                <Image
+                  src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&h=400&fit=crop"
+                  alt="Uwasilishaji - Delivery and logistics trucks"
+                  fill
+                  className="object-cover group-hover:scale-110 transition duration-300"
+                />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <h3 className="text-2xl font-bold mb-2 text-white">Uwasilishaji</h3>
+                  <p className="text-gray-100 text-sm">GPS ya magari, taarifa za usafiri na usimamizi wa uhasibu wa haraka.</p>
+                </div>
               </div>
             </div>
           </div>
