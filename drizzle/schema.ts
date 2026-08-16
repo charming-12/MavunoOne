@@ -1,0 +1,236 @@
+import { pgTable, serial, varchar, decimal, boolean, timestamp, text, integer, pgEnum } from "drizzle-orm/pg-core";
+
+// ===== 1. ROLES (Aina za Watumiaji) =====
+export const roleEnum = pgEnum("role", [
+  "boss", "owner", "manager", "cashier", "storekeeper",
+  "machine_operator", "customer", "admin"
+]);
+
+// ===== 2. USERS (Watumiaji wa Mfumo) =====
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  email: varchar("email", { length: 320 }).unique().notNull(),
+  phone: varchar("phone", { length: 32 }),
+  passwordHash: varchar("passwordHash", { length: 255 }),
+  role: roleEnum("role").default("customer").notNull(),
+  passwordResetToken: varchar("passwordResetToken", { length: 255 }),
+  passwordResetExpires: timestamp("passwordResetExpires"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 3. CATEGORIES (Makundi ya Bidhaa/Mazao) =====
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 4. PRODUCTS (Bidhaa, Bei, na Stock) =====
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  categoryId: integer("categoryId"),
+  unit: varchar("unit", { length: 32 }).default("kg").notNull(),
+  costPrice: decimal("costPrice", { precision: 12, scale: 2 }).default("0").notNull(),
+  sellPrice: decimal("sellPrice", { precision: 12, scale: 2 }).default("0").notNull(),
+  wholesalePrice: decimal("wholesalePrice", { precision: 12, scale: 2 }).default("0"),
+  machineServicePrice: decimal("machineServicePrice", { precision: 12, scale: 2 }).default("0"),
+  lowStockThreshold: decimal("lowStockThreshold", { precision: 10, scale: 2 }).default("10").notNull(),
+  currentStock: decimal("currentStock", { precision: 12, scale: 2 }).default("0").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// ===== 5. CUSTOMERS (Wateja na Madeni) =====
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  email: varchar("email", { length: 320 }),
+  customerType: varchar("customerType", { length: 32 }).default("retail").notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  creditLimit: decimal("creditLimit", { precision: 12, scale: 2 }).default("0").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 6. SALES (Mauzo na Malipo) =====
+export const sales = pgTable("sales", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: varchar("invoiceNumber", { length: 64 }).notNull().unique(),
+  customerId: integer("customerId"),
+  customerType: varchar("customerType", { length: 32 }).default("walk_in").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 32 }).default("cash").notNull(),
+  paymentStatus: varchar("paymentStatus", { length: 32 }).default("paid").notNull(),
+  paidAmount: decimal("paidAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  cashierId: integer("cashierId"),
+  status: varchar("status", { length: 32 }).default("completed").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 7. SALE ITEMS =====
+export const saleItems = pgTable("sale_items", {
+  id: serial("id").primaryKey(),
+  saleId: integer("saleId").notNull(),
+  productId: integer("productId").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  unitPrice: decimal("unitPrice", { precision: 12, scale: 2 }).notNull(),
+  discount: decimal("discount", { precision: 12, scale: 2 }).default("0"),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+});
+
+// ===== 8. STOCK IN =====
+export const stockIn = pgTable("stock_in", {
+  id: serial("id").primaryKey(),
+  productId: integer("productId").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  supplierName: varchar("supplierName", { length: 256 }),
+  supplierPhone: varchar("supplierPhone", { length: 32 }),
+  costPerUnit: decimal("costPerUnit", { precision: 12, scale: 2 }).default("0"),
+  totalCost: decimal("totalCost", { precision: 12, scale: 2 }).default("0"),
+  date: timestamp("date").defaultNow().notNull(),
+  notes: text("notes"),
+});
+
+// ===== 9. STOCK OUT =====
+export const stockOut = pgTable("stock_out", {
+  id: serial("id").primaryKey(),
+  productId: integer("productId").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  reason: varchar("reason", { length: 32 }).default("sale").notNull(),
+  date: timestamp("date").defaultNow().notNull(),
+  notes: text("notes"),
+});
+
+// ===== 10. MACHINE JOBS =====
+export const machineJobs = pgTable("machine_jobs", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customerId"),
+  jobType: varchar("jobType", { length: 64 }).notNull(),
+  inputProduct: varchar("inputProduct", { length: 256 }).notNull(),
+  inputKg: decimal("inputKg", { precision: 12, scale: 2 }).notNull(),
+  outputProduct1: varchar("outputProduct1", { length: 256 }),
+  outputKg1: decimal("outputKg1", { precision: 12, scale: 2 }).default("0"),
+  outputProduct2: varchar("outputProduct2", { length: 256 }),
+  outputKg2: decimal("outputKg2", { precision: 12, scale: 2 }).default("0"),
+  serviceFee: decimal("serviceFee", { precision: 12, scale: 2 }).default("0"),
+  paymentMethod: varchar("paymentMethod", { length: 32 }).default("cash"),
+  paymentStatus: varchar("paymentStatus", { length: 32 }).default("paid"),
+  operatorId: integer("operatorId"),
+  efficiency: decimal("efficiency", { precision: 5, scale: 2 }),
+  status: varchar("status", { length: 32 }).default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 11. VEHICLES =====
+export const vehicles = pgTable("vehicles", {
+  id: serial("id").primaryKey(),
+  plateNumber: varchar("plateNumber", { length: 32 }).notNull(),
+  model: varchar("model", { length: 128 }),
+  color: varchar("color", { length: 64 }),
+  gpsDeviceId: varchar("gpsDeviceId", { length: 64 }),
+  status: varchar("status", { length: 32 }).default("idle"),
+  lastPositionLat: decimal("lastPositionLat", { precision: 10, scale: 6 }),
+  lastPositionLng: decimal("lastPositionLng", { precision: 10, scale: 6 }),
+  lastUpdate: timestamp("lastUpdate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 12. DELIVERIES =====
+export const deliveries = pgTable("deliveries", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicleId"),
+  driverName: varchar("driverName", { length: 128 }),
+  driverPhone: varchar("driverPhone", { length: 32 }),
+  destination: text("destination"),
+  totalWeight: decimal("totalWeight", { precision: 12, scale: 2 }).default("0"),
+  departureTime: timestamp("departureTime"),
+  arrivalTime: timestamp("arrivalTime"),
+  status: varchar("status", { length: 32 }).default("scheduled"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 13. EXPENSES =====
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  category: varchar("category", { length: 32 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  description: text("description"),
+  date: timestamp("date").defaultNow().notNull(),
+});
+
+// ===== 14. DAILY CLOSURES =====
+export const dailyClosures = pgTable("daily_closures", {
+  id: serial("id").primaryKey(),
+  openingBalance: decimal("openingBalance", { precision: 12, scale: 2 }).default("0"),
+  closingBalance: decimal("closingBalance", { precision: 12, scale: 2 }).default("0"),
+  expectedBalance: decimal("expectedBalance", { precision: 12, scale: 2 }),
+  variance: decimal("variance", { precision: 12, scale: 2 }).default("0"),
+  date: timestamp("date").defaultNow().notNull(),
+  cashierId: integer("cashierId"),
+  notes: text("notes"),
+});
+
+// ===== 15. NOTIFICATIONS =====
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  type: varchar("type", { length: 32 }).notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  message: text("message"),
+  isRead: boolean("isRead").default(false).notNull(),
+  userId: integer("userId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 16. AUDIT LOGS =====
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId"),
+  action: varchar("action", { length: 32 }).notNull(),
+  tableName: varchar("tableName", { length: 128 }).notNull(),
+  recordId: integer("recordId"),
+  oldValueJson: text("oldValueJson"),
+  newValueJson: text("newValueJson"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// ===== 17. CONFIGURATIONS (Dynamic Settings & Credentials) =====
+export const configurations = pgTable("configurations", {
+  id: serial("id").primaryKey(),
+  key: varchar("key", { length: 128 }).notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  isEncrypted: boolean("isEncrypted").default(false).notNull(),
+  updatedBy: integer("updatedBy"),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// ===== 18. PASSWORD RESET TOKENS =====
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 19. ERROR LOGS (For Error Notification & Debugging) =====
+export const errorLogs = pgTable("error_logs", {
+  id: serial("id").primaryKey(),
+  errorMessage: text("errorMessage").notNull(),
+  stackTrace: text("stackTrace"),
+  route: varchar("route", { length: 256 }),
+  userId: integer("userId"),
+  severity: varchar("severity", { length: 32 }).default("error"),
+  isResolved: boolean("isResolved").default(false).notNull(),
+  emailSentAt: timestamp("emailSentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

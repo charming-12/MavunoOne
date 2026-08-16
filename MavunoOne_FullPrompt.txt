@@ -1,0 +1,409 @@
+﻿# MAVUNOONE â€” FULL PROMPT + FILE STRUCTURE
+## Copy-Paste Ready Guide
+
+Inatumika kutengeneza mfumo wa MavunoOne nje ya template (kwenye VS Code). Kila code block iko tayari ya ku-copy na ku-paste moja kwa moja.
+
+---
+
+## SEHEMU YA 1: PROMPT KAMILI
+
+Copy prompt hii yote na uipeleke kwa AI (ChatGPT, Claude, au Manus):
+
+```
+Tengeneza mfumo wa usimamizi wa biashara unaoitwa "MavunoOne".
+
+TECH STACK:
+- Frontend: Next.js 14 (App Router), React 18, TypeScript, TailwindCSS 4,
+- Backend: tRPC 11 + Express 4
+- Database: PostgreSQL + Drizzle ORM
+- Auth: NextAuth.js (Google + Email)
+- Maps: Leaflet + OpenStreetMap
+- Charts: Recharts
+- PDF: jsPDF
+- Hosting: Vercel (frontend) + Supabase (database)
+
+PORTALS:
+1. Office Portal (desktop) â€” sidebar navigation
+2. Boss Portal (mobile-first PWA) â€” bottom navigation
+3. Customer Portal (simplified) â€” bei, oda, deni
+
+ROLES: boss, manager, cashier, storekeeper, machine_operator, customer
+```
+
+---
+
+## SEHEMU YA 2: DATABASE SCHEMA (Drizzle ORM)
+
+**File:** `drizzle/schema.ts`
+
+```typescript
+import { pgTable, serial, varchar, decimal, boolean, timestamp, text, integer, pgEnum } from "drizzle-orm/pg-core";
+
+// ===== ROLES =====
+export const roleEnum = pgEnum("role", [
+  "boss", "manager", "cashier", "storekeeper",
+  "machine_operator", "customer", "admin"
+]);
+
+// ===== USERS =====
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  email: varchar("email", { length: 320 }).unique().notNull(),
+  phone: varchar("phone", { length: 32 }),
+  role: roleEnum("role").default("customer").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== CATEGORIES =====
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== PRODUCTS =====
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  categoryId: integer("categoryId"),
+  unit: varchar("unit", { length: 32 }).default("kg").notNull(),
+  costPrice: decimal("costPrice", { precision: 12, scale: 2 }).default("0").notNull(),
+  sellPrice: decimal("sellPrice", { precision: 12, scale: 2 }).default("0").notNull(),
+  wholesalePrice: decimal("wholesalePrice", { precision: 12, scale: 2 }).default("0"),
+  machineServicePrice: decimal("machineServicePrice", { precision: 12, scale: 2 }).default("0"),
+  lowStockThreshold: decimal("lowStockThreshold", { precision: 10, scale: 2 }).default("10").notNull(),
+  currentStock: decimal("currentStock", { precision: 12, scale: 2 }).default("0").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// ===== CUSTOMERS =====
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  email: varchar("email", { length: 320 }),
+  customerType: varchar("customerType", { length: 32 }).default("retail").notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  creditLimit: decimal("creditLimit", { precision: 12, scale: 2 }).default("0").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== SALES =====
+export const sales = pgTable("sales", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: varchar("invoiceNumber", { length: 64 }).notNull().unique(),
+  customerId: integer("customerId"),
+  customerType: varchar("customerType", { length: 32 }).default("walk_in").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 32 }).default("cash").notNull(),
+  paymentStatus: varchar("paymentStatus", { length: 32 }).default("paid").notNull(),
+  paidAmount: decimal("paidAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  cashierId: integer("cashierId"),
+  status: varchar("status", { length: 32 }).default("completed").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== SALE ITEMS =====
+export const saleItems = pgTable("sale_items", {
+  id: serial("id").primaryKey(),
+  saleId: integer("saleId").notNull(),
+  productId: integer("productId").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  unitPrice: decimal("unitPrice", { precision: 12, scale: 2 }).notNull(),
+  discount: decimal("discount", { precision: 12, scale: 2 }).default("0"),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+});
+
+// ===== STOCK IN =====
+export const stockIn = pgTable("stock_in", {
+  id: serial("id").primaryKey(),
+  productId: integer("productId").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  supplierName: varchar("supplierName", { length: 256 }),
+  supplierPhone: varchar("supplierPhone", { length: 32 }),
+  costPerUnit: decimal("costPerUnit", { precision: 12, scale: 2 }).default("0"),
+  totalCost: decimal("totalCost", { precision: 12, scale: 2 }).default("0"),
+  date: timestamp("date").defaultNow().notNull(),
+  notes: text("notes"),
+});
+
+// ===== STOCK OUT =====
+export const stockOut = pgTable("stock_out", {
+  id: serial("id").primaryKey(),
+  productId: integer("productId").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  reason: varchar("reason", { length: 32 }).default("sale").notNull(),
+  date: timestamp("date").defaultNow().notNull(),
+  notes: text("notes"),
+});
+
+// ===== MACHINE JOBS =====
+export const machineJobs = pgTable("machine_jobs", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customerId"),
+  jobType: varchar("jobType", { length: 64 }).notNull(),
+  inputProduct: varchar("inputProduct", { length: 256 }).notNull(),
+  inputKg: decimal("inputKg", { precision: 12, scale: 2 }).notNull(),
+  outputProduct1: varchar("outputProduct1", { length: 256 }),
+  outputKg1: decimal("outputKg1", { precision: 12, scale: 2 }).default("0"),
+  outputProduct2: varchar("outputProduct2", { length: 256 }),
+  outputKg2: decimal("outputKg2", { precision: 12, scale: 2 }).default("0"),
+  serviceFee: decimal("serviceFee", { precision: 12, scale: 2 }).default("0"),
+  paymentMethod: varchar("paymentMethod", { length: 32 }).default("cash"),
+  paymentStatus: varchar("paymentStatus", { length: 32 }).default("paid"),
+  operatorId: integer("operatorId"),
+  efficiency: decimal("efficiency", { precision: 5, scale: 2 }),
+  status: varchar("status", { length: 32 }).default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== VEHICLES =====
+export const vehicles = pgTable("vehicles", {
+  id: serial("id").primaryKey(),
+  plateNumber: varchar("plateNumber", { length: 32 }).notNull(),
+  model: varchar("model", { length: 128 }),
+  color: varchar("color", { length: 64 }),
+  gpsDeviceId: varchar("gpsDeviceId", { length: 64 }),
+  status: varchar("status", { length: 32 }).default("idle"),
+  lastPositionLat: decimal("lastPositionLat", { precision: 10, scale: 6 }),
+  lastPositionLng: decimal("lastPositionLng", { precision: 10, scale: 6 }),
+  lastUpdate: timestamp("lastUpdate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== DELIVERIES =====
+export const deliveries = pgTable("deliveries", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicleId"),
+  driverName: varchar("driverName", { length: 128 }),
+  driverPhone: varchar("driverPhone", { length: 32 }),
+  destination: text("destination"),
+  totalWeight: decimal("totalWeight", { precision: 12, scale: 2 }).default("0"),
+  departureTime: timestamp("departureTime"),
+  arrivalTime: timestamp("arrivalTime"),
+  status: varchar("status", { length: 32 }).default("scheduled"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== EXPENSES =====
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  category: varchar("category", { length: 32 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  description: text("description"),
+  date: timestamp("date").defaultNow().notNull(),
+});
+
+// ===== DAILY CLOSURES =====
+export const dailyClosures = pgTable("daily_closures", {
+  id: serial("id").primaryKey(),
+  openingBalance: decimal("openingBalance", { precision: 12, scale: 2 }).default("0"),
+  closingBalance: decimal("closingBalance", { precision: 12, scale: 2 }).default("0"),
+  expectedBalance: decimal("expectedBalance", { precision: 12, scale: 2 }),
+  variance: decimal("variance", { precision: 12, scale: 2 }).default("0"),
+  date: timestamp("date").defaultNow().notNull(),
+  cashierId: integer("cashierId"),
+  notes: text("notes"),
+});
+
+// ===== NOTIFICATIONS =====
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  type: varchar("type", { length: 32 }).notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  message: text("message"),
+  isRead: boolean("isRead").default(false).notNull(),
+  userId: integer("userId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== AUDIT LOGS =====
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId"),
+  action: varchar("action", { length: 32 }).notNull(),
+  tableName: varchar("tableName", { length: 128 }).notNull(),
+  recordId: integer("recordId"),
+  oldValueJson: text("oldValueJson"),
+  newValueJson: text("newValueJson"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+```
+
+---
+
+## SEHEMU YA 3: ROUTERS (tRPC API)
+
+**File:** `server/routers.ts`
+
+(Content too long - see full file in PDF for complete code)
+
+---
+
+## SEHEMU YA 4: FILE STRUCTURE (Copy-Paste Tree)
+
+```
+mavunoone/
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ app/
+â”‚   â”‚   â”œâ”€â”€ layout.tsx
+â”‚   â”‚   â”œâ”€â”€ page.tsx â† Landing page
+â”‚   â”‚   â”œâ”€â”€ globals.css
+â”‚   â”‚   â”œâ”€â”€ office/
+â”‚   â”‚   â”‚   â”œâ”€â”€ layout.tsx â† Sidebar layout
+â”‚   â”‚   â”‚   â”œâ”€â”€ page.tsx â† Dashboard
+â”‚   â”‚   â”‚   â”œâ”€â”€ pos/page.tsx â† POS
+â”‚   â”‚   â”‚   â”œâ”€â”€ sales/page.tsx â† Mauzo
+â”‚   â”‚   â”‚   â”œâ”€â”€ products/page.tsx â† Bidhaa
+â”‚   â”‚   â”‚   â”œâ”€â”€ stock-in/page.tsx â† Stock In
+â”‚   â”‚   â”‚   â”œâ”€â”€ stock-out/page.tsx â† Stock Out
+â”‚   â”‚   â”‚   â”œâ”€â”€ customers/page.tsx â† Wateja
+â”‚   â”‚   â”‚   â”œâ”€â”€ machines/page.tsx â† Mashine
+â”‚   â”‚   â”‚   â”œâ”€â”€ deliveries/page.tsx â† Oda za kupeleka
+â”‚   â”‚   â”‚   â”œâ”€â”€ vehicles/page.tsx â† Magari + GPS
+â”‚   â”‚   â”‚   â”œâ”€â”€ expenses/page.tsx â† Gharama
+â”‚   â”‚   â”‚   â”œâ”€â”€ closures/page.tsx â† Funguo za siku
+â”‚   â”‚   â”‚   â”œâ”€â”€ reports/page.tsx â† Ripoti
+â”‚   â”‚   â”‚   â””â”€â”€ settings/page.tsx â† Settings
+â”‚   â”‚   â”œâ”€â”€ boss/
+â”‚   â”‚   â”‚   â”œâ”€â”€ layout.tsx â† Bottom nav layout
+â”‚   â”‚   â”‚   â”œâ”€â”€ page.tsx â† Dashboard
+â”‚   â”‚   â”‚   â”œâ”€â”€ sales/page.tsx â† Mauzo overview
+â”‚   â”‚   â”‚   â”œâ”€â”€ stock/page.tsx â† Stock overview
+â”‚   â”‚   â”‚   â”œâ”€â”€ machines/page.tsx â† Mashine overview
+â”‚   â”‚   â”‚   â”œâ”€â”€ vehicles/page.tsx â† GPS map
+â”‚   â”‚   â”‚   â””â”€â”€ notifications/page.tsx â† Arifa
+â”‚   â”‚   â””â”€â”€ shop/
+â”‚   â”‚       â”œâ”€â”€ page.tsx â† Bei za bidhaa
+â”‚   â”‚       â”œâ”€â”€ order/page.tsx â† Kuweka oda
+â”‚   â”‚       â””â”€â”€ account/page.tsx â† Deni na history
+â”‚   â”œâ”€â”€ components/
+â”‚   â”‚   â”œâ”€â”€ ui/ â† Shadcn/UI (auto-generated)
+â”‚   â”‚   â”œâ”€â”€ office/
+â”‚   â”‚   â”‚   â”œâ”€â”€ Cart.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ ProductSearch.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ PaymentDialog.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ Receipt.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ SalesTable.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ StockAlert.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ MachineJobForm.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ VehicleMap.tsx
+â”‚   â”‚   â”‚   â””â”€â”€ Charts.tsx
+â”‚   â”‚   â”œâ”€â”€ boss/
+â”‚   â”‚   â”‚   â”œâ”€â”€ BottomNav.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ StatCard.tsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ LiveMap.tsx
+â”‚   â”‚   â”‚   â””â”€â”€ NotificationList.tsx
+â”‚   â”‚   â””â”€â”€ shop/
+â”‚   â”‚       â”œâ”€â”€ ProductCard.tsx
+â”‚   â”‚       â”œâ”€â”€ OrderForm.tsx
+â”‚   â”‚       â””â”€â”€ AccountSummary.tsx
+â”‚   â”œâ”€â”€ server/
+â”‚   â”‚   â”œâ”€â”€ db.ts
+â”‚   â”‚   â”œâ”€â”€ routers.ts
+â”‚   â”‚   â””â”€â”€ trpc.ts
+â”‚   â”œâ”€â”€ drizzle/
+â”‚   â”‚   â””â”€â”€ schema.ts
+â”‚   â””â”€â”€ public/
+â”‚       â”œâ”€â”€ manifest.json â† PWA
+â”‚       â””â”€â”€ favicon.ico
+â”œâ”€â”€ drizzle.config.ts
+â”œâ”€â”€ next.config.js
+â”œâ”€â”€ package.json
+â”œâ”€â”€ tsconfig.json
+â””â”€â”€ tailwind.config.ts
+```
+
+---
+
+## SEHEMU YA 5: PWA CONFIG (manifest.json)
+
+**File:** `public/manifest.json`
+
+```json
+{
+  "name": "MavunoOne",
+  "short_name": "MavunoOne",
+  "description": "Mfumo wa Usimamizi wa Biashara",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1F6B4B",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+```
+
+---
+
+## SEHEMU YA 6: PACKAGE.JSON DEPENDENCIES
+
+```json
+{
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@trpc/client": "^11.0.0",
+    "@trpc/react-query": "^11.0.0",
+    "@trpc/server": "^11.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "drizzle-orm": "^0.44.0",
+    "postgres": "^3.4.0",
+    "zod": "^4.0.0",
+    "lucide-react": "^0.453.0",
+    "recharts": "^2.15.0",
+    "jspdf": "^2.5.0",
+    "leaflet": "^1.9.0",
+    "react-leaflet": "^4.0.0",
+    "@radix-ui/react-dialog": "^1.1.0",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-radio-group": "^1.2.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.0.0",
+    "vitest": "^2.0.0"
+  }
+}
+```
+
+---
+
+## MUHTASARI WA KUTUMIA
+
+1. Copy prompt ya SEHEMU 1 na uipeleke kwa AI
+2. Copy schema (SEHEMU 2) na uweke kwenye `drizzle/schema.ts`
+3. Copy routers (SEHEMU 3) na uweke kwenye `server/routers.ts`
+4. Tumia file structure (SEHEMU 4) kuunda folders/files
+5. Copy PWA config (SEHEMU 5) na uweke kwenye `public/manifest.json`
+6. Copy components na uweke kwenye `src/components/`
+7. Install dependencies (SEHEMU 6)
+
+---
+
+**Contact:** Josia Makungu Marco â€” 0626522599 â€” josiahmarco93@gmail.com
+
+---
+
+*Generated on 2026-08-16*
