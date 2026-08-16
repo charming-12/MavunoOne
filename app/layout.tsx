@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { TrpcProvider } from "@/providers/TrpcProvider";
+import { OfflineSupport } from "@/components/OfflineSupport";
 
 export const metadata: Metadata = {
   title: "MavunoOne - Business Management System",
@@ -24,7 +25,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <TrpcProvider>{children}</TrpcProvider>
+        <TrpcProvider>
+          <OfflineSupport />
+          {children}
+        </TrpcProvider>
       </body>
     </html>
   );
