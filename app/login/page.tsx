@@ -77,9 +77,9 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-white mb-2">🌾 MavunoOne</h1>
+          <h1 className="text-5xl font-black text-white mb-2 tracking-tight">🌾 MavunoOne</h1>
           <p className="text-yellow-300 font-semibold">Mfumo wa Usimamizi wa Biashara</p>
-          <p className="text-green-100 text-sm mt-1">Mahindi • Alizee • Kusaga • Uwasilishaji</p>
+          <p className="text-green-100 text-sm mt-1">Mahindi • Alizeti • Kusaga • Uwasilishaji</p>
         </div>
 
         {/* Login Card */}
@@ -148,16 +148,24 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 pt-6 border-t">
-            <p className="text-center text-gray-600 text-sm mb-4">Akaunti ya Demo:</p>
+            <p className="text-center text-gray-600 text-sm mb-4">Akaunti ya Demo</p>
             <div className="space-y-2">
-              <div className="bg-blue-50 p-3 rounded">
+              <button
+                type="button"
+                onClick={() => setFormData({ email: DEFAULT_SUPER_ADMIN_EMAIL, password: DEFAULT_SUPER_ADMIN_PASSWORD })}
+                className="w-full bg-blue-50 hover:bg-blue-100 p-3 rounded text-left transition"
+              >
                 <p className="text-xs font-semibold text-blue-900">Super Admin</p>
-                <p className="text-xs text-blue-700">{DEFAULT_SUPER_ADMIN_EMAIL} / {DEFAULT_SUPER_ADMIN_PASSWORD}</p>
-              </div>
-              <div className="bg-purple-50 p-3 rounded">
+                <p className="text-xs text-blue-700">{DEFAULT_SUPER_ADMIN_EMAIL}</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ email: DEFAULT_BOSS_EMAIL, password: DEFAULT_BOSS_PASSWORD })}
+                className="w-full bg-purple-50 hover:bg-purple-100 p-3 rounded text-left transition"
+              >
                 <p className="text-xs font-semibold text-purple-900">Boss</p>
-                <p className="text-xs text-purple-700">{DEFAULT_BOSS_EMAIL} / {DEFAULT_BOSS_PASSWORD}</p>
-              </div>
+                <p className="text-xs text-purple-700">{DEFAULT_BOSS_EMAIL}</p>
+              </button>
             </div>
           </div>
         </div>

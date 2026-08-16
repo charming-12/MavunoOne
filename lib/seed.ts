@@ -51,25 +51,25 @@ export async function seedDatabase() {
         },
         {
           name: "John Manager",
-          email: "manager@mavunoone.com",
+          email: "manager@mavunoone.co.tz",
           phone: "+255700000002",
           role: "manager",
         },
         {
           name: "Jane Cashier",
-          email: "cashier@mavunoone.com",
+          email: "cashier@mavunoone.co.tz",
           phone: "+255700000003",
           role: "cashier",
         },
         {
           name: "Peter Storekeeper",
-          email: "store@mavunoone.com",
+          email: "store@mavunoone.co.tz",
           phone: "+255700000004",
           role: "storekeeper",
         },
         {
           name: "Grace Operator",
-          email: "operator@mavunoone.com",
+          email: "operator@mavunoone.co.tz",
           phone: "+255700000005",
           role: "machine_operator",
         },
@@ -94,12 +94,13 @@ export async function seedDatabase() {
     const categories = await db
       .insert(schema.categories)
       .values([
-        { name: "Mahindi", description: "Mazao ya mahindi" },
-        { name: "Alizeti", description: "Mazao ya alizeti" },
-        { name: "Uduvi", description: "Samaki na uduvi" },
-        { name: "Chokaa", description: "Chokaa na pembetatu" },
-        { name: "Mufurane", description: "Mufurane na chakula cha wanyama" },
-        { name: "Mafuta", description: "Mafuta na uzazi" },
+        { name: "Mahindi", description: "Bidhaa za mahindi na bidhaa zinazotokana na mahindi" },
+        { name: "Alizeti", description: "Bidhaa za alizeti na pembejeo za kilimo" },
+        { name: "Uduvi", description: "Bidhaa za uduvi, chakula na bidhaa za mifugo" },
+        { name: "Chokaa", description: "Chokaa, viambajengo na nyongeza za kilimo" },
+        { name: "Animal Feeds", description: "Chakula cha wanyama, lishe na bidhaa za mifugo" },
+        { name: "Sukari & Chumvi", description: "Bidhaa za matumizi ya nyumbani na biashara" },
+        { name: "Mafuta Alizeti", description: "Mafuta ya alizeti na bidhaa zinazotokana" },
       ])
       .returning();
 

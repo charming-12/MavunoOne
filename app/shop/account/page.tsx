@@ -106,12 +106,22 @@ export default function ShopAccountPage() {
 
       {/* Action Buttons */}
       <div className="space-y-2">
-        <button className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">
-          Lipa Deni
-        </button>
-        <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+        <a
+          href="https://wa.me/255718123456?text=Habari%20nina%20lipa%20deni%20langu%20na%20ninaomba%20maelezo%20ya%20malipo."
+          target="_blank"
+          rel="noreferrer"
+          className="block w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 text-center"
+        >
+          Lipa Sasa
+        </a>
+        <a
+          href="https://wa.me/255718123456?text=Habari%20ninaomba%20kusaidika%20kuhusu%20bidhaa%20na%20mauzo."
+          target="_blank"
+          rel="noreferrer"
+          className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 text-center"
+        >
           Wasiliana Nasi
-        </button>
+        </a>
       </div>
     </div>
   );

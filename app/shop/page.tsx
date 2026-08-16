@@ -17,14 +17,14 @@ interface CartItem extends Product {
 }
 
 const mockProducts: Product[] = [
-  { id: 1, name: "Mahindi", price: 2500, image: "🌽", inStock: true },
-  { id: 2, name: "Unga wa Mahindi", price: 3000, image: "🥄", inStock: true },
-  { id: 3, name: "Uduvi", price: 5000, image: "🐟", inStock: true },
-  { id: 4, name: "Pumba", price: 8000, image: "🥩", inStock: true },
-  { id: 5, name: "Alizeti", price: 4500, image: "🫒", inStock: false },
-  { id: 6, name: "Mafuta Alizeti", price: 12000, image: "🍯", inStock: true },
-  { id: 7, name: "Sukari", price: 2000, image: "🍬", inStock: true },
-  { id: 8, name: "Chumvi", price: 1500, image: "✨", inStock: true },
+  { id: 1, name: "Mahindi", price: 2500, image: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 2, name: "Alizeti", price: 4500, image: "https://images.unsplash.com/photo-1464226184884-fa52ac9c0f6a?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 3, name: "Uduvi", price: 5000, image: "https://images.unsplash.com/photo-1544943910-4c1dc44aab44?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 4, name: "Chakula cha Wanyama", price: 8000, image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 5, name: "Chokaa", price: 3200, image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 6, name: "Mafuta ya Alizeti", price: 12000, image: "https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 7, name: "Sukari", price: 2000, image: "https://images.unsplash.com/photo-1584208124928-20a0d4d9b9f4?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 8, name: "Chumvi", price: 1500, image: "https://images.unsplash.com/photo-1604908554102-57c42f0dcb5d?auto=format&fit=crop&w=900&q=80", inStock: true },
 ];
 
 export default function ShopPage() {
@@ -56,7 +56,7 @@ export default function ShopPage() {
       <header className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg">
         <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Mavunoone Shop</h1>
+            <h1 className="text-3xl font-bold">MavunoOne Shop</h1>
             <Link href="/shop/cart">
               <button className="relative bg-white text-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center gap-2">
                 <ShoppingCart size={20} />
@@ -75,7 +75,7 @@ export default function ShopPage() {
             <Search className="absolute left-3 top-3 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Tafuta bidhaa..."
+              placeholder="Tafuta bidhaa, pembejeo au chakula..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
@@ -90,28 +90,34 @@ export default function ShopPage() {
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              className={`card flex flex-col items-center justify-between ${
-                !product.inStock ? "opacity-50" : ""
+              className={`card flex flex-col items-center justify-between overflow-hidden ${
+                !product.inStock ? "opacity-60" : ""
               }`}
             >
-              <div className="text-4xl mb-3">{product.image}</div>
-              <h3 className="font-semibold text-center text-gray-900">
-                {product.name}
-              </h3>
-              <p className="text-lg font-bold text-green-600 mt-2">
-                TZS {product.price.toLocaleString()}
-              </p>
-              <button
-                onClick={() => handleAddToCart(product)}
-                disabled={!product.inStock}
-                className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
-                  product.inStock
-                    ? "bg-green-600 text-white hover:bg-green-700"
-                    : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                }`}
-              >
-                {product.inStock ? "Kuongeza" : "Haipo"}
-              </button>
+              <img
+                src={product.image}
+                alt={product.name}
+                className="w-full h-32 object-cover rounded-t-xl mb-3"
+              />
+              <div className="px-3 pb-3 w-full">
+                <h3 className="font-semibold text-center text-gray-900">
+                  {product.name}
+                </h3>
+                <p className="text-lg font-bold text-green-600 mt-2 text-center">
+                  TZS {product.price.toLocaleString()}
+                </p>
+                <button
+                  onClick={() => handleAddToCart(product)}
+                  disabled={!product.inStock}
+                  className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
+                    product.inStock
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  {product.inStock ? "Kuongeza" : "Haipo"}
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -16,11 +16,11 @@ export type StoredUser = {
 };
 
 export const DEFAULT_SUPER_ADMIN_EMAIL =
-  process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL ?? "admin@mavunoone.com";
+  process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL ?? "admin@mavunoone.co.tz";
 export const DEFAULT_SUPER_ADMIN_PASSWORD =
   process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_PASSWORD ?? "Admin@Mavuno2026!";
 export const DEFAULT_BOSS_EMAIL =
-  process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL ?? "boss@mavunoone.com";
+  process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL ?? "boss@mavunoone.co.tz";
 export const DEFAULT_BOSS_PASSWORD =
   process.env.NEXT_PUBLIC_MAVUNO_BOSS_PASSWORD ?? "Boss@Mavuno2026!";
 
