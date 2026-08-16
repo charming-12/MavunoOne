@@ -1,6 +1,13 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+function getResendClient() {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 const ADMIN_EMAIL = "josiahmarco93@gmail.com";
 const APP_NAME = "MavunoOne";
@@ -89,7 +96,13 @@ export async function sendErrorNotification(
 </html>
     `;
 
-    const result = await resend.emails.send({
+    const client = getResendClient();
+    if (!client) {
+      console.warn("⚠️ Resend client not initialized - error notification skipped");
+      return;
+    }
+
+    const result = await client.emails.send({
       from: `${APP_NAME} <noreply@resend.dev>`,
       to: ADMIN_EMAIL,
       subject: `🚨 ${APP_NAME} - Critical Error Detected`,
@@ -167,7 +180,13 @@ export async function sendPasswordResetEmail(
 </html>
     `;
 
-    const result = await resend.emails.send({
+    const client = getResendClient();
+    if (!client) {
+      console.warn("⚠️ Resend client not initialized - password reset email skipped");
+      return;
+    }
+
+    const result = await client.emails.send({
       from: `${APP_NAME} <noreply@resend.dev>`,
       to: userEmail,
       subject: `🔐 ${APP_NAME} - Weka Tena Neno Lako`,
