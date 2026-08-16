@@ -33,11 +33,9 @@ export function getClientId(request: NextRequest): string {
     return forwardedFor.split(",")[0].trim();
   }
 
-  // Fallback to connection IP
+  // Fallback to other headers
   return (
     request.headers.get("x-real-ip") ||
-    request.ip ||
-    request.geo?.country ||
     "unknown"
   );
 }

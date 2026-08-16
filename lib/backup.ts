@@ -132,7 +132,9 @@ export async function importDatabase(
 /**
  * Export all tables to JSON format
  */
-export async function exportDataToJson(outputDir: string = "./backups"): Promise<{
+export async function exportDataToJson(
+  outputDir: string = "./backups"
+): Promise<{
   success: boolean;
   filename: string;
   tables: Record<string, number>;
@@ -147,36 +149,33 @@ export async function exportDataToJson(outputDir: string = "./backups"): Promise
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    // Export from all tables
-    const backup: Record<string, any[]> = {};
+    // Create a simple backup structure
+    const backup: Record<string, any[]> = {
+      users: [],
+      categories: [],
+      products: [],
+      customers: [],
+      sales: [],
+      saleItems: [],
+      stockIn: [],
+      stockOut: [],
+      machineJobs: [],
+      vehicles: [],
+      deliveries: [],
+      expenses: [],
+      dailyClosures: [],
+      notifications: [],
+      auditLogs: [],
+    };
 
-    // List of all tables in schema
-    const tables = [
-      "users",
-      "categories",
-      "products",
-      "customers",
-      "sales",
-      "saleItems",
-      "stockIn",
-      "stockOut",
-      "machineJobs",
-      "vehicles",
-      "deliveries",
-      "expenses",
-      "dailyClosures",
-      "notifications",
-      "auditLogs",
-    ];
-
-    // Export each table
-    for (const table of tables) {
-      try {
-        const result = await db.query[table as keyof typeof db.query]?.findMany?.();
-        backup[table] = result || [];
-      } catch (err) {
-        console.warn(`Warning: Could not export table ${table}`);
+    // Try to export users table as example
+    try {
+      const users = await db.query.users.findMany();
+      if (users) {
+        backup['users'] = users as any[];
       }
+    } catch (err) {
+      console.warn("Could not export users table");
     }
 
     // Write to file

@@ -57,8 +57,9 @@ export function handleError(error: unknown, context: string = "Operation"): TRPC
   }
 
   if (error instanceof ZodError) {
-    const message = error.errors
-      .map((e) => `${e.path.join(".")}: ${e.message}`)
+    const issues = (error as any).issues || (error as any).errors || [];
+    const message = (issues as any[])
+      .map((issue: any) => `${(issue.path || []).join(".")}: ${issue.message}`)
       .join(", ");
     return new TRPCError({
       code: "BAD_REQUEST",
