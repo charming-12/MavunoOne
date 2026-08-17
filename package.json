@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "npx tsx scripts/seed-production.ts",
+    "seed:api": "pwsh scripts/seed-api.ps1"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

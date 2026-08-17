@@ -1,0 +1,47 @@
+/**
+ * Production Database Seeding Script
+ * Seeds MavunoOne database with admin and boss user credentials
+ * Usage: npx tsx scripts/seed-production.ts
+ */
+
+import { seedDatabase } from "@/lib/seed";
+import { readStoredUser } from "@/lib/auth";
+
+async function main() {
+  console.log("🌱 Starting MavunoOne Database Seed...\n");
+
+  try {
+    const result = await seedDatabase();
+    
+    console.log("✅ Database seeded successfully!\n");
+    console.log("📝 Test Credentials Created:\n");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("\n👤 ADMIN Account:");
+    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL || "admin@mavunoone.co.tz"}`);
+    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_PASSWORD || "Admin@Mavuno2026!"}`);
+    console.log(`   Role:     admin`);
+    console.log(`   Path:     /office\n`);
+
+    console.log("👔 BOSS Account:");
+    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL || "boss@mavunoone.co.tz"}`);
+    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_PASSWORD || "Boss@Mavuno2026!"}`);
+    console.log(`   Role:     boss`);
+    console.log(`   Path:     /boss\n`);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+    console.log("📊 Database Contents:");
+    if (result && typeof result === 'object') {
+      Object.entries(result).forEach(([key, count]) => {
+        console.log(`   ✓ ${key}: ${count} records`);
+      });
+    }
+
+    console.log("\n✨ MavunoOne is ready to use!");
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Seeding failed:", error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}
+
+main();
