@@ -133,7 +133,7 @@ export default function LoginPage() {
               </div>
               <div className="mt-2 text-right">
                 <Link href="/forgot-password" className="text-sm text-green-600 hover:text-green-700 font-medium">
-                  Umakumbuka neno? 🔐
+                  Badili nenosiri? 🔐
                 </Link>
               </div>
             </div>

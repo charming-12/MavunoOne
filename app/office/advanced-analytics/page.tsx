@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BarChart3, Download, TrendingUp, Users, ShoppingCart, Zap, Calendar } from "lucide-react";
+import Image from "next/image";
+import { Download, Calendar } from "lucide-react";
 
 interface SalesReport {
   date: string;
@@ -78,7 +79,7 @@ export default function AdvancedAnalyticsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="text-green-600" size={32} />
+            📊
             Uchambuzi Mkali
           </h1>
         </div>
@@ -100,7 +101,7 @@ export default function AdvancedAnalyticsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="text-green-600" size={32} />
+            📊
             Uchambuzi Mkali
           </h1>
           <p className="text-gray-600 mt-2">Ripoti kamiliki: mauzo, faida, na mifumo ya mauzo</p>
@@ -150,48 +151,68 @@ export default function AdvancedAnalyticsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-gray-600 text-sm font-medium">Jumla ya Mauzo</p>
-            <ShoppingCart className="text-green-600" size={20} />
+        {/* Total Sales Card */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+            alt="Jumla ya Mauzo"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Mauzo</p>
+            <p className="text-2xl font-bold text-white">TZS {(analytics.summary.totalRevenue / 1000000).toFixed(2)}M</p>
+            <p className="text-xs text-gray-200">Jumla ya kipindi kilicho chaguliwa</p>
           </div>
-          <p className="text-3xl font-bold text-green-700">
-            TZS {(analytics.summary.totalRevenue / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-600 mt-2">Jumla ya kipindi kilicho chaguliwa</p>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-gray-600 text-sm font-medium">Jumla ya Matumizi</p>
-            <Zap className="text-orange-600" size={20} />
+        {/* Total Expenses Card */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+            alt="Jumla ya Matumizi"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Matumizi</p>
+            <p className="text-2xl font-bold text-white">TZS {(analytics.summary.totalExpenses / 1000000).toFixed(2)}M</p>
+            <p className="text-xs text-gray-200">Gharama za uendeshaji</p>
           </div>
-          <p className="text-3xl font-bold text-orange-700">
-            TZS {(analytics.summary.totalExpenses / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-600 mt-2">Gharama za uendeshaji</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-gray-600 text-sm font-medium">Faida ya Wavu</p>
-            <TrendingUp className="text-blue-600" size={20} />
+        {/* Net Profit Card */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+            alt="Faida ya Wavu"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Faida ya Wavu</p>
+            <p className="text-2xl font-bold text-white">TZS {(analytics.summary.netProfit / 1000000).toFixed(2)}M</p>
+            <p className="text-xs text-gray-200">Ukingo wa faida: {profitMargin}%</p>
           </div>
-          <p className="text-3xl font-bold text-blue-700">
-            TZS {(analytics.summary.netProfit / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-600 mt-2">Ukingo wa faida: {profitMargin}%</p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-gray-600 text-sm font-medium">Wastani ya Muamala</p>
-            <Users className="text-purple-600" size={20} />
+        {/* Average Transaction Card */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
+            alt="Wastani ya Muamala"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Wastani ya Muamala</p>
+            <p className="text-2xl font-bold text-white">TZS {analytics.summary.averageTransaction.toLocaleString()}</p>
+            <p className="text-xs text-gray-200">Kwa kila muamala</p>
           </div>
-          <p className="text-3xl font-bold text-purple-700">
-            TZS {analytics.summary.averageTransaction.toLocaleString()}
-          </p>
-          <p className="text-xs text-gray-600 mt-2">Kwa kila muamala</p>
         </div>
       </div>
 
