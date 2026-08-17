@@ -4,11 +4,19 @@
  * Usage: npx tsx scripts/seed-production.ts
  */
 
+// MUST be at top to load env vars
+const dotenv = require('dotenv');
+dotenv.config({ path: '.env' });
+dotenv.config({ path: '.env.local' });
+
 import { seedDatabase } from "@/lib/seed";
-import { readStoredUser } from "@/lib/auth";
 
 async function main() {
   console.log("🌱 Starting MavunoOne Database Seed...\n");
+  console.log("Environment loaded:");
+  console.log(`  DATABASE_URL: ${process.env.DATABASE_URL ? '✓' : '✗'}`);
+  console.log(`  ADMIN Email:  ${process.env.MAVUNO_SUPER_ADMIN_EMAIL || 'default'}`);
+  console.log(`  BOSS Email:   ${process.env.MAVUNO_BOSS_EMAIL || 'default'}\n`);
 
   try {
     const result = await seedDatabase();
@@ -17,14 +25,14 @@ async function main() {
     console.log("📝 Test Credentials Created:\n");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("\n👤 ADMIN Account:");
-    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL || "admin@mavunoone.co.tz"}`);
-    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_PASSWORD || "Admin@Mavuno2026!"}`);
+    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL || process.env.MAVUNO_SUPER_ADMIN_EMAIL || "admin@mavunoone.co.tz"}`);
+    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_PASSWORD || process.env.MAVUNO_SUPER_ADMIN_PASSWORD || "Admin@Mavuno2026!"}`);
     console.log(`   Role:     admin`);
     console.log(`   Path:     /office\n`);
 
     console.log("👔 BOSS Account:");
-    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL || "boss@mavunoone.co.tz"}`);
-    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_PASSWORD || "Boss@Mavuno2026!"}`);
+    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL || process.env.MAVUNO_BOSS_EMAIL || "boss@mavunoone.co.tz"}`);
+    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_PASSWORD || process.env.MAVUNO_BOSS_PASSWORD || "Boss@Mavuno2026!"}`);
     console.log(`   Role:     boss`);
     console.log(`   Path:     /boss\n`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -40,6 +48,7 @@ async function main() {
     process.exit(0);
   } catch (error) {
     console.error("❌ Seeding failed:", error instanceof Error ? error.message : String(error));
+    console.error(error);
     process.exit(1);
   }
 }
