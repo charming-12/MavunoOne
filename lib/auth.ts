@@ -1,7 +1,7 @@
 export type AppUserRole =
+  | "admin"
   | "boss"
   | "owner"
-  | "admin"
   | "manager"
   | "cashier"
   | "storekeeper"
@@ -15,15 +15,6 @@ export type StoredUser = {
   role: AppUserRole;
 };
 
-export const DEFAULT_SUPER_ADMIN_EMAIL =
-  process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL ?? "admin@mavunoone.co.tz";
-export const DEFAULT_SUPER_ADMIN_PASSWORD =
-  process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_PASSWORD ?? "Admin@Mavuno2026!";
-export const DEFAULT_BOSS_EMAIL =
-  process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL ?? "boss@mavunoone.co.tz";
-export const DEFAULT_BOSS_PASSWORD =
-  process.env.NEXT_PUBLIC_MAVUNO_BOSS_PASSWORD ?? "Boss@Mavuno2026!";
-
 const USER_STORAGE_KEY = "mavunoone-user";
 
 export function writeStoredUser(user: StoredUser) {
@@ -33,7 +24,6 @@ export function writeStoredUser(user: StoredUser) {
 
 export function readStoredUser(): StoredUser | null {
   if (typeof window === "undefined") return null;
-
   try {
     const raw = localStorage.getItem(USER_STORAGE_KEY);
     if (!raw) return null;
@@ -51,11 +41,10 @@ export function clearStoredUser() {
 export function getRoleRedirectPath(role: AppUserRole | string) {
   if (role === "boss") return "/boss";
   if (role === "admin" || role === "owner") return "/office";
-  if (role === "manager" || role === "cashier" || role === "storekeeper" || role === "machine_operator") return "/office";
+  if (["manager", "cashier", "storekeeper", "machine_operator"].includes(role)) return "/office";
   return "/shop";
 }
 
 export function isRoleAllowed(role: AppUserRole | string, allowedRoles: Array<AppUserRole | string>) {
   return allowedRoles.includes(role) || (role === "owner" && allowedRoles.includes("admin"));
 }
-

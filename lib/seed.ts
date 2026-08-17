@@ -1,12 +1,16 @@
 import { db } from "./db";
 import * as schema from "@/drizzle/schema";
-import { DEFAULT_BOSS_EMAIL, DEFAULT_BOSS_PASSWORD, DEFAULT_SUPER_ADMIN_EMAIL, DEFAULT_SUPER_ADMIN_PASSWORD } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
 
-const SEED_SUPER_ADMIN_EMAIL = process.env.MAVUNO_SUPER_ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL ?? DEFAULT_SUPER_ADMIN_EMAIL;
-const SEED_SUPER_ADMIN_PASSWORD = process.env.MAVUNO_SUPER_ADMIN_PASSWORD ?? process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_PASSWORD ?? DEFAULT_SUPER_ADMIN_PASSWORD;
-const SEED_BOSS_EMAIL = process.env.MAVUNO_BOSS_EMAIL ?? process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL ?? DEFAULT_BOSS_EMAIL;
-const SEED_BOSS_PASSWORD = process.env.MAVUNO_BOSS_PASSWORD ?? process.env.NEXT_PUBLIC_MAVUNO_BOSS_PASSWORD ?? DEFAULT_BOSS_PASSWORD;
+const requiredSeedSecret = (value: string | undefined, name: string) => {
+  if (!value) throw new Error(`${name} must be configured before seeding`);
+  return value;
+};
+
+const SEED_SUPER_ADMIN_EMAIL = process.env.MAVUNO_SUPER_ADMIN_EMAIL ?? "admin@mavunoone.co.tz";
+const SEED_SUPER_ADMIN_PASSWORD = requiredSeedSecret(process.env.MAVUNO_SUPER_ADMIN_PASSWORD, "MAVUNO_SUPER_ADMIN_PASSWORD");
+const SEED_BOSS_EMAIL = process.env.MAVUNO_BOSS_EMAIL ?? "boss@mavunoone.co.tz";
+const SEED_BOSS_PASSWORD = requiredSeedSecret(process.env.MAVUNO_BOSS_PASSWORD, "MAVUNO_BOSS_PASSWORD");
 
 export async function seedDatabase() {
   try {

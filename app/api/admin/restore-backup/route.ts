@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { restoreLatestSampleDataBackup } from "@/lib/backup";
-
-function getAuthenticatedUser(request: NextRequest) {
-  const cookie = request.cookies.get("mavunoone-user");
-  if (!cookie?.value) return null;
-
-  try {
-    return JSON.parse(cookie.value) as { role?: string; id?: number };
-  } catch {
-    return null;
-  }
-}
+import { requirePrivilegedUser } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
-  const user = getAuthenticatedUser(request);
-  if (!user || !["admin", "boss", "owner"].includes((user.role ?? "").toLowerCase())) {
+  const user = requirePrivilegedUser(request);
+  if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
   }
 

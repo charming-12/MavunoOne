@@ -197,9 +197,9 @@ Visit:
 
 ### Environment Setup
 
-The `.env.local` file is already configured with:
+Configure `.env.local` locally or set the equivalent secret in Render Environment Variables. Never commit database credentials to the repository:
 ```
-DATABASE_URL=postgresql://neondb_owner:npg_ebFJuSk5B3RG@ep-quiet-bonus-ax52ddis-pooler.c-4.us-east-2.aws.neon.tech/mavunoone?channel_binding=require&sslmode=require
+DATABASE_URL=postgresql://<user>:<password>@<host>/<database>?sslmode=require
 ```
 
 ## 🎨 UI Features

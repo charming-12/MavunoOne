@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Users, Phone, MapPin, TrendingUp, DollarSign, Plus } from "lucide-react";
+import { Users, Phone, MapPin, Plus } from "lucide-react";
 
 // Mock farmers data
 const mockFarmers = [

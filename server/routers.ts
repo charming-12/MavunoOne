@@ -78,7 +78,7 @@ export const appRouter = router({
         return updated;
       }),
 
-    lowStock: publicProcedure.query(async () => {
+    lowStock: protectedProcedure.query(async () => {
       return await db.query.products.findMany({
         where: and(
           lte(products.currentStock, products.lowStockThreshold),
@@ -90,7 +90,7 @@ export const appRouter = router({
 
   // ===== SALES =====
   sales: router({
-    list: publicProcedure.query(async () => {
+    list: protectedProcedure.query(async () => {
       return await db.query.sales.findMany({
         orderBy: desc(sales.createdAt),
         limit: 100,
@@ -451,7 +451,7 @@ export const appRouter = router({
 
   // ===== DASHBOARD STATS =====
   dashboard: router({
-    stats: publicProcedure.query(async () => {
+    stats: protectedProcedure.query(async () => {
       const todaySales = await db.query.sales.findMany({
         where: gte(sales.createdAt, new Date(new Date().setHours(0, 0, 0, 0))),
       });
@@ -526,7 +526,7 @@ export const appRouter = router({
       }),
 
     // Customers with an outstanding balance (deni)
-    listDebtors: publicProcedure.query(async () => {
+    listDebtors: protectedProcedure.query(async () => {
       return await db.query.customers.findMany({
         where: and(gt(customers.balance, "0"), eq(customers.isActive, true)),
         orderBy: desc(customers.balance),
