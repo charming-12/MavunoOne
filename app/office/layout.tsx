@@ -49,20 +49,20 @@ const groupedItems = sidebarItems.reduce(
 export default function OfficeLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard allowedRoles={["admin", "manager", "cashier", "storekeeper", "machine_operator"]}>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-[#07150f]">
         {/* Sidebar */}
-        <aside className="w-64 bg-gradient-to-b from-green-800 to-green-900 text-white p-6 fixed h-screen overflow-y-auto shadow-xl">
+        <aside className="w-64 bg-gradient-to-b from-[#0a1e18] to-[#051511] text-white p-6 fixed h-screen overflow-y-auto shadow-2xl border-r border-emerald-900/30">
           {/* Logo */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white">🌾 MavunoOne</h2>
-            <p className="text-green-200 text-xs mt-1">Biashara Hub</p>
+          <div className="mb-8 pb-4 border-b border-emerald-900/40">
+            <h2 className="text-2xl font-black text-white">🌾 MavunoOne</h2>
+            <p className="text-emerald-300 text-xs mt-2 font-semibold uppercase tracking-wider">Operations Hub</p>
           </div>
 
           {/* Navigation */}
           <nav className="space-y-6">
             {Object.entries(groupedItems).map(([group, items]) => (
               <div key={group}>
-                <p className="text-green-300 text-xs font-semibold uppercase tracking-wider mb-3">
+                <p className="text-amber-300 text-xs font-bold uppercase tracking-[0.25em] mb-3">
                   {group}
                 </p>
                 <div className="space-y-1">
@@ -70,9 +70,9 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
                     <Link
                       key={href}
                       href={href}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-50 hover:bg-white hover:bg-opacity-20 transition-all duration-200 hover:translate-x-0.5 group"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-emerald-50 hover:bg-emerald-500/20 hover:border-l-2 hover:border-amber-400 hover:pl-2.5 transition-all duration-200 group"
                     >
-                      <Icon size={18} className="flex-shrink-0 group-hover:scale-110 transition-transform" />
+                      <Icon size={18} className="flex-shrink-0 group-hover:text-amber-300 transition-colors" />
                       <span className="text-sm font-medium">{label}</span>
                     </Link>
                   ))}
@@ -82,15 +82,16 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
           </nav>
 
           {/* Footer */}
-          <div className="mt-8 pt-4 border-t border-green-700">
-            <p className="text-green-300 text-xs">
-              © 2024 MavunoOne - All Rights Reserved
+          <div className="mt-8 pt-4 border-t border-emerald-900/40">
+            <p className="text-emerald-300 text-xs font-semibold">
+              © 2026 MavunoOne
             </p>
+            <p className="text-emerald-500/70 text-xs mt-1">Premium Agribusiness Platform</p>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="ml-64 flex-1 p-8 overflow-auto">
+        <main className="ml-64 flex-1 p-8 overflow-auto bg-gradient-to-br from-[#07150f] to-[#0a1e18]">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
