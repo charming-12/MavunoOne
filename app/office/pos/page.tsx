@@ -1,173 +1,87 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import { Search, ShoppingCart, Trash2, DollarSign } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, ShoppingCart, Trash2, DollarSign, Plus, Minus, Loader2, CheckCircle2 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
-interface CartItem {
-  id: number;
+type CartItem = {
+  productId: number;
   name: string;
   price: number;
   quantity: number;
-  total: number;
-}
+  stock: number;
+};
 
 export default function POSPage() {
+  const productsQuery = trpc.products.list.useQuery();
+  const createSale = trpc.sales.create.useMutation();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // Mock products
-  const products = [
-    { id: 1, name: "Mahindi (Raw)", price: 9000, quantity: 50 },
-    { id: 2, name: "Unga wa Mahindi", price: 18000, quantity: 12 },
-    { id: 3, name: "Uduvi (Bran)", price: 4500, quantity: 8 },
-    { id: 4, name: "Pumba (Meal)", price: 15000, quantity: 5 },
-    { id: 5, name: "Kahdarikaa", price: 12000, quantity: 25 },
-    { id: 6, name: "Alizeti (Raw)", price: 30000, quantity: 10 },
-    { id: 7, name: "Mafuta Alizeti", price: 65000, quantity: 3 },
-    { id: 8, name: "Chokaa (Limestone)", price: 2500, quantity: 40 },
-    { id: 9, name: "Animal Feeds", price: 25000, quantity: 15 },
-  ];
+  const products = productsQuery.data ?? [];
+  const filteredProducts = products.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const totalAmount = useMemo(() => cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0), [cart]);
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const addToCart = (product: (typeof products)[number]) => {
+    const stock = Number(product.currentStock ?? 0);
+    setCart((current) => {
+      const existing = current.find((item) => item.productId === product.id);
+      if (existing) {
+        if (existing.quantity >= stock) return current;
+        return current.map((item) => item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      if (stock <= 0) return current;
+      return [...current, { productId: product.id, name: product.name, price: Number(product.sellPrice ?? 0), quantity: 1, stock }];
+    });
+    setSuccessMessage("");
+  };
 
-  const addToCart = (product: typeof products[0]) => {
-    const existing = cart.find(item => item.id === product.id);
-    if (existing) {
-      setCart(cart.map(item =>
-        item.id === product.id
-          ? { ...item, quantity: item.quantity + 1, total: item.price * (item.quantity + 1) }
-          : item
-      ));
-    } else {
-      setCart([...cart, { ...product, quantity: 1, total: product.price }]);
+  const updateQuantity = (productId: number, delta: number) => {
+    setCart((current) => current.flatMap((item) => {
+      if (item.productId !== productId) return [item];
+      const quantity = item.quantity + delta;
+      return quantity <= 0 ? [] : quantity > item.stock ? [item] : [{ ...item, quantity }];
+    }));
+  };
+
+  const completeSale = async () => {
+    if (!cart.length || createSale.isPending) return;
+    setSuccessMessage("");
+    try {
+      const result = await createSale.mutateAsync({
+        totalAmount,
+        paymentMethod,
+        paidAmount: paymentMethod === "credit" ? 0 : totalAmount,
+        balance: paymentMethod === "credit" ? totalAmount : 0,
+        items: cart.map((item) => ({ productId: item.productId, quantity: item.quantity, unitPrice: item.price, discount: 0, total: item.price * item.quantity })),
+      });
+      setCart([]);
+      setSuccessMessage(`Mauzo yamehifadhiwa. Invoice: ${result.invoiceNumber}`);
+      await productsQuery.refetch();
+    } catch (error) {
+      setSuccessMessage(error instanceof Error ? error.message : "Mauzo hayakuhifadhiwa. Tafadhali jaribu tena.");
     }
   };
-
-  const removeFromCart = (id: number) => {
-    setCart(cart.filter(item => item.id !== id));
-  };
-
-  const totalAmount = cart.reduce((sum, item) => sum + item.total, 0);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">POS - Mauzo</h1>
-        <p className="text-gray-600 mt-2">Ongeza bidhaa kwenye karata</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Sales terminal</p>
+        <h1 className="mt-1 text-3xl font-black text-slate-900">POS — Mauzo</h1>
+        <p className="mt-2 text-slate-500">Chagua bidhaa kutoka stock halisi na hifadhi mauzo moja kwa moja.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Products */}
-        <div className="col-span-2">
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Tafuta bidhaa..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              />
-            </div>
-          </div>
+      {successMessage && <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"><CheckCircle2 size={18} />{successMessage}</div>}
 
-          <div className="grid grid-cols-2 gap-4">
-            {filteredProducts.map(product => (
-              <div key={product.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition cursor-pointer"
-                onClick={() => addToCart(product)}>
-                <div className="relative h-24 w-full bg-gray-200">
-                  <Image
-                    src={
-                      product.id % 3 === 0
-                        ? "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=300&fit=crop"
-                        : product.id % 3 === 1
-                        ? "https://images.unsplash.com/photo-1560493676-04071c5f467b?w=400&h=300&fit=crop"
-                        : "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop"
-                    }
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition"></div>
-                </div>
-                <div className="p-3">
-                  <h3 className="font-semibold text-gray-900 text-sm">{product.name}</h3>
-                  <p className="text-green-600 font-bold mt-1">TZS {product.price.toLocaleString()}</p>
-                  <p className="text-gray-500 text-xs mt-1">Stock: {product.quantity}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+        <section>
+          <div className="relative mb-4"><Search className="absolute left-3 top-3 text-slate-400" size={20} /><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Tafuta bidhaa..." className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" /></div>
+          {productsQuery.isLoading ? <div className="flex items-center justify-center gap-2 rounded-2xl bg-white p-12 text-slate-500"><Loader2 className="animate-spin" size={20} />Inapakia bidhaa...</div> : productsQuery.error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">Imeshindikana kupakia bidhaa. Hakikisha umeingia kama staff.</div> : filteredProducts.length === 0 ? <div className="rounded-2xl bg-white p-12 text-center text-slate-500">Hakuna bidhaa inayopatikana.</div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filteredProducts.map((product) => { const stock = Number(product.currentStock ?? 0); return <button key={product.id} type="button" disabled={stock <= 0} onClick={() => addToCart(product)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"><div className="flex items-start justify-between gap-3"><div><p className="font-bold text-slate-900">{product.name}</p><p className="mt-1 text-sm font-semibold text-emerald-700">TZS {Number(product.sellPrice ?? 0).toLocaleString()}</p></div><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${stock <= Number(product.lowStockThreshold ?? 0) ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{stock} {product.unit}</span></div><span className="mt-5 flex items-center gap-1 text-xs font-bold text-emerald-700"><Plus size={14} />Ongeza kwenye cart</span></button>; })}</div>}
+        </section>
 
-        {/* Cart */}
-        <div className="bg-white p-6 rounded-lg shadow h-fit sticky top-6">
-          <div className="flex items-center gap-2 mb-4">
-            <ShoppingCart size={20} className="text-green-600" />
-            <h3 className="text-lg font-bold text-gray-900">Karata</h3>
-          </div>
-
-          <div className="space-y-2 mb-4 max-h-96 overflow-y-auto">
-            {cart.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Hakuna bidhaa kwenye karata</p>
-            ) : (
-              cart.map(item => (
-                <div key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                    <p className="text-xs text-gray-600">{item.quantity} x TZS {item.price.toLocaleString()}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-green-600">
-                      {item.total.toLocaleString()}
-                    </span>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="border-t pt-4">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-gray-700">Jumla:</span>
-              <span className="text-2xl font-bold text-green-600">
-                TZS {totalAmount.toLocaleString()}
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-900 mb-2">Njia ya Malipo</label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              >
-                <option value="cash">Pesa Taslimu</option>
-                <option value="mpesa">M-Pesa</option>
-                <option value="credit">Deni (Credit)</option>
-              </select>
-            </div>
-
-            <button
-              disabled={cart.length === 0}
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-300"
-            >
-              <DollarSign className="inline mr-2" size={20} />
-              Kamilisha Malipo
-            </button>
-          </div>
-        </div>
+        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-6"><div className="mb-4 flex items-center gap-2"><ShoppingCart size={20} className="text-emerald-600" /><h2 className="text-lg font-black text-slate-900">Cart ya Mauzo</h2></div><div className="max-h-96 space-y-3 overflow-y-auto">{cart.length === 0 ? <p className="py-12 text-center text-sm text-slate-400">Hakuna bidhaa kwenye cart.</p> : cart.map((item) => <div key={item.productId} className="rounded-xl bg-slate-50 p-3"><div className="flex items-start justify-between gap-2"><div><p className="text-sm font-bold text-slate-900">{item.name}</p><p className="text-xs text-slate-500">TZS {item.price.toLocaleString()} × {item.quantity}</p></div><button type="button" onClick={() => setCart((current) => current.filter((entry) => entry.productId !== item.productId))} className="text-red-500"><Trash2 size={16} /></button></div><div className="mt-3 flex items-center justify-between"><div className="flex items-center gap-2"><button type="button" onClick={() => updateQuantity(item.productId, -1)} className="rounded-lg border border-slate-200 bg-white p-1"><Minus size={14} /></button><span className="min-w-6 text-center text-sm font-bold">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.productId, 1)} className="rounded-lg border border-slate-200 bg-white p-1"><Plus size={14} /></button></div><span className="font-black text-emerald-700">TZS {(item.price * item.quantity).toLocaleString()}</span></div></div>)}</div><div className="mt-5 border-t border-slate-200 pt-4"><div className="mb-4 flex items-center justify-between"><span className="text-slate-600">Jumla</span><span className="text-2xl font-black text-emerald-700">TZS {totalAmount.toLocaleString()}</span></div><select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="mb-4 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"><option value="cash">Pesa taslimu</option><option value="mpesa">M-Pesa</option><option value="credit">Deni (Credit)</option></select><button type="button" disabled={!cart.length || createSale.isPending} onClick={completeSale} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"><DollarSign size={19} />{createSale.isPending ? "Inahifadhi..." : "Kamilisha Mauzo"}</button></div></aside>
       </div>
     </div>
   );

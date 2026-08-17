@@ -486,6 +486,30 @@ export const appRouter = router({
     }),
   }),
 
+  // ===== ANALYTICS =====
+  analytics: router({
+    summary: protectedProcedure.query(async () => {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - 6);
+      const [recentSales, recentExpenses] = await Promise.all([
+        db.query.sales.findMany({ where: gte(sales.createdAt, start) }),
+        db.query.expenses.findMany({ where: gte(expenses.date, start) }),
+      ]);
+      const daily = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(start);
+        date.setDate(start.getDate() + index);
+        const key = date.toISOString().slice(0, 10);
+        const salesTotal = recentSales.filter((sale) => sale.createdAt.toISOString().slice(0, 10) === key).reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
+        const expensesTotal = recentExpenses.filter((expense) => expense.date.toISOString().slice(0, 10) === key).reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+        return { date: key, sales: salesTotal, expenses: expensesTotal, profit: salesTotal - expensesTotal };
+      });
+      const totalSales = daily.reduce((sum, day) => sum + day.sales, 0);
+      const totalExpenses = daily.reduce((sum, day) => sum + day.expenses, 0);
+      return { daily, totalSales, totalExpenses, totalProfit: totalSales - totalExpenses };
+    }),
+  }),
+
   // ===== CUSTOMERS =====
   customers: router({
     list: publicProcedure.query(async () => {
