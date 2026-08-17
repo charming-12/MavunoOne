@@ -44,7 +44,11 @@ export default function SetupWizardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           key: "SETUP_WIZARD_CONFIG",
-          value: JSON.stringify(config),
+          value: JSON.stringify({
+            ...config,
+            mpesa: { ...config.mpesa, apiKey: config.mpesa.apiKey ? "[provided-in-setup]" : "" },
+            resend: { ...config.resend, apiKey: config.resend.apiKey ? "[provided-in-setup]" : "" },
+          }),
           description: "Initial MavunoOne setup configuration",
         }),
       });
@@ -260,21 +264,21 @@ export default function SetupWizardPage() {
                 <div>
                   <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">LIPA API</label>
                   <input
-                    type="text"
                     value={config.mpesa.apiKey}
                     onChange={(e) => setConfig({ ...config, mpesa: { ...config.mpesa, apiKey: e.target.value } })}
+                    type="password"
                     className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600 outline-none focus:border-amber-400"
-                    placeholder="Enter Lipa API key"
+                    placeholder="Weka kwenye Render Environment Variables"
                   />
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Resend API</label>
                   <input
-                    type="text"
                     value={config.resend.apiKey}
                     onChange={(e) => setConfig({ ...config, resend: { ...config.resend, apiKey: e.target.value } })}
+                    type="password"
                     className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600 outline-none focus:border-amber-400"
-                    placeholder="Enter Resend key"
+                    placeholder="Weka kwenye Render Environment Variables"
                   />
                 </div>
               </div>
