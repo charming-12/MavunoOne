@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Search, ShoppingCart, Trash2, DollarSign } from "lucide-react";
 
 interface CartItem {
@@ -77,12 +78,28 @@ export default function POSPage() {
 
           <div className="grid grid-cols-2 gap-4">
             {filteredProducts.map(product => (
-              <div key={product.id} className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+              <div key={product.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition cursor-pointer"
                 onClick={() => addToCart(product)}>
-                <div className="bg-gray-200 h-24 rounded mb-3"></div>
-                <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                <p className="text-gray-600 text-sm mt-1">TZS {product.price.toLocaleString()}</p>
-                <p className="text-gray-500 text-xs mt-2">Stock: {product.quantity}</p>
+                <div className="relative h-24 w-full bg-gray-200">
+                  <Image
+                    src={
+                      product.id % 3 === 0
+                        ? "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=300&fit=crop"
+                        : product.id % 3 === 1
+                        ? "https://images.unsplash.com/photo-1560493676-04071c5f467b?w=400&h=300&fit=crop"
+                        : "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop"
+                    }
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition"></div>
+                </div>
+                <div className="p-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">{product.name}</h3>
+                  <p className="text-green-600 font-bold mt-1">TZS {product.price.toLocaleString()}</p>
+                  <p className="text-gray-500 text-xs mt-1">Stock: {product.quantity}</p>
+                </div>
               </div>
             ))}
           </div>
