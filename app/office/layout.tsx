@@ -52,7 +52,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
 
   return (
-    <AuthGuard allowedRoles={["admin", "manager", "cashier", "storekeeper", "machine_operator"]}>
+    <AuthGuard allowedRoles={["admin", "owner", "manager", "cashier", "storekeeper", "machine_operator"]}>
       <div className="flex min-h-screen bg-[#07150f]">
         {/* Sidebar */}
         <aside className="w-64 bg-gradient-to-b from-[#0a1e18] to-[#051511] text-white p-6 fixed h-screen overflow-y-auto shadow-2xl border-r border-emerald-900/30">

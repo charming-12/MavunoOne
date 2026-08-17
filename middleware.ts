@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUserFromCookieEdge, isPrivilegedEdgeRole, isStaffEdgeRole } from "@/lib/session-edge";
+import { getSessionUserFromCookieEdge, isStaffEdgeRole } from "@/lib/session-edge";
 
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Frame-Options": "SAMEORIGIN",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+  "Permissions-Policy": "geolocation=(self), camera=(self), microphone=()",
 };
 
 export async function middleware(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
 
   let response: NextResponse;
   if (pathname.startsWith("/boss")) {
-    if (!user || !isPrivilegedEdgeRole(user.role)) {
+    if (!user || user.role !== "boss") {
       return NextResponse.redirect(new URL("/login", request.url));
     }
     response = NextResponse.next();

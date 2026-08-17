@@ -27,22 +27,6 @@ import {
 } from "recharts";
 import { trpc } from "@/lib/trpc";
 
-const salesTrend = [
-  { month: "Jan", sales: 12.4, target: 10.0 },
-  { month: "Feb", sales: 15.8, target: 12.0 },
-  { month: "Mar", sales: 17.6, target: 14.0 },
-  { month: "Apr", sales: 16.2, target: 14.5 },
-  { month: "May", sales: 20.1, target: 16.0 },
-  { month: "Jun", sales: 22.4, target: 18.0 },
-];
-
-const stockBreakdown = [
-  { name: "Mazao", value: 50, color: "#16a66a" },
-  { name: "Vifaa", value: 25, color: "#183a5c" },
-  { name: "Mbolea", value: 15, color: "#e6a51b" },
-  { name: "Nyingine", value: 10, color: "#aeb8b5" },
-];
-
 const formatMoney = (value: number) => `TZS ${value.toLocaleString("en-TZ")}`;
 
 const formatDate = (value: string | Date | undefined) => {
@@ -125,18 +109,24 @@ export default function BossDashboard() {
   const lowStockQuery = trpc.products.lowStock.useQuery();
   const salesQuery = trpc.sales.list.useQuery();
   const vehiclesQuery = trpc.vehicles.list.useQuery();
+  const analyticsQuery = trpc.analytics.summary.useQuery();
+  const productsQuery = trpc.products.list.useQuery();
 
   const stats = {
     todaySalesTotal: Number(dashboardQuery.data?.todaySalesTotal ?? 0),
     todaySalesCount: Number(dashboardQuery.data?.todaySalesCount ?? 0),
     lowStockCount: Number(lowStockQuery.data?.length ?? 0),
     totalCustomerDebt: Number(dashboardQuery.data?.totalCustomerDebt ?? 0),
-    activeVehicles: vehiclesQuery.data?.filter((vehicle) => vehicle.status === "active").length ?? 2,
-    totalVehicles: vehiclesQuery.data?.length ?? 15,
+    activeVehicles: vehiclesQuery.data?.filter((vehicle) => ["active", "moving", "delivering"].includes(vehicle.status ?? "")).length ?? 0,
+    totalVehicles: vehiclesQuery.data?.length ?? 0,
   };
 
   const recentSales = salesQuery.data?.slice(0, 4) ?? [];
-  const isLoading = dashboardQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading;
+  const salesTrend = (analyticsQuery.data?.daily ?? []).map((day) => ({ month: day.date.slice(5), sales: day.sales / 1_000_000, target: 0 }));
+  const stockProducts = (productsQuery.data ?? []).filter((product) => Number(product.currentStock ?? 0) > 0).sort((a, b) => Number(b.currentStock ?? 0) - Number(a.currentStock ?? 0)).slice(0, 4);
+  const stockTotal = stockProducts.reduce((sum, product) => sum + Number(product.currentStock ?? 0), 0);
+  const stockBreakdown = stockProducts.map((product, index) => ({ name: product.name, value: stockTotal ? Math.round((Number(product.currentStock ?? 0) / stockTotal) * 100) : 0, color: ["#16a66a", "#183a5c", "#e6a51b", "#aeb8b5"][index] }));
+  const isLoading = dashboardQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading || vehiclesQuery.isLoading || analyticsQuery.isLoading || productsQuery.isLoading;
 
   return (
     <div className="min-h-screen bg-[#f7f9f8] text-slate-900">
@@ -150,7 +140,7 @@ export default function BossDashboard() {
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm sm:flex">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              16 Aug 2026
+              {new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date())}
             </div>
             <button className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700">
               Export ripoti
@@ -203,7 +193,7 @@ export default function BossDashboard() {
             </div>
             <div className="mt-2 flex items-center gap-5 text-xs font-medium text-slate-500">
               <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-emerald-600" /> Mauzo</span>
-              <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-[#183a5c]" /> Lengo</span>
+                  <span className="text-slate-400">Siku 7 zilizopita</span>
             </div>
           </section>
 
@@ -223,7 +213,7 @@ export default function BossDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-slate-950">1,248</span>
+                  <span className="text-2xl font-bold text-slate-950">{stockTotal.toLocaleString()}</span>
                   <span className="text-xs text-slate-500">jumla ya items</span>
                 </div>
               </div>

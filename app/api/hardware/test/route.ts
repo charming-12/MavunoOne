@@ -1,29 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/api-auth";
+import { isPrivilegedRole } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
+  const user = getAuthenticatedUser(request);
+  if (!user || !isPrivilegedRole(user.role)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await request.json();
     const { deviceId, type } = body as { deviceId: string; type: string };
 
-    // Simulate hardware test based on type
     let message = "";
     let success = true;
 
     switch (type) {
       case "printer":
-        // Simulate ESC/POS printer test
-        message = `✓ Printa ESC/POS (${deviceId}) inatumia mafanikio. Kutoka kwa mtihani: "Hello MavunoOne"`;
+        message = `Printa ESC/POS (${deviceId}) haijathibitishwa na hardware bridge. Unganisha kifaa halisi kisha jaribu tena.`;
+        success = false;
         break;
 
       case "scale":
-        // Simulate weighing scale test
-        const weight = (Math.random() * 5 + 0.1).toFixed(2);
-        message = `✓ Kiwanja (${deviceId}) inatumia mafanikio. Uzani wa mtihani: ${weight} kg`;
+        message = `Scale (${deviceId}) haijathibitishwa na hardware bridge. Unganisha kifaa halisi kisha jaribu tena.`;
+        success = false;
         break;
 
       case "rfid":
-        // Simulate RFID test
-        message = `✓ Mtambua RFID (${deviceId}) inatumia mafanikio. Kadi imekubaliana.`;
+        message = `RFID (${deviceId}) haijathibitishwa na hardware bridge. Unganisha kifaa halisi kisha jaribu tena.`;
+        success = false;
         break;
 
       default:
