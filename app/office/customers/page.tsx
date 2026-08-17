@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Plus, Phone, Mail, TrendingUp } from "lucide-react";
 
 export default function CustomersPage() {
@@ -25,45 +26,62 @@ export default function CustomersPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {customers.map(customer => (
-          <div key={customer.id} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{customer.name}</h3>
-                <p className="text-sm text-gray-600">{customer.type} Customer</p>
-              </div>
-              <span className={`px-3 py-1 rounded text-sm font-medium ${
-                customer.status === "Active"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}>
-                {customer.status}
-              </span>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Phone size={16} />
-                <a href={`tel:${customer.phone}`} className="text-blue-600 hover:underline">
-                  {customer.phone}
-                </a>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail size={16} />
-                <a href={`mailto:${customer.email}`} className="text-blue-600 hover:underline">
-                  {customer.email}
-                </a>
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className={customer.debt > 0 ? "text-red-600" : "text-green-600"} size={20} />
-                  <span className="text-sm text-gray-600">Deni:</span>
+          <div key={customer.id} className="rounded-lg shadow hover:shadow-lg transition overflow-hidden group cursor-pointer">
+            {/* Image Background */}
+            <div className="relative h-28 bg-gray-200">
+              <Image
+                src={
+                  customer.type === "Wholesale"
+                    ? "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500&h=300&fit=crop"
+                    : "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=500&h=300&fit=crop"
+                }
+                alt={customer.name}
+                fill
+                className="object-cover group-hover:scale-105 transition duration-300"
+              />
+              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+              <div className="absolute inset-0 p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{customer.name}</h3>
+                  <p className="text-sm text-gray-200">{customer.type}</p>
                 </div>
-                <span className={`text-lg font-bold ${customer.debt > 0 ? "text-red-600" : "text-green-600"}`}>
-                  TZS {customer.debt.toLocaleString()}
+                <span className={`px-3 py-1 rounded text-xs font-medium ${
+                  customer.status === "Active"
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
+                }`}>
+                  {customer.status}
                 </span>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="bg-white p-4">
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Phone size={16} className="text-green-600" />
+                  <a href={`tel:${customer.phone}`} className="text-blue-600 hover:underline text-sm">
+                    {customer.phone}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Mail size={16} className="text-blue-600" />
+                  <a href={`mailto:${customer.email}`} className="text-blue-600 hover:underline text-sm">
+                    {customer.email}
+                  </a>
+                </div>
+              </div>
+
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className={customer.debt > 0 ? "text-red-600" : "text-green-600"} size={16} />
+                    <span className="text-xs text-gray-600">Deni:</span>
+                  </div>
+                  <span className={`font-bold text-sm ${customer.debt > 0 ? "text-red-600" : "text-green-600"}`}>
+                    TZS {customer.debt.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Receipt, AlertCircle, Plus, Trash2, Edit2, Calendar } from "lucide-react";
 
 // Mock expense data
@@ -73,37 +74,77 @@ export default function ExpensesPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <p className="text-gray-600 text-sm">Jumla ya Gharama</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">
-            TZS {(monthlyTotal / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Mwezi huu</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Expenses */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+            alt="Jumla ya Gharama"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Gharama</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(monthlyTotal / 1000000).toFixed(2)}M
+            </p>
+            <p className="text-xs text-gray-200 mt-1">Mwezi huu</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Gharama Zinazorudia</p>
-          <p className="text-3xl font-bold text-orange-600 mt-2">
-            TZS {(recurringTotal / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Kila mwezi</p>
+        {/* Recurring Expenses */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+            alt="Gharama Zinazorudia"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Gharama Zinazorudia</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(recurringTotal / 1000000).toFixed(2)}M
+            </p>
+            <p className="text-xs text-gray-200 mt-1">Kila mwezi</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Gharama Kubwa Zaidi</p>
-          <p className="text-3xl font-bold text-purple-600 mt-2">
-            TZS {(largestExpense / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Katika orodha</p>
+        {/* Largest Expense */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
+            alt="Gharama Kubwa Zaidi"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Gharama Kubwa Zaidi</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(largestExpense / 1000000).toFixed(2)}M
+            </p>
+            <p className="text-xs text-gray-200 mt-1">Katika orodha</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Wastani ya Gharama</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">
-            TZS {(averageExpense / 1000).toLocaleString()}K
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Kwa kila kaidi</p>
+        {/* Average Expense */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+            alt="Wastani ya Gharama"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Wastani ya Gharama</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(averageExpense / 1000).toLocaleString()}K
+            </p>
+            <p className="text-xs text-gray-200 mt-1">Kwa kila kaidi</p>
+          </div>
         </div>
       </div>
 

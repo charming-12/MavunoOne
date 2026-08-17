@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Users, Plus, Edit2, Trash2, Phone, Mail, AlertCircle } from "lucide-react";
 
 // Mock employee data
@@ -63,31 +64,71 @@ export default function EmployeesPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <p className="text-gray-600 text-sm">Jumla ya Wafanyakazi</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{employees.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Juma nzima</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Employees */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop"
+            alt="Jumla ya Wafanyakazi"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Wafanyakazi</p>
+            <p className="text-2xl font-bold text-white">{employees.length}</p>
+            <p className="text-xs text-gray-200 mt-1">Juma nzima</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Wanafanya Kazi</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">{activeCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Sasa hivi</p>
+        {/* Active Employees */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop"
+            alt="Wanafanya Kazi"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Wanafanya Kazi</p>
+            <p className="text-2xl font-bold text-white">{activeCount}</p>
+            <p className="text-xs text-gray-200 mt-1">Sasa hivi</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Kuchezaana</p>
-          <p className="text-3xl font-bold text-orange-600 mt-2">{inactiveCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Hawakatikika</p>
+        {/* Inactive Employees */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop"
+            alt="Kuchezaana"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Kuchezaana</p>
+            <p className="text-2xl font-bold text-white">{inactiveCount}</p>
+            <p className="text-xs text-gray-200 mt-1">Hawakatikika</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Jumla ya Malipo</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">
-            TZS {(totalPayroll / 1000000).toFixed(1)}M
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Kwa mwezi</p>
+        {/* Total Payroll */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+            alt="Jumla ya Malipo"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Malipo</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(totalPayroll / 1000000).toFixed(1)}M
+            </p>
+            <p className="text-xs text-gray-200 mt-1">Kwa mwezi</p>
+          </div>
         </div>
       </div>
 
