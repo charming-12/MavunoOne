@@ -50,7 +50,7 @@ export default function BossLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <AuthGuard allowedRoles={["boss", "admin"]}>
+    <AuthGuard allowedRoles={["boss"]}>
       <div className="min-h-screen bg-[#f7f9f8]">
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col bg-[#071a18] px-4 py-6 text-white shadow-2xl lg:flex">
           <div className="px-3"><Brand /></div>

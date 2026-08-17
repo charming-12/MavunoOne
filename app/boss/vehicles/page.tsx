@@ -1,52 +1,13 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { Loader2, MapPin, Navigation, Truck } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+
+const formatDate = (value: string | Date | null | undefined) => value ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "Hakuna taarifa";
 
 export default function BossVehiclesPage() {
-  const vehicles = [
-    { id: 1, plate: "KG456AB", driver: "Peter Mwangi", location: "Dar es Salaam", status: "Delivering", speed: "45 km/h" },
-    { id: 2, plate: "TZ789CD", driver: "Hassan Ali", location: "Morogoro", status: "In Transit", speed: "55 km/h" },
-    { id: 3, plate: "RO123EF", driver: "Grace Kamau", location: "Iringa", status: "Delivering", speed: "40 km/h" },
-    { id: 4, plate: "RJ456GH", driver: "Moses Kimani", location: "Offline", status: "Offline", speed: "— " },
-  ];
+  const vehiclesQuery = trpc.vehicles.list.useQuery();
+  const vehicles = vehiclesQuery.data ?? [];
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-green-800 text-white p-4">
-        <h1 className="text-lg font-bold">Magari — Realtime</h1>
-      </header>
-
-      <main className="p-4 space-y-3">
-        {vehicles.map(vehicle => (
-          <div key={vehicle.id} className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-start gap-3 mb-3">
-              <div className={`w-3 h-3 rounded-full mt-1 ${
-                vehicle.status === "Offline"
-                  ? "bg-red-600"
-                  : "bg-green-600"
-              }`}></div>
-              <div className="flex-1">
-                <p className="font-bold text-gray-900">{vehicle.plate}</p>
-                <p className="text-xs text-gray-600">{vehicle.driver}</p>
-              </div>
-              <span className="text-xs font-medium px-2 py-1 rounded bg-blue-100 text-blue-800">
-                {vehicle.speed}
-              </span>
-            </div>
-
-            <div className="bg-gray-50 p-2 rounded flex items-center gap-2 mb-2">
-              <MapPin className="text-blue-600" size={16} />
-              <span className="text-sm text-gray-700">{vehicle.location}</span>
-            </div>
-
-            <div className="text-right">
-              <button className="text-blue-600 text-sm font-medium hover:underline">
-                Angalia Ramani →
-              </button>
-            </div>
-          </div>
-        ))}
-      </main>
-    </div>
-  );
+  return <main className="min-h-screen bg-[#f7f9f8] px-4 py-6 text-slate-900 sm:px-6 lg:px-8 lg:py-8"><div className="mx-auto max-w-6xl"><div className="mb-8"><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Fleet intelligence</p><h1 className="mt-1 text-3xl font-black text-[#102b25]">Magari na GPS</h1><p className="mt-2 text-slate-500">Hali ya magari kutoka kwenye taarifa za mwisho zilizohifadhiwa kwenye mfumo.</p></div>{vehiclesQuery.isLoading ? <div className="flex items-center justify-center gap-2 rounded-2xl bg-white p-16 text-slate-500"><Loader2 className="animate-spin" size={20} />Inapakia magari...</div> : vehiclesQuery.error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">Magari hayakuweza kupakiwa.</div> : vehicles.length === 0 ? <div className="rounded-2xl bg-white p-16 text-center text-slate-500 shadow-sm">Hakuna gari lililosajiliwa bado. Ongeza magari kupitia Operations Hub.</div> : <div className="grid gap-5 md:grid-cols-2">{vehicles.map((vehicle) => { const hasLocation = vehicle.lastPositionLat !== null && vehicle.lastPositionLng !== null; const active = ["active", "moving", "delivering"].includes(vehicle.status ?? ""); return <article key={vehicle.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className={`rounded-xl p-3 ${active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}><Truck size={22} /></span><div><h2 className="font-black text-slate-900">{vehicle.plateNumber}</h2><p className="mt-1 text-sm text-slate-500">{vehicle.model || "Model haijawekwa"}{vehicle.color ? ` • ${vehicle.color}` : ""}</p></div></div><span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{vehicle.status || "unknown"}</span></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><div className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">GPS</p><p className="mt-1 flex items-center gap-1 text-sm font-bold text-slate-800">{hasLocation ? <><MapPin size={15} className="text-emerald-600" />{Number(vehicle.lastPositionLat).toFixed(5)}, {Number(vehicle.lastPositionLng).toFixed(5)}</> : "Hakuna coordinate"}</p></div><div className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Last update</p><p className="mt-1 text-sm font-bold text-slate-800">{formatDate(vehicle.lastUpdate)}</p></div></div>{hasLocation && <a href={`https://www.google.com/maps?q=${vehicle.lastPositionLat},${vehicle.lastPositionLng}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:text-emerald-800"><Navigation size={16} />Fungua kwenye ramani</a>}</article>; })}</div>}</div></main>;
 }

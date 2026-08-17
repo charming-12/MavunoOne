@@ -48,12 +48,12 @@ export default function LoginPage() {
 
       const role = result.user.role;
 
-      if (role === "boss" || role === "admin" || role === "owner") {
+      if (role === "boss") {
         router.push("/boss");
         return;
       }
 
-      if (role === "manager" || role === "cashier" || role === "storekeeper" || role === "machine_operator") {
+      if (role === "admin" || role === "owner" || role === "manager" || role === "cashier" || role === "storekeeper" || role === "machine_operator") {
         router.push("/office");
         return;
       }
