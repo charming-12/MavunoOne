@@ -1,6 +1,7 @@
 "use client";
 
-import { BarChart3, TrendingUp, AlertTriangle } from "lucide-react";
+import { TrendingUp, AlertTriangle } from "lucide-react";
+import Image from "next/image";
 
 // Mock daily data
 const mockDailyData = [
@@ -26,7 +27,7 @@ export default function ReportsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="text-green-600" size={32} />
+            📊
             Ripoti za Siku
           </h1>
           <p className="text-gray-600 mt-1">Muhtasari wa mauzo, matumizi, na faida</p>
@@ -35,28 +36,58 @@ export default function ReportsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card bg-gradient-to-br from-green-50 to-green-100">
-          <p className="text-gray-600 text-sm font-medium">Jumla ya Mauzo</p>
-          <p className="text-4xl font-bold text-green-700 mt-2">
-            TZS {(totalSales / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-600 mt-2">Katika siku {mockDailyData.length}</p>
+        {/* Total Sales */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+            alt="Jumla ya Mauzo"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Mauzo</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(totalSales / 1000000).toFixed(2)}M
+            </p>
+            <p className="text-xs text-gray-200">Katika siku {mockDailyData.length}</p>
+          </div>
         </div>
 
-        <div className="card bg-gradient-to-br from-orange-50 to-orange-100">
-          <p className="text-gray-600 text-sm font-medium">Jumla ya Matumizi</p>
-          <p className="text-4xl font-bold text-orange-700 mt-2">
-            TZS {(totalExpenses / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-600 mt-2">Gharama za sehemu</p>
+        {/* Total Expenses */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+            alt="Jumla ya Matumizi"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Matumizi</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(totalExpenses / 1000000).toFixed(2)}M
+            </p>
+            <p className="text-xs text-gray-200">Gharama za sehemu</p>
+          </div>
         </div>
 
-        <div className="card bg-gradient-to-br from-blue-50 to-blue-100">
-          <p className="text-gray-600 text-sm font-medium">Jumla ya Faida</p>
-          <p className="text-4xl font-bold text-blue-700 mt-2">
-            TZS {(totalProfit / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-gray-600 mt-2">Mauzo - Matumizi</p>
+        {/* Total Profit */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+            alt="Jumla ya Faida"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Faida</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(totalProfit / 1000000).toFixed(2)}M
+            </p>
+            <p className="text-xs text-gray-200">Mauzo - Matumizi</p>
+          </div>
         </div>
       </div>
 

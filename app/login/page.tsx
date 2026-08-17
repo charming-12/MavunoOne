@@ -147,26 +147,39 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-center text-gray-600 text-sm mb-4">Akaunti ya Demo</p>
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setFormData({ email: DEFAULT_SUPER_ADMIN_EMAIL, password: DEFAULT_SUPER_ADMIN_PASSWORD })}
-                className="w-full bg-blue-50 hover:bg-blue-100 p-3 rounded text-left transition"
-              >
-                <p className="text-xs font-semibold text-blue-900">Super Admin</p>
-                <p className="text-xs text-blue-700">{DEFAULT_SUPER_ADMIN_EMAIL}</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ email: DEFAULT_BOSS_EMAIL, password: DEFAULT_BOSS_PASSWORD })}
-                className="w-full bg-purple-50 hover:bg-purple-100 p-3 rounded text-left transition"
-              >
-                <p className="text-xs font-semibold text-purple-900">Boss</p>
-                <p className="text-xs text-purple-700">{DEFAULT_BOSS_EMAIL}</p>
-              </button>
+          <div className="mt-8 pt-6 border-t">
+            <p className="text-center text-gray-700 text-sm font-semibold mb-4">� Jinsi ya Kufanya Kazi</p>
+            <div className="space-y-3">
+              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
+                <span className="text-2xl flex-shrink-0">1️⃣</span>
+                <div>
+                  <p className="font-semibold text-gray-900 text-xs">Ingiza Bidhaa</p>
+                  <p className="text-gray-600 text-xs mt-0.5">Ongeza mahindi, alizeti, na pembejeo zingine kwenye mfumo</p>
+                </div>
+              </div>
+              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
+                <span className="text-2xl flex-shrink-0">2️⃣</span>
+                <div>
+                  <p className="font-semibold text-gray-900 text-xs">Duka Online (Shop)</p>
+                  <p className="text-gray-600 text-xs mt-0.5">Wauzaji wanunulia moja kwa moja kwenye huduma ya mteja</p>
+                </div>
+              </div>
+              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
+                <span className="text-2xl flex-shrink-0">3️⃣</span>
+                <div>
+                  <p className="font-semibold text-gray-900 text-xs">Usafiri & Uwasilishaji</p>
+                  <p className="text-gray-600 text-xs mt-0.5">Kuunda agizo na kutuma kwa wauzaji kwa njia ya GPS</p>
+                </div>
+              </div>
+              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
+                <span className="text-2xl flex-shrink-0">4️⃣</span>
+                <div>
+                  <p className="font-semibold text-gray-900 text-xs">Ripoti Haraka</p>
+                  <p className="text-gray-600 text-xs mt-0.5">Angalia faida, mauzo, na habari kwa sekunde</p>
+                </div>
+              </div>
             </div>
+            <p className="text-center text-gray-500 text-xs mt-4">✨ Mfumo wa MavunoOne unasaidia wakulima kutoka shambani hadi sokoni</p>
           </div>
         </div>
 
