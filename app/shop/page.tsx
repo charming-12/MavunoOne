@@ -1,39 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ShoppingCart, Search, MapPin, Phone, Clock, ArrowRight } from "lucide-react";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Clock, Loader2, MapPin, Phone, Search, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { trpc } from "@/lib/trpc";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  inStock: boolean;
-}
-
-interface CartItem extends Product {
-  quantity: number;
-}
-
-const mockProducts: Product[] = [
-  { id: 1, name: "Mahindi", price: 2500, image: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 2, name: "Alizeti", price: 4500, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 3, name: "Unga wa Mahindi", price: 1800, image: "https://images.unsplash.com/photo-1528747045269-390fe33c19f2?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 4, name: "Uduvi", price: 5000, image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 5, name: "Chakula cha Wanyama", price: 8000, image: "https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 6, name: "Chokaa", price: 3200, image: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 7, name: "Mafuta ya Alizeti", price: 12000, image: "/oil-ref.jpg", inStock: true },
-];
+type CartItem = { id: number; name: string; price: number; quantity: number; image?: string; inStock?: boolean };
+const CART_KEY = "mavunoone-shop-cart";
+const visualStyles = ["from-emerald-700 to-teal-500", "from-amber-600 to-yellow-400", "from-sky-700 to-cyan-400", "from-slate-800 to-slate-500"];
 
 export default function ShopPage() {
+  const productsQuery = trpc.products.list.useQuery();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem("mavunoone-shop-cart");
+      const saved = window.localStorage.getItem(CART_KEY);
       if (saved) window.setTimeout(() => setCart(JSON.parse(saved) as CartItem[]), 0);
     } catch {
       window.setTimeout(() => setCart([]), 0);
@@ -41,137 +24,30 @@ export default function ShopPage() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("mavunoone-shop-cart", JSON.stringify(cart));
+    window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
   }, [cart]);
 
-  const filteredProducts = mockProducts.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const products = useMemo(() => (productsQuery.data ?? []).map((product) => ({
+    id: product.id,
+    name: product.name,
+    price: Number(product.sellPrice ?? 0),
+    stock: Number(product.currentStock ?? 0),
+    unit: product.unit,
+  })), [productsQuery.data]);
+  const filteredProducts = products.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: (typeof products)[number]) => {
+    if (product.stock <= 0) return;
     setCart((current) => {
-      const existing = current.find((c) => c.id === product.id);
-      if (existing) return current.map((c) => (c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c));
-      return [...current, { ...product, quantity: 1 }];
+      const existing = current.find((item) => item.id === product.id);
+      if (existing) {
+        if (existing.quantity >= product.stock) return current;
+        return current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...current, { id: product.id, name: product.name, price: product.price, quantity: 1, inStock: true }];
     });
   };
 
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  return (
-    <div className="min-h-screen bg-[#07150f] text-white">
-      <header className="border-b border-emerald-900/40 bg-gradient-to-r from-[#0a1e18] via-[#0c2a24] to-[#0b241d] shadow-2xl">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-300">MavunoOne</p>
-              <h1 className="mt-2 text-3xl font-black text-white">Shop ya Bidhaa</h1>
-            </div>
-
-            <Link href="/shop/cart">
-              <button className="relative inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2.5 font-bold text-emerald-950 shadow-lg transition hover:brightness-110">
-                <ShoppingCart size={18} />
-                Kikapu
-                {cartCount > 0 && (
-                  <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
-            </Link>
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-3 text-emerald-300" size={20} />
-            <input
-              type="text"
-              placeholder="Tafuta bidhaa, pembejeo au chakula..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-emerald-800 bg-[#041915] py-3 pl-10 pr-4 text-white placeholder-emerald-500 outline-none ring-0 transition focus:border-amber-400"
-            />
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8 rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-6 shadow-xl">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Premium Produce</p>
-              <h2 className="mt-2 text-2xl font-black text-white">Bidhaa za kilimo, biashara na usalama wa soko</h2>
-            </div>
-            <button className="inline-flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-900/50 px-4 py-2 text-sm font-bold text-emerald-100 transition hover:bg-emerald-800">
-              Fanya oda <ArrowRight size={16} />
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className={`overflow-hidden rounded-2xl border ${
-                product.inStock ? "border-emerald-800 bg-[#0a1e18]/80" : "border-gray-700 bg-[#0a1e18]/50 opacity-70"
-              } shadow-lg transition hover:-translate-y-1 hover:border-amber-400/60`}
-            >
-              <div className="relative h-40 w-full overflow-hidden">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#041915] via-transparent to-transparent" />
-              </div>
-
-              <div className="space-y-3 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-black text-white">{product.name}</h3>
-                  <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${product.inStock ? "bg-emerald-500/15 text-emerald-300" : "bg-red-500/15 text-red-300"}`}>
-                    {product.inStock ? "ipo" : "haipo"}
-                  </span>
-                </div>
-
-                <p className="text-2xl font-black text-amber-300">TZS {product.price.toLocaleString()}</p>
-
-                <button
-                  onClick={() => handleAddToCart(product)}
-                  disabled={!product.inStock}
-                  className={`w-full rounded-lg py-2.5 font-bold transition ${
-                    product.inStock
-                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:brightness-110"
-                      : "cursor-not-allowed bg-gray-700 text-gray-400"
-                  }`}
-                >
-                  {product.inStock ? "Ongeza kwa Kikapu" : "Bidhaa Haipo"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg">
-            <Clock className="mx-auto mb-3 text-amber-300" size={28} />
-            <h3 className="text-lg font-black text-white">Huduma ya Haraka</h3>
-            <p className="mt-2 text-sm text-emerald-200">Uwasilishaji ulio karibu na huduma ya moja kwa moja.</p>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg">
-            <Phone className="mx-auto mb-3 text-amber-300" size={28} />
-            <h3 className="text-lg font-black text-white">Msaada wa Wateja</h3>
-            <p className="mt-2 text-sm text-emerald-200">0712 345 678</p>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg">
-            <MapPin className="mx-auto mb-3 text-amber-300" size={28} />
-            <h3 className="text-lg font-black text-white">Mahali</h3>
-            <p className="mt-2 text-sm text-emerald-200">Dar es Salaam, Tanzania</p>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  return <div className="min-h-screen bg-[#07150f] text-white"><header className="border-b border-emerald-900/40 bg-gradient-to-r from-[#0a1e18] via-[#0c2a24] to-[#0b241d] shadow-2xl"><div className="mx-auto max-w-6xl px-4 py-6 md:py-8"><div className="mb-6 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-300">MavunoOne Marketplace</p><h1 className="mt-2 text-3xl font-black text-white">Shop ya Bidhaa</h1></div><Link href="/shop/cart" className="relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2.5 font-bold text-emerald-950 shadow-lg transition hover:brightness-110"><ShoppingCart size={18} />Kikapu{cartCount > 0 && <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white">{cartCount}</span>}</Link></div><div className="relative"><Search className="absolute left-3 top-3 text-emerald-300" size={20} /><input type="text" placeholder="Tafuta bidhaa, pembejeo au chakula..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full rounded-xl border border-emerald-800 bg-[#041915] py-3 pl-10 pr-4 text-white placeholder-emerald-500 outline-none transition focus:border-amber-400" /></div></div></header><main className="mx-auto max-w-6xl px-4 py-8"><div className="mb-8 flex flex-col gap-3 rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-6 shadow-xl md:flex-row md:items-end md:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Fresh inventory</p><h2 className="mt-2 text-2xl font-black text-white">Bidhaa kutoka stock ya MavunoOne</h2><p className="mt-2 text-sm text-emerald-200">Bei na upatikanaji vinafichua hali halisi ya inventory.</p></div><Link href="/shop/cart" className="inline-flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-900/50 px-4 py-2 text-sm font-bold text-emerald-100 transition hover:bg-emerald-800">Fanya oda <ArrowRight size={16} /></Link></div>{productsQuery.isLoading ? <div className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-16 text-emerald-200"><Loader2 className="animate-spin" size={20} />Inapakia bidhaa...</div> : productsQuery.error ? <div className="rounded-2xl border border-red-800 bg-red-950/40 p-6 text-red-200">Bidhaa hazikuweza kupakiwa. Tafadhali jaribu tena baadaye.</div> : filteredProducts.length === 0 ? <div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-16 text-center text-emerald-200">Hakuna bidhaa inayolingana na utafutaji wako.</div> : <div className="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{filteredProducts.map((product, index) => { const available = product.stock > 0; return <div key={product.id} className={`overflow-hidden rounded-2xl border ${available ? "border-emerald-800 bg-[#0a1e18]/80" : "border-gray-700 bg-[#0a1e18]/50 opacity-70"} shadow-lg transition hover:-translate-y-1 hover:border-amber-400/60`}><div className={`flex h-40 items-end bg-gradient-to-br ${visualStyles[index % visualStyles.length]} p-5`}><div><p className="text-xs font-bold uppercase tracking-[0.25em] text-white/70">MavunoOne</p><p className="mt-1 text-2xl font-black text-white">{product.name.slice(0, 1).toUpperCase()}</p></div></div><div className="space-y-3 p-4"><div className="flex items-start justify-between gap-2"><h3 className="text-lg font-black text-white">{product.name}</h3><span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${available ? "bg-emerald-500/15 text-emerald-300" : "bg-red-500/15 text-red-300"}`}>{available ? "ipo" : "haipo"}</span></div><p className="text-2xl font-black text-amber-300">TZS {product.price.toLocaleString()} <span className="text-xs font-semibold text-emerald-300">/ {product.unit}</span></p><p className="text-xs text-emerald-200">Stock: {product.stock.toLocaleString()} {product.unit}</p><button onClick={() => handleAddToCart(product)} disabled={!available} className={`w-full rounded-lg py-2.5 font-bold transition ${available ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:brightness-110" : "cursor-not-allowed bg-gray-700 text-gray-400"}`}>{available ? "Ongeza kwa Kikapu" : "Bidhaa Haipo"}</button></div></div>; })}</div>}<div className="grid grid-cols-1 gap-4 md:grid-cols-3"><div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg"><Clock className="mx-auto mb-3 text-amber-300" size={28} /><h3 className="text-lg font-black text-white">Huduma ya Haraka</h3><p className="mt-2 text-sm text-emerald-200">Uwasilishaji unaoratibiwa kwa ufanisi.</p></div><div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg"><Phone className="mx-auto mb-3 text-amber-300" size={28} /><h3 className="text-lg font-black text-white">Msaada wa Wateja</h3><p className="mt-2 text-sm text-emerald-200">0712 345 678</p></div><div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg"><MapPin className="mx-auto mb-3 text-amber-300" size={28} /><h3 className="text-lg font-black text-white">Mahali</h3><p className="mt-2 text-sm text-emerald-200">Dar es Salaam, Tanzania</p></div></div></main></div>;
 }
