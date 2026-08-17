@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { AlertTriangle, CheckCircle, DollarSign, Phone, User } from "lucide-react";
 
 // Mock customer debt data
@@ -66,33 +67,73 @@ export default function CustomerDebtPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <p className="text-gray-600 text-sm">Jumla ya Deni</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">
-            TZS {totalDebt.toLocaleString()}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Bado halijalipi</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Debt */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+            alt="Jumla ya Deni"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Deni</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {totalDebt.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-200 mt-1">Bado halijalipi</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Mahesabu Kuchelewa</p>
-          <p className="text-3xl font-bold text-orange-600 mt-2">{overduCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Zaidi ya siku 3</p>
+        {/* Overdue Accounts */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+            alt="Mahesabu Kuchelewa"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Mahesabu Kuchelewa</p>
+            <p className="text-2xl font-bold text-white">{overduCount}</p>
+            <p className="text-xs text-gray-200 mt-1">Zaidi ya siku 3</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Mahesabu Inasubiri</p>
-          <p className="text-3xl font-bold text-yellow-600 mt-2">
-            {debtors.filter((d) => d.status === "pending").length}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Hadi siku 3</p>
+        {/* Pending Accounts */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+            alt="Mahesabu Inasubiri"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Mahesabu Inasubiri</p>
+            <p className="text-2xl font-bold text-white">
+              {debtors.filter((d) => d.status === "pending").length}
+            </p>
+            <p className="text-xs text-gray-200 mt-1">Hadi siku 3</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Mahesabu Yalipi</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">{clearedCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Mahesabu kamili</p>
+        {/* Cleared Accounts */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=600&h=400&fit=crop"
+            alt="Mahesabu Yalipi"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Mahesabu Yalipi</p>
+            <p className="text-2xl font-bold text-white">{clearedCount}</p>
+            <p className="text-xs text-gray-200 mt-1">Mahesabu kamili</p>
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Users, Phone, MapPin, TrendingUp, DollarSign, Plus } from "lucide-react";
 
 // Mock farmers data
@@ -106,50 +107,70 @@ export default function FarmersPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Jumla ya Wakulima</p>
-              <p className="text-3xl font-bold text-green-600">{farmers.length}</p>
-            </div>
-            <Users size={32} className="text-green-200" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Farmers */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=600&h=400&fit=crop"
+            alt="Jumla ya Wakulima"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla ya Wakulima</p>
+            <p className="text-2xl font-bold text-white">{farmers.length}</p>
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Jumla Supplied</p>
-              <p className="text-3xl font-bold text-blue-600">
-                {farmers.reduce((sum, f) => sum + f.totalSupplied, 0).toLocaleString()} kg
-              </p>
-            </div>
-            <TrendingUp size={32} className="text-blue-200" />
+        {/* Total Supplied */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=600&h=400&fit=crop"
+            alt="Jumla Supplied"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla Supplied</p>
+            <p className="text-2xl font-bold text-white">
+              {farmers.reduce((sum, f) => sum + f.totalSupplied, 0).toLocaleString()} kg
+            </p>
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Jumla Kulipwa</p>
-              <p className="text-3xl font-bold text-green-600">
-                TZS {farmers.reduce((sum, f) => sum + f.totalPaid, 0).toLocaleString()}
-              </p>
-            </div>
-            <DollarSign size={32} className="text-green-200" />
+        {/* Total Paid */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+            alt="Jumla Kulipwa"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla Kulipwa</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {farmers.reduce((sum, f) => sum + f.totalPaid, 0).toLocaleString()}
+            </p>
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Jumla Deni</p>
-              <p className="text-3xl font-bold text-red-600">
-                TZS {farmers.reduce((sum, f) => sum + f.balance, 0).toLocaleString()}
-              </p>
-            </div>
-            <TrendingUp size={32} className="text-red-200" />
+        {/* Total Debt */}
+        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+            alt="Jumla Deni"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Jumla Deni</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {farmers.reduce((sum, f) => sum + f.balance, 0).toLocaleString()}
+            </p>
           </div>
         </div>
       </div>
