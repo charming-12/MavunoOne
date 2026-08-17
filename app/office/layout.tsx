@@ -81,8 +81,20 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
             ))}
           </nav>
 
+          {/* Logout Button */}
+          <button
+            onClick={() => {
+              const { clearStoredUser } = require('@/lib/auth');
+              clearStoredUser();
+              window.location.href = '/login';
+            }}
+            className="w-full mt-6 py-2.5 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold rounded-lg hover:from-red-500 hover:to-red-600 transition shadow-lg"
+          >
+            Toka Nje
+          </button>
+
           {/* Footer */}
-          <div className="mt-8 pt-4 border-t border-emerald-900/40">
+          <div className="mt-4 pt-4 border-t border-emerald-900/40">
             <p className="text-emerald-300 text-xs font-semibold">
               © 2026 MavunoOne
             </p>

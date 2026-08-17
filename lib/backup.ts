@@ -8,6 +8,25 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
 import path from "path";
+import { desc, sql } from "drizzle-orm";
+import {
+  auditLogs,
+  categories,
+  customers,
+  dailyClosures,
+  dataBackups,
+  deliveries,
+  expenses,
+  machineJobs,
+  notifications,
+  products,
+  saleItems,
+  sales,
+  stockIn,
+  stockOut,
+  users,
+  vehicles,
+} from "@/drizzle/schema";
 
 const execAsync = promisify(exec);
 
@@ -310,6 +329,123 @@ function extractHost(url: string): string {
 function extractDatabase(url: string): string {
   const match = url.match(/\/([^?]+)(\?|$)/);
   return match ? match[1] : "";
+}
+
+const SAMPLE_DATA_TABLES = [
+  { name: "users", table: users },
+  { name: "categories", table: categories },
+  { name: "products", table: products },
+  { name: "customers", table: customers },
+  { name: "vehicles", table: vehicles },
+  { name: "sales", table: sales },
+  { name: "saleItems", table: saleItems },
+  { name: "stockIn", table: stockIn },
+  { name: "stockOut", table: stockOut },
+  { name: "deliveries", table: deliveries },
+  { name: "machineJobs", table: machineJobs },
+  { name: "expenses", table: expenses },
+  { name: "dailyClosures", table: dailyClosures },
+  { name: "notifications", table: notifications },
+  { name: "auditLogs", table: auditLogs },
+] as const;
+
+export type BackupSnapshot = Record<string, unknown[]>;
+
+function isProtectedUserRole(role: string | null | undefined) {
+  return ["admin", "boss", "owner"].includes((role ?? "").toLowerCase());
+}
+
+async function createSampleDataSnapshot(): Promise<BackupSnapshot> {
+  const snapshot: BackupSnapshot = {};
+
+  const allUsers = await db.select().from(users);
+  snapshot.users = allUsers
+    .filter((user) => !isProtectedUserRole(user.role))
+    .map((user) => ({ ...user, passwordHash: user.passwordHash ?? null }));
+
+  for (const tableMeta of SAMPLE_DATA_TABLES) {
+    if (tableMeta.name === "users") continue;
+    const rows = await db.select().from(tableMeta.table);
+    snapshot[tableMeta.name] = rows.map((row) => ({ ...row }));
+  }
+
+  return snapshot;
+}
+
+export async function createSampleDataBackup(createdBy?: number | null) {
+  const snapshot = await createSampleDataSnapshot();
+  const label = `sample_data_backup_${new Date().toISOString().replace(/[:.]/g, "-")}`;
+
+  const result = await db
+    .insert(dataBackups)
+    .values({
+      label,
+      snapshot: JSON.stringify(snapshot, null, 2),
+      createdBy: createdBy ?? null,
+    })
+    .returning();
+
+  return result[0] ?? null;
+}
+
+export async function getLatestSampleDataBackup() {
+  const rows = await db.select().from(dataBackups).orderBy(desc(dataBackups.createdAt)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function resetSampleData(createdBy?: number | null) {
+  const backup = await createSampleDataBackup(createdBy);
+
+  await db.transaction(async (tx) => {
+    await tx.delete(users).where(sql`${users.role} NOT IN ('admin', 'boss', 'owner')`);
+
+    for (const tableMeta of SAMPLE_DATA_TABLES) {
+      if (tableMeta.name === "users") continue;
+      await tx.delete(tableMeta.table);
+    }
+  });
+
+  return {
+    message: "Sample data reset completed. Admin and boss accounts were preserved.",
+    backup,
+  };
+}
+
+export async function restoreLatestSampleDataBackup() {
+  const latestBackup = await getLatestSampleDataBackup();
+
+  if (!latestBackup) {
+    throw new Error("No backup exists to restore.");
+  }
+
+  const snapshot = JSON.parse(latestBackup.snapshot) as BackupSnapshot;
+
+  await db.transaction(async (tx) => {
+    await tx.delete(users).where(sql`${users.role} NOT IN ('admin', 'boss', 'owner')`);
+
+    for (const tableMeta of SAMPLE_DATA_TABLES) {
+      if (tableMeta.name === "users") continue;
+      await tx.delete(tableMeta.table);
+    }
+
+    const userRows = Array.isArray(snapshot.users) ? (snapshot.users as Record<string, any>[]) : [];
+    if (userRows.length > 0) {
+      await tx.insert(users).values(userRows as any);
+    }
+
+    for (const tableMeta of SAMPLE_DATA_TABLES) {
+      if (tableMeta.name === "users") continue;
+      const rows = Array.isArray(snapshot[tableMeta.name]) ? (snapshot[tableMeta.name] as Record<string, any>[]) : [];
+      if (rows.length > 0) {
+        await tx.insert(tableMeta.table).values(rows as any);
+      }
+    }
+  });
+
+  return {
+    message: "The latest backup was restored successfully.",
+    backup: latestBackup,
+  };
 }
 
 /**

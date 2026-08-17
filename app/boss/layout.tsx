@@ -17,9 +17,21 @@ export default function BossLayout({ children }: { children: React.ReactNode }) 
     <AuthGuard allowedRoles={["boss", "admin"]}>
       <div className="min-h-screen bg-gradient-to-br from-[#07150f] to-[#0a1e18] pb-20">
         <header className="sticky top-0 z-20 border-b border-emerald-900/30 bg-[#07150f]/95 backdrop-blur-md px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-black text-white">🌾 MavunoOne</h1>
-            <p className="text-emerald-300 text-xs mt-1 font-semibold uppercase tracking-wider">Boss Dashboard</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black text-white">🌾 MavunoOne</h1>
+              <p className="text-emerald-300 text-xs mt-1 font-semibold uppercase tracking-wider">Boss Dashboard</p>
+            </div>
+            <button
+              onClick={() => {
+                const { clearStoredUser } = require('@/lib/auth');
+                clearStoredUser();
+                window.location.href = '/login';
+              }}
+              className="py-2 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold rounded-lg hover:from-red-500 hover:to-red-600 transition"
+            >
+              Toka Nje
+            </button>
           </div>
         </header>
         <main>{children}</main>

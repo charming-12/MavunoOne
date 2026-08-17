@@ -189,7 +189,16 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-// ===== 16. AUDIT LOGS =====
+// ===== 16. DATA BACKUPS (For reset/restore safety) =====
+export const dataBackups = pgTable("data_backups", {
+  id: serial("id").primaryKey(),
+  label: varchar("label", { length: 128 }).default("sample_data_backup").notNull(),
+  snapshot: text("snapshot").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: integer("createdBy"),
+});
+
+// ===== 17. AUDIT LOGS =====
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
   userId: integer("userId"),
@@ -201,7 +210,7 @@ export const auditLogs = pgTable("audit_logs", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
-// ===== 17. CONFIGURATIONS (Dynamic Settings & Credentials) =====
+// ===== 18. CONFIGURATIONS (Dynamic Settings & Credentials) =====
 export const configurations = pgTable("configurations", {
   id: serial("id").primaryKey(),
   key: varchar("key", { length: 128 }).notNull().unique(),
@@ -212,7 +221,7 @@ export const configurations = pgTable("configurations", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-// ===== 18. PASSWORD RESET TOKENS =====
+// ===== 19. PASSWORD RESET TOKENS =====
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
@@ -222,7 +231,7 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-// ===== 19. ERROR LOGS (For Error Notification & Debugging) =====
+// ===== 20. ERROR LOGS (For Error Notification & Debugging) =====
 export const errorLogs = pgTable("error_logs", {
   id: serial("id").primaryKey(),
   errorMessage: text("errorMessage").notNull(),

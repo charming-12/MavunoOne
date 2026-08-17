@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, Search, MapPin, Phone, Clock } from "lucide-react";
+import { ShoppingCart, Search, MapPin, Phone, Clock, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface Product {
@@ -18,13 +19,12 @@ interface CartItem extends Product {
 
 const mockProducts: Product[] = [
   { id: 1, name: "Mahindi", price: 2500, image: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 2, name: "Alizeti", price: 4500, image: "https://images.unsplash.com/photo-1464226184884-fa52ac9c0f6a?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 3, name: "Uduvi", price: 5000, image: "https://images.unsplash.com/photo-1544943910-4c1dc44aab44?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 4, name: "Chakula cha Wanyama", price: 8000, image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 5, name: "Chokaa", price: 3200, image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 6, name: "Mafuta ya Alizeti", price: 12000, image: "https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 7, name: "Sukari", price: 2000, image: "https://images.unsplash.com/photo-1584208124928-20a0d4d9b9f4?auto=format&fit=crop&w=900&q=80", inStock: true },
-  { id: 8, name: "Chumvi", price: 1500, image: "https://images.unsplash.com/photo-1604908554102-57c42f0dcb5d?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 2, name: "Alizeti", price: 4500, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 3, name: "Unga wa Mahindi", price: 1800, image: "https://images.unsplash.com/photo-1528747045269-390fe33c19f2?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 4, name: "Uduvi", price: 5000, image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 5, name: "Chakula cha Wanyama", price: 8000, image: "https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 6, name: "Chokaa", price: 3200, image: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=900&q=80", inStock: true },
+  { id: 7, name: "Mafuta ya Alizeti", price: 12000, image: "/oil-ref.jpg", inStock: true },
 ];
 
 export default function ShopPage() {
@@ -38,11 +38,7 @@ export default function ShopPage() {
   const handleAddToCart = (product: Product) => {
     const existing = cart.find((c) => c.id === product.id);
     if (existing) {
-      setCart(
-        cart.map((c) =>
-          c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c
-        )
-      );
+      setCart(cart.map((c) => (c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c)));
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
@@ -51,18 +47,21 @@ export default function ShopPage() {
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg">
-        <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">MavunoOne Shop</h1>
+    <div className="min-h-screen bg-[#07150f] text-white">
+      <header className="border-b border-emerald-900/40 bg-gradient-to-r from-[#0a1e18] via-[#0c2a24] to-[#0b241d] shadow-2xl">
+        <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-300">MavunoOne</p>
+              <h1 className="mt-2 text-3xl font-black text-white">Shop ya Bidhaa</h1>
+            </div>
+
             <Link href="/shop/cart">
-              <button className="relative bg-white text-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center gap-2">
-                <ShoppingCart size={20} />
+              <button className="relative inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2.5 font-bold text-emerald-950 shadow-lg transition hover:brightness-110">
+                <ShoppingCart size={18} />
                 Kikapu
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                  <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white">
                     {cartCount}
                   </span>
                 )}
@@ -70,78 +69,94 @@ export default function ShopPage() {
             </Link>
           </div>
 
-          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-3 text-emerald-300" size={20} />
             <input
               type="text"
               placeholder="Tafuta bidhaa, pembejeo au chakula..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
+              className="w-full rounded-xl border border-emerald-800 bg-[#041915] py-3 pl-10 pr-4 text-white placeholder-emerald-500 outline-none ring-0 transition focus:border-amber-400"
             />
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mb-8 rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-6 shadow-xl">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Premium Produce</p>
+              <h2 className="mt-2 text-2xl font-black text-white">Bidhaa za kilimo, biashara na usalama wa soko</h2>
+            </div>
+            <button className="inline-flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-900/50 px-4 py-2 text-sm font-bold text-emerald-100 transition hover:bg-emerald-800">
+              Fanya oda <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              className={`card flex flex-col items-center justify-between overflow-hidden ${
-                !product.inStock ? "opacity-60" : ""
-              }`}
+              className={`overflow-hidden rounded-2xl border ${
+                product.inStock ? "border-emerald-800 bg-[#0a1e18]/80" : "border-gray-700 bg-[#0a1e18]/50 opacity-70"
+              } shadow-lg transition hover:-translate-y-1 hover:border-amber-400/60`}
             >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-32 object-cover rounded-t-xl mb-3"
-              />
-              <div className="px-3 pb-3 w-full">
-                <h3 className="font-semibold text-center text-gray-900">
-                  {product.name}
-                </h3>
-                <p className="text-lg font-bold text-green-600 mt-2 text-center">
-                  TZS {product.price.toLocaleString()}
-                </p>
+              <div className="relative h-40 w-full overflow-hidden">
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#041915] via-transparent to-transparent" />
+              </div>
+
+              <div className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-lg font-black text-white">{product.name}</h3>
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${product.inStock ? "bg-emerald-500/15 text-emerald-300" : "bg-red-500/15 text-red-300"}`}>
+                    {product.inStock ? "ipo" : "haipo"}
+                  </span>
+                </div>
+
+                <p className="text-2xl font-black text-amber-300">TZS {product.price.toLocaleString()}</p>
+
                 <button
                   onClick={() => handleAddToCart(product)}
                   disabled={!product.inStock}
-                  className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
+                  className={`w-full rounded-lg py-2.5 font-bold transition ${
                     product.inStock
-                      ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:brightness-110"
+                      : "cursor-not-allowed bg-gray-700 text-gray-400"
                   }`}
                 >
-                  {product.inStock ? "Kuongeza" : "Haipo"}
+                  {product.inStock ? "Ongeza kwa Kikapu" : "Bidhaa Haipo"}
                 </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Info Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card text-center">
-            <Clock className="mx-auto text-green-600 mb-2" size={32} />
-            <h3 className="font-semibold text-gray-900">Haraka Mlangoni</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Lugha yote ndani ya Dar es Salaam
-            </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg">
+            <Clock className="mx-auto mb-3 text-amber-300" size={28} />
+            <h3 className="text-lg font-black text-white">Huduma ya Haraka</h3>
+            <p className="mt-2 text-sm text-emerald-200">Uwasilishaji ulio karibu na huduma ya moja kwa moja.</p>
           </div>
 
-          <div className="card text-center">
-            <Phone className="mx-auto text-green-600 mb-2" size={32} />
-            <h3 className="font-semibold text-gray-900">Msaada wa Wateja</h3>
-            <p className="text-sm text-gray-600 mt-1">0712 345 678</p>
+          <div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg">
+            <Phone className="mx-auto mb-3 text-amber-300" size={28} />
+            <h3 className="text-lg font-black text-white">Msaada wa Wateja</h3>
+            <p className="mt-2 text-sm text-emerald-200">0712 345 678</p>
           </div>
 
-          <div className="card text-center">
-            <MapPin className="mx-auto text-green-600 mb-2" size={32} />
-            <h3 className="font-semibold text-gray-900">Makazi</h3>
-            <p className="text-sm text-gray-600 mt-1">Dar es Salaam, TZ</p>
+          <div className="rounded-2xl border border-emerald-800 bg-[#0a1e18]/80 p-5 text-center shadow-lg">
+            <MapPin className="mx-auto mb-3 text-amber-300" size={28} />
+            <h3 className="text-lg font-black text-white">Mahali</h3>
+            <p className="mt-2 text-sm text-emerald-200">Dar es Salaam, Tanzania</p>
           </div>
         </div>
       </main>
