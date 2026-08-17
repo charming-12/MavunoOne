@@ -111,15 +111,15 @@ export default function SettingsPage() {
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">⚙️ Mipangilio ya Mfumo</h1>
-        <p className="text-gray-600 mt-2">Pange akaunti za fedha, SMS, na kamera bila kuandika nambari mbili</p>
+        <h1 className="text-4xl font-black text-white">⚙️ Mipangilio ya Mfumo</h1>
+        <p className="text-emerald-200 mt-3 font-semibold">Pange akaunti za fedha, SMS, na kamera bila kuandika nambari mbili</p>
       </div>
 
       <div
-        className={`mb-6 rounded-lg border p-4 ${
+        className={`mb-6 rounded-lg border p-5 ${
           readyState.ready
-            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-            : "border-amber-200 bg-amber-50 text-amber-900"
+            ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
+            : "border-amber-400/40 bg-amber-500/15 text-amber-100"
         }`}
       >
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -174,11 +174,11 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Form Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Ongeza Mipangilio Mpya</h2>
+        <div className="bg-[#0a1e18]/60 rounded-lg shadow-lg border border-emerald-900/30 p-6 backdrop-blur-sm">
+          <h2 className="text-xl font-black mb-4 text-amber-300 uppercase tracking-wider">Ongeza Mipangilio Mpya</h2>
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-emerald-200 mb-2 uppercase tracking-wider">
                 Jina la Funguo
               </label>
               <input
@@ -188,12 +188,12 @@ export default function SettingsPage() {
                   setFormData({ ...formData, key: e.target.value.toUpperCase() })
                 }
                 placeholder="LIPA_NUMBER, CAMERA_IP, etc."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-emerald-200 mb-2 uppercase tracking-wider">
                 Thamani
               </label>
               <textarea
@@ -203,12 +203,12 @@ export default function SettingsPage() {
                 }
                 placeholder="Ingiza thamani..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-emerald-200 mb-2 uppercase tracking-wider">
                 Maelezo (Kawaida)
               </label>
               <input
@@ -218,26 +218,26 @@ export default function SettingsPage() {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Maelezo kuhusu parameta hii..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
               />
             </div>
 
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.isEncrypted}
                 onChange={(e) =>
                   setFormData({ ...formData, isEncrypted: e.target.checked })
                 }
-                className="w-4 h-4"
+                className="w-4 h-4 accent-amber-400"
               />
-              <span className="text-sm text-gray-700">Matibabu kama siri (iliyosimbwa)</span>
+              <span className="text-sm text-emerald-200 font-semibold">Matibabu kama siri (iliyosimbwa)</span>
             </label>
 
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-emerald-950 font-black py-2 px-4 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50 uppercase tracking-wide"
             >
               <Save size={18} />
               {saving ? "Inakosavua..." : "Okoa Mipangilio"}
@@ -246,31 +246,31 @@ export default function SettingsPage() {
         </div>
 
         {/* List Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Mipangilio Iliyookoa</h2>
+        <div className="bg-[#0a1e18]/60 rounded-lg shadow-lg border border-emerald-900/30 p-6 backdrop-blur-sm">
+          <h2 className="text-xl font-black mb-4 text-amber-300 uppercase tracking-wider">Mipangilio Iliyookoa</h2>
           {loading ? (
-            <p className="text-gray-500">Inapakua...</p>
+            <p className="text-emerald-400">Inapakua...</p>
           ) : configs.length === 0 ? (
-            <p className="text-gray-500">Hakuna mipangilio iliyookoa</p>
+            <p className="text-emerald-500">Hakuna mipangilio iliyookoa</p>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {configs.map((config) => (
                 <div
                   key={config.id}
-                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                  className="p-3 border border-emerald-900/30 rounded-lg bg-[#051511] hover:bg-emerald-500/10 transition"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{config.key}</p>
+                      <p className="font-semibold text-amber-300">{config.key}</p>
                       {config.description && (
-                        <p className="text-sm text-gray-600">{config.description}</p>
+                        <p className="text-sm text-emerald-300">{config.description}</p>
                       )}
                       <div className="flex items-center gap-2 mt-2">
                         <input
                           type={showValues[config.key] ? "text" : "password"}
                           value={config.value}
                           readOnly
-                          className="text-xs bg-gray-100 p-1 rounded w-32"
+                          className="text-xs bg-[#07150f] text-emerald-300 p-1 rounded w-32 border border-emerald-900/30"
                         />
                         <button
                           onClick={() =>
@@ -279,7 +279,7 @@ export default function SettingsPage() {
                               [config.key]: !showValues[config.key],
                             })
                           }
-                          className="text-gray-500 hover:text-gray-700"
+                          className="text-emerald-400 hover:text-amber-300 transition"
                         >
                           {showValues[config.key] ? (
                             <EyeOff size={16} />
@@ -291,7 +291,7 @@ export default function SettingsPage() {
                     </div>
                     <button
                       onClick={() => handleDelete(config.key)}
-                      className="text-red-600 hover:text-red-700 ml-2"
+                      className="text-red-400 hover:text-red-300 ml-2 transition"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -304,20 +304,20 @@ export default function SettingsPage() {
       </div>
 
       {/* Recommended Settings */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="font-semibold text-blue-900 mb-3">💡 Mipangilio Inayopendekezwa</h3>
+      <div className="mt-8 bg-gradient-to-r from-emerald-500/20 to-amber-500/20 border border-emerald-400/30 rounded-lg p-6">
+        <h3 className="font-black text-amber-300 mb-4 uppercase tracking-wider">💡 Mipangilio Inayopendekezwa</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="font-medium">Mkopo wa Fedha</p>
-            <p className="text-gray-600">LIPA_NUMBER, LIPA_BUSINESS_KEY, LIPA_PASSWORD</p>
+            <p className="font-bold text-emerald-300">Mkopo wa Fedha</p>
+            <p className="text-emerald-200 mt-1">LIPA_NUMBER, LIPA_BUSINESS_KEY, LIPA_PASSWORD</p>
           </div>
           <div>
-            <p className="font-medium">Kamera/CCTV</p>
-            <p className="text-gray-600">CAMERA_IP, CAMERA_PORT, CAMERA_USERNAME</p>
+            <p className="font-bold text-emerald-300">Kamera/CCTV</p>
+            <p className="text-emerald-200 mt-1">CAMERA_IP, CAMERA_PORT, CAMERA_USERNAME</p>
           </div>
           <div>
-            <p className="font-medium">API Za Juu</p>
-            <p className="text-gray-600">API_KEY_EXTERNAL, WEBHOOK_URL</p>
+            <p className="font-bold text-emerald-300">API Za Juu</p>
+            <p className="text-emerald-200 mt-1">API_KEY_EXTERNAL, WEBHOOK_URL</p>
           </div>
         </div>
       </div>

@@ -67,37 +67,37 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#07150f] via-[#0a1e18] to-[#051511] flex items-center justify-center p-4 relative">
       {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-yellow-400 opacity-5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-green-400 opacity-5 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-0 w-96 h-96 bg-amber-400 opacity-8 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500 opacity-8 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-black text-white mb-2 tracking-tight">🌾 MavunoOne</h1>
-          <p className="text-yellow-300 font-semibold">Mfumo wa Usimamizi wa Biashara</p>
-          <p className="text-green-100 text-sm mt-1">Mahindi • Alizeti • Kusaga • Uwasilishaji</p>
+          <p className="text-amber-300 font-black text-lg">Premium Platform</p>
+          <p className="text-emerald-200 text-sm mt-2 font-semibold uppercase tracking-wider">Agribusiness Operations</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Ingia kwenye Akaunti</h2>
+        <div className="bg-[#0a1e18]/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 mb-6 border border-emerald-900/40">
+          <h2 className="text-2xl font-black text-white mb-6">Ingia kwenye Akaunti</h2>
 
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-600 p-4 mb-4 rounded">
+            <div className="bg-red-500/20 border-l-4 border-red-400 p-4 mb-4 rounded">
               <div className="flex items-center gap-2">
-                <AlertCircle className="text-red-600" size={20} />
-                <p className="text-red-700 text-sm">{error}</p>
+                <AlertCircle className="text-red-400" size={20} />
+                <p className="text-red-300 text-sm">{error}</p>
               </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-emerald-200 mb-2 uppercase tracking-wider">
                 Barua Pepe
               </label>
               <input
@@ -106,12 +106,12 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="admin@mavunoone.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 transition"
+                className="w-full px-4 py-3 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-emerald-200 mb-2 uppercase tracking-wider">
                 Neno la Siri
               </label>
               <div className="relative">
@@ -121,18 +121,18 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 transition"
+                  className="w-full px-4 py-3 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-600 hover:text-gray-900"
+                  className="absolute right-3 top-3 text-emerald-400 hover:text-amber-300"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
               <div className="mt-2 text-right">
-                <Link href="/forgot-password" className="text-sm text-green-600 hover:text-green-700 font-medium">
+                <Link href="/forgot-password" className="text-sm text-amber-400 hover:text-amber-300 font-semibold">
                   Badili nenosiri? 🔐
                 </Link>
               </div>
@@ -141,7 +141,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-emerald-950 py-3 rounded-lg font-black hover:from-amber-300 hover:to-amber-400 transition transform hover:shadow-[0_0_30px_rgba(251,191,36,0.3)] disabled:opacity-60 disabled:cursor-not-allowed uppercase tracking-wide"
             >
               {isSubmitting ? "Ingia..." : "Ingia"}
             </button>
