@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, TrendingDown, BarChart3, Package, Zap } from "lucide-react";
+import Image from "next/image";
+import { AlertTriangle, TrendingDown, Package, Zap } from "lucide-react";
 
 // Mock inventory data
 const mockInventory = [
@@ -66,7 +67,7 @@ export default function InventoryAnalyticsPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <BarChart3 className="text-blue-600" size={32} />
+          📊
           Uchambuzi wa Hesabu ya Bidhaa
         </h1>
         <p className="text-gray-600 mt-1">Kutazama mienendo na mapendekezo ya kujaza stock</p>
@@ -74,30 +75,66 @@ export default function InventoryAnalyticsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <p className="text-gray-600 text-sm">Jumla ya Bidhaa</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{inventory.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Aina za bidhaa</p>
+        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
+          <Image
+            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+            alt="Jumla ya Bidhaa"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300">Jumla ya Bidhaa</p>
+            <p className="text-2xl font-bold text-white">{inventory.length}</p>
+            <p className="text-xs text-gray-200">Aina za bidhaa</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Stock za Haraka</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">{lowStockItems.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Zinahitaji kujazwa</p>
+        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
+          <Image
+            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+            alt="Stock za Haraka"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/60 group-hover:bg-black/70 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300">Stock za Haraka</p>
+            <p className="text-2xl font-bold text-white">{lowStockItems.length}</p>
+            <p className="text-xs text-gray-200">Zinahitaji kujazwa</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Stock Zaidi</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{overstockedItems.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Zaidi ya kiwango</p>
+        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
+          <Image
+            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
+            alt="Stock Zaidi"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300">Stock Zaidi</p>
+            <p className="text-2xl font-bold text-white">{overstockedItems.length}</p>
+            <p className="text-xs text-gray-200">Zaidi ya kiwango</p>
+          </div>
         </div>
 
-        <div className="card">
-          <p className="text-gray-600 text-sm">Jumla ya Thamani</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">
-            TZS {(totalValue / 1000000).toFixed(1)}M
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Sehemu ya bidhaa</p>
+        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
+          <Image
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+            alt="Jumla ya Thamani"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300">Jumla ya Thamani</p>
+            <p className="text-2xl font-bold text-white">
+              TZS {(totalValue / 1000000).toFixed(1)}M
+            </p>
+            <p className="text-xs text-gray-200">Sehemu ya bidhaa</p>
+          </div>
         </div>
       </div>
 

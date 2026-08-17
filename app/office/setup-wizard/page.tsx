@@ -357,7 +357,7 @@ export default function SetupWizardPage() {
                   onClick={() => router.push("/office")}
                   className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg flex items-center gap-2 mx-auto transition"
                 >
-                  Kwenda Nyumbani
+                  Rudi Nyumbani
                   <ChevronRight size={20} />
                 </button>
               </div>
