@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Global Error Handler Utility
  * Provides consistent error responses and logging

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Database Backup & Restore Utility
  * Create and restore database backups

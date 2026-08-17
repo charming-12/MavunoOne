@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Data Export Utilities
  * Export sales, stock, and other data to CSV and Excel formats

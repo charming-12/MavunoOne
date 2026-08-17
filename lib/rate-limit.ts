@@ -21,7 +21,7 @@ interface RateLimitStore {
  * In-memory rate limit store
  * For production, use Redis or a database
  */
-let rateLimitStore: RateLimitStore = {};
+const rateLimitStore: RateLimitStore = {};
 
 /**
  * Get client identifier from request

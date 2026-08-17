@@ -4,12 +4,12 @@
  * Usage: npx tsx scripts/seed-production.ts
  */
 
-// MUST be at top to load env vars
-const dotenv = require('dotenv');
-dotenv.config({ path: '.env' });
-dotenv.config({ path: '.env.local' });
-
+// MUST be near the top to load env vars
+import dotenv from "dotenv";
 import { seedDatabase } from "@/lib/seed";
+
+dotenv.config({ path: ".env" });
+dotenv.config({ path: ".env.local" });
 
 async function main() {
   console.log("🌱 Starting MavunoOne Database Seed...\n");

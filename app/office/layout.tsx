@@ -8,6 +8,7 @@ import {
   BarChart3, Settings2, Rocket
 } from "lucide-react";
 import { AuthGuard } from "@/components/AuthGuard";
+import { clearStoredUser } from "@/lib/auth";
 
 const sidebarItems = [
   { href: "/office", label: "Dashboard", icon: LayoutDashboard, group: "Main" },
@@ -84,7 +85,6 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
           {/* Logout Button */}
           <button
             onClick={() => {
-              const { clearStoredUser } = require('@/lib/auth');
               clearStoredUser();
               window.location.href = '/login';
             }}
