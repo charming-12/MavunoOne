@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function OrderPage() {
   const [step, setStep] = useState(1);
+  const [cartTotal, setCartTotal] = useState(0);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("mavunoone-shop-cart");
+      const items = saved ? (JSON.parse(saved) as Array<{ price: number; quantity: number }>) : [];
+      window.setTimeout(() => setCartTotal(items.reduce((sum, item) => sum + item.price * item.quantity, 0)), 0);
+    } catch {
+      window.setTimeout(() => setCartTotal(0), 0);
+    }
+  }, []);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -26,6 +37,7 @@ export default function OrderPage() {
     if (step < 3) {
       setStep(step + 1);
     } else {
+      window.localStorage.removeItem("mavunoone-shop-cart");
       setOrderPlaced(true);
     }
   };
@@ -233,15 +245,15 @@ export default function OrderPage() {
           <div className="card border-l-4 border-green-600">
             <div className="flex justify-between mb-2">
               <span>Jumla Bidhaa</span>
-              <span className="font-bold">TZS 17,500</span>
+              <span className="font-bold">TZS {cartTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between mb-4 text-gray-600 text-sm">
               <span>Kodi (18%)</span>
-              <span>TZS 3,150</span>
+              <span>TZS {(cartTotal * 0.18).toLocaleString()}</span>
             </div>
             <div className="border-t pt-4 flex justify-between text-xl font-bold">
               <span>Jumla Malipo</span>
-              <span className="text-green-600">TZS 20,650</span>
+              <span className="text-green-600">TZS {(cartTotal * 1.18).toLocaleString()}</span>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShoppingCart, Search, MapPin, Phone, Clock, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -31,17 +31,29 @@ export default function ShopPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("mavunoone-shop-cart");
+      if (saved) window.setTimeout(() => setCart(JSON.parse(saved) as CartItem[]), 0);
+    } catch {
+      window.setTimeout(() => setCart([]), 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("mavunoone-shop-cart", JSON.stringify(cart));
+  }, [cart]);
+
   const filteredProducts = mockProducts.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddToCart = (product: Product) => {
-    const existing = cart.find((c) => c.id === product.id);
-    if (existing) {
-      setCart(cart.map((c) => (c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c)));
-    } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
-    }
+    setCart((current) => {
+      const existing = current.find((c) => c.id === product.id);
+      if (existing) return current.map((c) => (c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c));
+      return [...current, { ...product, quantity: 1 }];
+    });
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
