@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, TrendingUp, AlertTriangle, Users, DollarSign, Package, Clock, Target } from "lucide-react";
+import { Loader2, Package, Users, Clock } from "lucide-react";
+import Image from "next/image";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 
@@ -55,79 +56,75 @@ export default function OfficeDashboard() {
         </div>
       </div>
 
-      {/* Main KPI Cards - 4 Column Grid */}
+      {/* Main KPI Cards - Real Image Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Today's Sales */}
-        <div className="card border-l-4 border-green-600 bg-gradient-to-br from-green-50 to-white">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Mauzo ya Leo</p>
-              <p className="text-3xl font-bold text-green-700 mt-2">
-                TZS {(stats.todaySalesTotal / 1000000).toFixed(2)}M
-              </p>
-              <p className="text-xs text-gray-500 mt-1">{stats.todaySalesCount} makali</p>
-            </div>
-            <TrendingUp className="text-green-200" size={40} />
-          </div>
-          {/* Progress Bar */}
-          <div className="mt-3 bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-green-600 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(salesProgress, 100)}%` }}
+        {/* Today's Sales - Market Image */}
+        <Link href="/office/sales">
+          <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
+            <Image
+              src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+              alt="Mauzo ya Leo"
+              fill
+              className="object-cover group-hover:scale-110 transition duration-300"
             />
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Target: TZS {(dailyTarget / 1000000).toFixed(1)}M ({Math.round(salesProgress)}%)</p>
-        </div>
-
-        {/* Low Stock Alert */}
-        <div className="card border-l-4 border-orange-600 bg-gradient-to-br from-orange-50 to-white">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Stock za Chini</p>
-              <p className="text-3xl font-bold text-orange-700 mt-2">
-                {stats.lowStockCount}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Bidhaa za kubaini</p>
+            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+            <div className="absolute inset-0 p-4 flex flex-col justify-end">
+              <p className="text-xs text-gray-300 font-medium">Mauzo ya Leo</p>
+              <p className="text-2xl font-bold text-white">TZS {(stats.todaySalesTotal / 1000000).toFixed(2)}M</p>
+              <p className="text-xs text-gray-200">{stats.todaySalesCount} makali</p>
             </div>
-            <AlertTriangle className="text-orange-200" size={40} />
           </div>
-          <Link href="/office/products">
-            <button className="mt-3 w-full text-xs bg-orange-100 text-orange-700 py-1 rounded hover:bg-orange-200 transition font-semibold">
-              Angalia Stock
-            </button>
-          </Link>
-        </div>
+        </Link>
 
-        {/* Customer Debt */}
-        <div className="card border-l-4 border-red-600 bg-gradient-to-br from-red-50 to-white">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Madeni ya Wateja</p>
-              <p className="text-3xl font-bold text-red-700 mt-2">
-                TZS {(stats.totalCustomerDebt / 1000000).toFixed(2)}M
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Yanahitaji kufuatiliwa</p>
+        {/* Low Stock Alert - Warehouse Image */}
+        <Link href="/office/products">
+          <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
+            <Image
+              src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+              alt="Stock za Chini"
+              fill
+              className="object-cover group-hover:scale-110 transition duration-300"
+            />
+            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+            <div className="absolute inset-0 p-4 flex flex-col justify-end">
+              <p className="text-xs text-gray-300 font-medium">Stock za Chini</p>
+              <p className="text-2xl font-bold text-white">{stats.lowStockCount}</p>
+              <p className="text-xs text-gray-200">Bidhaa za kubaini</p>
             </div>
-            <DollarSign className="text-red-200" size={40} />
           </div>
-          <Link href="/office/debt">
-            <button className="mt-3 w-full text-xs bg-red-100 text-red-700 py-1 rounded hover:bg-red-200 transition font-semibold">
-              Malipo Sasa
-            </button>
-          </Link>
-        </div>
+        </Link>
 
-        {/* Weekly Average */}
-        <div className="card border-l-4 border-blue-600 bg-gradient-to-br from-blue-50 to-white">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Wastani wa Juma</p>
-              <p className="text-3xl font-bold text-blue-700 mt-2">
-                TZS {(weeklyAverage / 1000000).toFixed(2)}M
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Siku 7 zilizopita</p>
+        {/* Customer Debt - Finance Image */}
+        <Link href="/office/debt">
+          <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
+            <Image
+              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+              alt="Madeni ya Wateja"
+              fill
+              className="object-cover group-hover:scale-110 transition duration-300"
+            />
+            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+            <div className="absolute inset-0 p-4 flex flex-col justify-end">
+              <p className="text-xs text-gray-300 font-medium">Madeni ya Wateja</p>
+              <p className="text-2xl font-bold text-white">TZS {(stats.totalCustomerDebt / 1000000).toFixed(2)}M</p>
+              <p className="text-xs text-gray-200">Yanahitaji kufuatiliwa</p>
             </div>
-            <Target className="text-blue-200" size={40} />
+          </div>
+        </Link>
+
+        {/* Weekly Average - Analytics Image */}
+        <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
+          <Image
+            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
+            alt="Wastani wa Juma"
+            fill
+            className="object-cover group-hover:scale-110 transition duration-300"
+          />
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+          <div className="absolute inset-0 p-4 flex flex-col justify-end">
+            <p className="text-xs text-gray-300 font-medium">Wastani wa Juma</p>
+            <p className="text-2xl font-bold text-white">TZS {(weeklyAverage / 1000000).toFixed(2)}M</p>
+            <p className="text-xs text-gray-200">Siku 7 zilizopita</p>
           </div>
         </div>
       </div>
@@ -140,25 +137,25 @@ export default function OfficeDashboard() {
           <div className="space-y-2">
             <Link href="/office/pos">
               <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2">
-                <DollarSign size={18} />
+                💰
                 Mauzo Mapya (POS)
               </button>
             </Link>
             <Link href="/office/stock-in">
               <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center gap-2">
-                <Package size={18} />
+                📦
                 Jaza Stock
               </button>
             </Link>
             <Link href="/office/customers">
               <button className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-semibold flex items-center justify-center gap-2">
-                <Users size={18} />
+                👥
                 Mteja Mpya
               </button>
             </Link>
             <Link href="/office/deliveries">
               <button className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold flex items-center justify-center gap-2">
-                <Clock size={18} />
+                🚚
                 Uwasilishaji
               </button>
             </Link>

@@ -190,7 +190,7 @@ export default function LoginPage() {
         <div className="text-center mt-6">
           <Link href="/">
             <button className="text-yellow-300 hover:text-yellow-200 text-sm underline transition">
-              ← Rudi Kwenye Ukurasa wa Kwanza
+              ← Back
             </button>
           </Link>
         </div>

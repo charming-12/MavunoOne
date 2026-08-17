@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, AlertTriangle, Users, Truck } from "lucide-react";
+import Image from "next/image";
 import { trpc } from "@/lib/trpc";
 
 export default function BossDashboard() {
@@ -29,58 +29,79 @@ export default function BossDashboard() {
       </header>
 
       <main className="p-4 space-y-4">
-        {/* Today's Sales Card */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Mauzo ya Leo</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                TZS {(stats.todaySalesTotal || 0).toLocaleString()}
-              </p>
-              <p className="text-gray-500 text-xs mt-1">{stats.todaySalesCount} mauzo</p>
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Today's Sales Card */}
+          <a href="/boss/sales" className="block">
+            <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+              <Image
+                src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+                alt="Mauzo ya Leo"
+                fill
+                className="object-cover group-hover:scale-110 transition duration-300"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+              <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                <p className="text-xs text-gray-300">Mauzo ya Leo</p>
+                <p className="text-2xl font-bold text-white">TZS {(stats.todaySalesTotal || 0).toLocaleString()}</p>
+                <p className="text-xs text-gray-200">{stats.todaySalesCount} mauzo</p>
+              </div>
             </div>
-            <TrendingUp className="text-green-600" size={40} />
-          </div>
-        </div>
+          </a>
 
-        {/* Low Stock Alert */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Stock za Chini</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {stats.lowStockCount}
-              </p>
-              <p className="text-gray-500 text-xs mt-1">Zinahitaji kujazwa</p>
+          {/* Low Stock Alert */}
+          <a href="/boss/stock" className="block">
+            <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+              <Image
+                src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
+                alt="Stock za Chini"
+                fill
+                className="object-cover group-hover:scale-110 transition duration-300"
+              />
+              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
+              <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                <p className="text-xs text-gray-300">Stock za Chini</p>
+                <p className="text-2xl font-bold text-white">{stats.lowStockCount}</p>
+                <p className="text-xs text-gray-200">Zinahitaji kujazwa</p>
+              </div>
             </div>
-            <AlertTriangle className="text-yellow-600" size={40} />
-          </div>
-        </div>
+          </a>
 
-        {/* Customer Debt */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Madeni ya Wateja</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                TZS {(stats.totalCustomerDebt || 0).toLocaleString()}
-              </p>
-              <p className="text-gray-500 text-xs mt-1">Yanahitaji kufuatiliwa</p>
+          {/* Customer Debt */}
+          <a href="/boss/sales" className="block">
+            <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+              <Image
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+                alt="Madeni ya Wateja"
+                fill
+                className="object-cover group-hover:scale-110 transition duration-300"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+              <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                <p className="text-xs text-gray-300">Madeni ya Wateja</p>
+                <p className="text-2xl font-bold text-white">TZS {(stats.totalCustomerDebt || 0).toLocaleString()}</p>
+                <p className="text-xs text-gray-200">Yanahitaji kufuatiliwa</p>
+              </div>
             </div>
-            <Users className="text-red-600" size={40} />
-          </div>
-        </div>
+          </a>
 
-        {/* Active Vehicles */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Magari Yanayotembea</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">2</p>
-              <p className="text-gray-500 text-xs mt-1">Sasa hivi</p>
+          {/* Active Vehicles */}
+          <a href="/boss/vehicles" className="block">
+            <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
+              <Image
+                src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&h=400&fit=crop"
+                alt="Magari Yanayotembea"
+                fill
+                className="object-cover group-hover:scale-110 transition duration-300"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
+              <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                <p className="text-xs text-gray-300">Magari Yanayotembea</p>
+                <p className="text-2xl font-bold text-white">2</p>
+                <p className="text-xs text-gray-200">Sasa hivi</p>
+              </div>
             </div>
-            <Truck className="text-blue-600" size={40} />
-          </div>
+          </a>
         </div>
 
         {/* Recent Activity */}
@@ -89,7 +110,7 @@ export default function BossDashboard() {
           <div className="space-y-3">
             {recentActivity.map((item, index) => (
               <div key={`${item.invoiceNumber ?? "activity"}-${index}`} className="flex items-start gap-3 py-2 border-b last:border-b-0 last:pb-0">
-                <TrendingUp className="text-green-600 flex-shrink-0 mt-1" size={16} />
+                <div className="text-green-600 flex-shrink-0 mt-1 text-lg">📊</div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{item.invoiceNumber ?? "Kazi ya Biashara"}</p>
                   <p className="text-xs text-gray-600">
