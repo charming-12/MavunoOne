@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DEFAULT_SUPER_ADMIN_EMAIL, DEFAULT_SUPER_ADMIN_PASSWORD, DEFAULT_BOSS_EMAIL, DEFAULT_BOSS_PASSWORD, writeStoredUser } from "@/lib/auth";
+import { writeStoredUser } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();

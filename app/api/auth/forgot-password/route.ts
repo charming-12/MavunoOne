@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { message: "Akaunti hii haipo" },
-        { status: 404 }
+        { message: "Kama akaunti ipo, maelekezo ya kurejesha neno yatatumwa." },
+        { status: 200 }
       );
     }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       const smsMessage = `MavunoOne: Nambari yako ya kuubadilisha neno: ${otp}. Itaishia baada ya dakika 15.`;
       await sendSMSNotification(user.phone, smsMessage);
       return NextResponse.json(
-        { message: "OTP ilichezechelewakwa kwenye simu yako", method: "sms", otp },
+        { message: "OTP imetumwa kwenye simu yako", method: "sms" },
         { status: 200 }
       );
     }

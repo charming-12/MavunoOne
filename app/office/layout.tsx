@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, History, Package,
   ArrowDownToLine, ArrowUpFromLine, Users, Cog,
@@ -48,6 +49,8 @@ const groupedItems = sidebarItems.reduce(
 );
 
 export default function OfficeLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
   return (
     <AuthGuard allowedRoles={["admin", "manager", "cashier", "storekeeper", "machine_operator"]}>
       <div className="flex min-h-screen bg-[#07150f]">
@@ -84,9 +87,10 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
 
           {/* Logout Button */}
           <button
-            onClick={() => {
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' });
               clearStoredUser();
-              window.location.href = '/login';
+              router.push('/login');
             }}
             className="w-full mt-6 py-2.5 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold rounded-lg hover:from-red-500 hover:to-red-600 transition shadow-lg"
           >
