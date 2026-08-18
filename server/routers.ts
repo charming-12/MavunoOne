@@ -131,6 +131,13 @@ export const appRouter = router({
         })),
       }))
       .mutation(async ({ input, ctx }) => {
+        if (input.items.length === 0) throw new Error("Sale lazima iwe na bidhaa angalau moja");
+        for (const item of input.items) {
+          if (item.quantity <= 0) throw new Error("Quantity lazima iwe zaidi ya sifuri");
+          const product = await db.query.products.findFirst({ where: and(eq(products.id, item.productId), eq(products.isActive, true)) });
+          if (!product) throw new Error(`Product haipatikani: ${item.productId}`);
+          if (Number(product.currentStock) < item.quantity) throw new Error(`Stock haitoshi kwa ${product.name}. Iliyopo: ${product.currentStock}`);
+        }
         const invoiceNumber = `INV-${Date.now()}`;
         
         const [newSale] = await db.insert(sales).values({
@@ -154,9 +161,12 @@ export const appRouter = router({
             total: decimalString(item.total),
           });
 
-          await db.update(products)
-            .set({ currentStock: sql`currentStock - ${item.quantity}` })
-            .where(eq(products.id, item.productId));
+          const [updatedProduct] = await db.update(products)
+            .set({ currentStock: sql`${products.currentStock} - ${item.quantity}` })
+            .where(and(eq(products.id, item.productId), gte(products.currentStock, decimalString(item.quantity))))
+            .returning();
+          if (!updatedProduct) throw new Error(`Stock imebadilika wakati wa sale; tafadhali jaribu tena kwa product ${item.productId}`);
+          await db.insert(stockOut).values({ productId: item.productId, quantity: decimalString(item.quantity), reason: "sale", notes: `Sale ${invoiceNumber}` });
         }
 
         if (input.paymentMethod === "credit" && input.customerId) {
