@@ -64,9 +64,15 @@ export default function ForgotPasswordPage() {
             <span className="text-2xl font-black tracking-tight">Mavuno<span className="text-emerald-400">One</span></span>
           </Link>
           <p className="mt-20 text-xs font-black uppercase tracking-[0.28em] text-amber-300">Account recovery</p>
+<<<<<<< ours
           <h1 className="mt-5 max-w-md text-5xl font-black leading-[1.05] tracking-tight">Rudisha usalama wa akaunti yako.</h1>
           <p className="mt-6 max-w-md text-base leading-8 text-emerald-100/70">Tutakutumia kiunga cha barua pepe au OTP ya SMS kwenye taarifa iliyothibitishwa ya akaunti yako.</p>
           <div className="mt-10 flex max-w-md items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-5 text-sm leading-6 text-emerald-100/75"><LockKeyhole className="mt-0.5 shrink-0 text-emerald-300" size={19} /><p>Usimpe mtu mwingine OTP au kiunga cha kubadilisha nenosiri.</p></div>
+=======
+          <h1 className="mt-5 max-w-md text-5xl font-black leading-[1.08] tracking-tight xl:text-6xl">Rudisha usalama wa akaunti yako.</h1>
+          <p className="mt-6 max-w-md text-lg leading-8 text-emerald-100/80">Tutakutumia kiunga cha barua pepe au OTP ya SMS kwenye taarifa iliyothibitishwa ya akaunti yako.</p>
+          <div className="mt-10 flex max-w-md items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-5 text-base leading-7 text-emerald-100/80"><LockKeyhole className="mt-0.5 shrink-0 text-emerald-300" size={19} /><p>Usimpe mtu mwingine OTP au kiunga cha kubadilisha nenosiri.</p></div>
+>>>>>>> theirs
         </section>
 
         <section className="mx-auto w-full max-w-md">
@@ -79,8 +85,13 @@ export default function ForgotPasswordPage() {
             <Link href="/login" className="mb-7 inline-flex items-center gap-2 text-sm font-bold text-emerald-300 transition hover:text-white"><ArrowLeft size={17} /> Rudi kwenye login</Link>
             <div className="mb-7">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Password recovery</p>
+<<<<<<< ours
               <h2 className="mt-3 text-3xl font-black tracking-tight">Weka upya nenosiri</h2>
               <p className="mt-3 text-sm leading-6 text-emerald-100/65">Chagua njia salama ya kupokea maelekezo ya kubadilisha nenosiri.</p>
+=======
+              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Weka upya nenosiri</h2>
+              <p className="mt-3 text-base leading-7 text-emerald-100/75">Chagua njia salama ya kupokea maelekezo ya kubadilisha nenosiri.</p>
+>>>>>>> theirs
             </div>
 
             {message && <div role="status" className={`mb-5 flex gap-3 rounded-xl border p-4 text-sm leading-5 ${message.type === "success" ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100" : "border-red-400/30 bg-red-500/10 text-red-200"}`}>{message.type === "success" ? <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-300" size={18} /> : <AlertCircle className="mt-0.5 shrink-0 text-red-300" size={18} />}<p>{message.text}</p></div>}
@@ -88,21 +99,37 @@ export default function ForgotPasswordPage() {
             <div className="mb-6 grid gap-3 sm:grid-cols-2">
               <label className={`cursor-pointer rounded-xl border p-4 transition ${method === "email" ? "border-amber-300 bg-amber-300/10" : "border-emerald-900 bg-[#051511] hover:border-emerald-700"}`}>
                 <input type="radio" name="method" value="email" checked={method === "email"} onChange={() => { setMethod("email"); setMessage(null); }} className="sr-only" />
+<<<<<<< ours
                 <span className="flex items-center gap-3"><Mail size={19} className={method === "email" ? "text-amber-300" : "text-emerald-300"} /><span><span className="block text-sm font-bold">Barua pepe</span><span className="mt-1 block text-xs text-emerald-100/55">Tuma kiunga</span></span></span>
               </label>
               <label className={`cursor-pointer rounded-xl border p-4 transition ${method === "phone" ? "border-amber-300 bg-amber-300/10" : "border-emerald-900 bg-[#051511] hover:border-emerald-700"}`}>
                 <input type="radio" name="method" value="phone" checked={method === "phone"} onChange={() => { setMethod("phone"); setMessage(null); }} className="sr-only" />
                 <span className="flex items-center gap-3"><Phone size={19} className={method === "phone" ? "text-amber-300" : "text-emerald-300"} /><span><span className="block text-sm font-bold">SMS / OTP</span><span className="mt-1 block text-xs text-emerald-100/55">Tuma code ya simu</span></span></span>
+=======
+                <span className="flex items-center gap-3"><Mail size={19} className={method === "email" ? "text-amber-300" : "text-emerald-300"} /><span><span className="block text-base font-bold">Barua pepe</span><span className="mt-1 block text-sm text-emerald-100/65">Tuma kiunga</span></span></span>
+              </label>
+              <label className={`cursor-pointer rounded-xl border p-4 transition ${method === "phone" ? "border-amber-300 bg-amber-300/10" : "border-emerald-900 bg-[#051511] hover:border-emerald-700"}`}>
+                <input type="radio" name="method" value="phone" checked={method === "phone"} onChange={() => { setMethod("phone"); setMessage(null); }} className="sr-only" />
+                <span className="flex items-center gap-3"><Phone size={19} className={method === "phone" ? "text-amber-300" : "text-emerald-300"} /><span><span className="block text-base font-bold">SMS / OTP</span><span className="mt-1 block text-sm text-emerald-100/65">Tuma code ya simu</span></span></span>
+>>>>>>> theirs
               </label>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {method === "email" ? (
+<<<<<<< ours
                 <div><label htmlFor="email" className="mb-2 block text-sm font-bold text-emerald-100">Email ya kampuni</label><input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="jina@kampuni.co.tz" autoComplete="email" required className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-3.5 text-white outline-none transition placeholder:text-emerald-700 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" /></div>
               ) : (
                 <div><label htmlFor="phone" className="mb-2 block text-sm font-bold text-emerald-100">Namba ya simu iliyosajiliwa</label><input id="phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+255 700 000 000" autoComplete="tel" required className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-3.5 text-white outline-none transition placeholder:text-emerald-700 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" /><p className="mt-2 text-xs text-emerald-100/50">Tumia namba iliyopo kwenye account yako ya MavunoOne.</p></div>
               )}
               <button type="submit" disabled={loading || sent} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-amber-500 py-3.5 font-black text-emerald-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60">{loading ? <><Loader size={18} className="animate-spin" /> Inatuma...</> : sent ? "Ombi limetumwa" : method === "phone" ? "Tuma OTP kwa SMS" : "Tuma kiunga cha recovery"}</button>
+=======
+                <div><label htmlFor="email" className="mb-2 block text-base font-bold text-emerald-100">Email ya kampuni</label><input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="jina@kampuni.co.tz" autoComplete="email" required className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-4 text-base text-white outline-none transition placeholder:text-emerald-600 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" /></div>
+              ) : (
+                <div><label htmlFor="phone" className="mb-2 block text-base font-bold text-emerald-100">Namba ya simu iliyosajiliwa</label><input id="phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+255 700 000 000" autoComplete="tel" required className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-4 text-base text-white outline-none transition placeholder:text-emerald-600 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" /><p className="mt-2 text-sm text-emerald-100/65">Tumia namba iliyopo kwenye account yako ya MavunoOne.</p></div>
+              )}
+              <button type="submit" disabled={loading || sent} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-amber-500 py-4 text-base font-black text-emerald-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60">{loading ? <><Loader size={18} className="animate-spin" /> Inatuma...</> : sent ? "Ombi limetumwa" : method === "phone" ? "Tuma OTP kwa SMS" : "Tuma kiunga cha recovery"}</button>
+>>>>>>> theirs
             </form>
 
           </div>
