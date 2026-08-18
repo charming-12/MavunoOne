@@ -8,6 +8,7 @@ import {
 } from "@/drizzle/schema";
 import { desc, eq, and, gt, gte, lte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/audit";
 
 const decimalString = (value?: number | string | null, fallback = "0") => {
   if (value === undefined || value === null || Number.isNaN(Number(value))) {
@@ -22,6 +23,8 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return await db.query.products.findMany({
         where: eq(products.isActive, true),
+        orderBy: desc(products.name),
+        limit: 500,
       });
     }),
     
@@ -216,6 +219,7 @@ export const appRouter = router({
           console.error("[SMS] Failed to send sale-related notifications:", smsError);
         }
 
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, totalAmount: input.totalAmount, paymentMethod: input.paymentMethod, itemCount: input.items.length } });
         return { success: true, saleId: newSale.id, invoiceNumber };
       }),
   }),
@@ -223,6 +227,10 @@ export const appRouter = router({
   // ===== STOCK =====
   stock: router({
     stockIn: router({
+      list: protectedProcedure.query(async () => {
+        return await db.query.stockIn.findMany({ orderBy: desc(stockIn.date), limit: 200 });
+      }),
+
       create: protectedProcedure
         .input(z.object({
           productId: z.number(),
@@ -231,27 +239,32 @@ export const appRouter = router({
           costPerUnit: z.number().default(0),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ input, ctx }) => {
           const totalCost = input.quantity * input.costPerUnit;
           
-          await db.insert(stockIn).values({
+          const [savedStockIn] = await db.insert(stockIn).values({
             productId: input.productId,
             quantity: decimalString(input.quantity),
             supplierName: input.supplierName,
             costPerUnit: decimalString(input.costPerUnit),
             totalCost: decimalString(totalCost),
             notes: input.notes,
-          });
+          }).returning();
 
           await db.update(products)
             .set({ currentStock: sql`currentStock + ${input.quantity}` })
             .where(eq(products.id, input.productId));
+          await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_in", recordId: savedStockIn.id, newValue: { productId: input.productId, quantity: input.quantity, totalCost } });
 
-          return { success: true };
+          return { success: true, id: savedStockIn.id };
         }),
     }),
 
     stockOut: router({
+      list: protectedProcedure.query(async () => {
+        return await db.query.stockOut.findMany({ orderBy: desc(stockOut.date), limit: 200 });
+      }),
+
       create: protectedProcedure
         .input(z.object({
           productId: z.number(),
@@ -259,19 +272,20 @@ export const appRouter = router({
           reason: z.string().default("sale"),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
-          await db.insert(stockOut).values({
+        .mutation(async ({ input, ctx }) => {
+          const [savedStockOut] = await db.insert(stockOut).values({
             productId: input.productId,
             quantity: decimalString(input.quantity),
             reason: input.reason,
             notes: input.notes,
-          });
+          }).returning();
 
           await db.update(products)
             .set({ currentStock: sql`currentStock - ${input.quantity}` })
             .where(eq(products.id, input.productId));
+          await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_out", recordId: savedStockOut.id, newValue: { productId: input.productId, quantity: input.quantity, reason: input.reason } });
 
-          return { success: true };
+          return { success: true, id: savedStockOut.id };
         }),
     }),
   }),
@@ -317,6 +331,7 @@ export const appRouter = router({
     list: protectedProcedure.query(async () => {
       return await db.query.machineJobs.findMany({
         orderBy: desc(machineJobs.createdAt),
+        limit: 100,
       });
     }),
   }),
@@ -324,7 +339,10 @@ export const appRouter = router({
   // ===== VEHICLES & DELIVERIES =====
   vehicles: router({
     list: protectedProcedure.query(async () => {
-      return await db.query.vehicles.findMany();
+      return await db.query.vehicles.findMany({
+        orderBy: desc(vehicles.lastUpdate),
+        limit: 200,
+      });
     }),
 
     updatePosition: protectedProcedure
@@ -401,13 +419,15 @@ export const appRouter = router({
         amount: z.number(),
         description: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
-        return await db.insert(expenses).values({
+      .mutation(async ({ input, ctx }) => {
+        const [savedExpense] = await db.insert(expenses).values({
           category: input.category,
           amount: decimalString(input.amount),
           description: input.description,
           date: new Date(),
         }).returning();
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "expenses", recordId: savedExpense.id, newValue: { category: input.category, amount: input.amount, description: input.description } });
+        return savedExpense;
       }),
 
     list: protectedProcedure
@@ -423,7 +443,7 @@ export const appRouter = router({
             lte(expenses.date, input.endDate)
           );
         }
-        return await db.query.expenses.findMany({ where });
+        return await db.query.expenses.findMany({ where, orderBy: desc(expenses.date), limit: 200 });
       }),
   }),
 
@@ -515,6 +535,8 @@ export const appRouter = router({
     list: protectedProcedure.query(async () => {
       return await db.query.customers.findMany({
         where: eq(customers.isActive, true),
+        orderBy: desc(customers.createdAt),
+        limit: 500,
       });
     }),
 
@@ -526,7 +548,7 @@ export const appRouter = router({
         customerType: z.string().default("retail"),
         creditLimit: z.number().default(0),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const [newCustomer] = await db.insert(customers).values({
           name: input.name,
           phone: input.phone,
@@ -546,6 +568,7 @@ export const appRouter = router({
           console.error("[SMS] Failed to send welcome SMS:", smsError);
         }
 
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "customers", recordId: newCustomer.id, newValue: { name: newCustomer.name, customerType: newCustomer.customerType, creditLimit: input.creditLimit } });
         return newCustomer;
       }),
 
@@ -655,7 +678,7 @@ export const appRouter = router({
     list: protectedProcedure.query(async () => {
       return await db.query.notifications.findMany({
         orderBy: desc(notifications.createdAt),
-        limit: 20,
+        limit: 50,
       });
     }),
   }),
