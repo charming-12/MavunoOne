@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [slowLoginNotice, setSlowLoginNotice] = useState(false);
+  useEffect(() => {
+    // Warm Render/Neon while the user is entering credentials.
+    void fetch("/api/config/ready", { cache: "no-store" }).catch(() => undefined);
+  }, []);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -25,6 +30,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
+    setSlowLoginNotice(false);
+    const slowTimer = window.setTimeout(() => setSlowLoginNotice(true), 4000);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -49,19 +56,20 @@ export default function LoginPage() {
       const role = result.user.role;
 
       if (role === "boss") {
-        router.push("/boss");
+        router.replace("/boss");
         return;
       }
 
       if (role === "admin" || role === "owner" || role === "manager" || role === "cashier" || role === "storekeeper" || role === "machine_operator") {
-        router.push("/office");
+        router.replace("/office");
         return;
       }
 
-      router.push("/shop");
+      router.replace("/shop");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Login failed.");
     } finally {
+      window.clearTimeout(slowTimer);
       setIsSubmitting(false);
     }
   };
@@ -146,6 +154,7 @@ export default function LoginPage() {
               {isSubmitting ? "Ingia..." : "Ingia"}
             </button>
           </form>
+          {slowLoginNotice && <p className="mt-3 text-center text-xs font-semibold text-amber-200">Server ya Render ilikuwa imelala; inaamshwa sasa. Tafadhali subiri kidogo, credentials zako bado zinalindwa.</p>}
 
           <div className="mt-8 pt-6 border-t">
             <p className="text-center text-gray-700 text-sm font-semibold mb-4">� Jinsi ya Kufanya Kazi</p>
