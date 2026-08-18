@@ -289,3 +289,34 @@ export const maintenanceCosts = pgTable("maintenance_costs", {
   createdBy: integer("createdBy"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+// ===== 24. STOCK RECONCILIATIONS =====
+export const stockReconciliations = pgTable("stock_reconciliations", {
+  id: serial("id").primaryKey(),
+  productId: integer("productId").notNull(),
+  systemQuantity: decimal("systemQuantity", { precision: 12, scale: 2 }).notNull(),
+  countedQuantity: decimal("countedQuantity", { precision: 12, scale: 2 }).notNull(),
+  variance: decimal("variance", { precision: 12, scale: 2 }).notNull(),
+  adjustmentReason: varchar("adjustmentReason", { length: 64 }).notNull(),
+  notes: text("notes"),
+  status: varchar("status", { length: 32 }).default("approved").notNull(),
+  countedBy: integer("countedBy"),
+  approvedBy: integer("approvedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 25. FARMER PAYMENT APPROVALS =====
+export const farmerPaymentApprovals = pgTable("farmer_payment_approvals", {
+  id: serial("id").primaryKey(),
+  farmerPaymentId: integer("farmerPaymentId").notNull(),
+  requestedAmount: decimal("requestedAmount", { precision: 12, scale: 2 }).notNull(),
+  status: varchar("status", { length: 32 }).default("pending").notNull(),
+  requestedBy: integer("requestedBy").notNull(),
+  approvedBy: integer("approvedBy"),
+  paidBy: integer("paidBy"),
+  paymentReference: varchar("paymentReference", { length: 128 }),
+  rejectionReason: text("rejectionReason"),
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  approvedAt: timestamp("approvedAt"),
+  paidAt: timestamp("paidAt"),
+});

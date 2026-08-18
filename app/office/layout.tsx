@@ -27,6 +27,7 @@ const sidebarItems: SidebarItem[] = [
   { href: "/office/stock-in", label: "Stock In", icon: ArrowDownToLine, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
   { href: "/office/stock-out", label: "Stock Out", icon: ArrowUpFromLine, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
   { href: "/office/inventory-analytics", label: "Uchambuzi wa Hesabu", icon: FileBarChart, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
+  { href: "/office/reconciliation", label: "Stock Reconciliation", icon: Cog, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
   { href: "/office/customers", label: "Wateja", icon: Users, group: "Operations", roles: ["admin", "owner", "manager", "cashier"] },
   { href: "/office/debt", label: "Deni la Wateja", icon: DollarSign, group: "Operations", roles: ["admin", "owner", "manager"] },
   { href: "/office/farmers", label: "Wakulima", icon: Users, group: "Operations", roles: ["admin", "owner", "manager"] },

@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { 
   products, sales, saleItems, stockIn, stockOut, machineJobs,
   vehicles, deliveries, expenses, dailyClosures, notifications,
-  customers, categories, users, auditLogs, farmers, farmerPayments, maintenanceCosts
+  customers, categories, users, auditLogs, farmers, farmerPayments, maintenanceCosts,
+  stockReconciliations, farmerPaymentApprovals
 } from "@/drizzle/schema";
 import { desc, eq, and, gt, gte, lte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
@@ -648,6 +649,66 @@ export const appRouter = router({
     }),
   }),
 
+  // ===== STOCK RECONCILIATION =====
+  stockReconciliation: router({
+    list: protectedProcedure.query(async () => db.query.stockReconciliations.findMany({ orderBy: desc(stockReconciliations.createdAt), limit: 300 })),
+    create: officeProcedure.input(z.object({ productId: z.number(), countedQuantity: z.number().nonnegative(), adjustmentReason: z.enum(["count_variance", "damaged", "expired", "wastage", "transfer" ]), notes: z.string().optional() })).mutation(async ({ input, ctx }) => {
+      const product = await db.query.products.findFirst({ where: eq(products.id, input.productId) });
+      if (!product) throw new Error("Product haipatikani");
+      const systemQuantity = Number(product.currentStock || 0);
+      const variance = input.countedQuantity - systemQuantity;
+      const [record] = await db.insert(stockReconciliations).values({ productId: input.productId, systemQuantity: decimalString(systemQuantity), countedQuantity: decimalString(input.countedQuantity), variance: decimalString(variance), adjustmentReason: input.adjustmentReason, notes: input.notes, status: "pending", countedBy: ctx.user?.id }).returning();
+      await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_reconciliations", recordId: record.id, newValue: record });
+      return record;
+    }),
+    approve: financeProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      const record = await db.query.stockReconciliations.findFirst({ where: eq(stockReconciliations.id, input.id) });
+      if (!record) throw new Error("Reconciliation record haipatikani");
+      if (record.status !== "pending") throw new Error("Reconciliation hii tayari imefanyiwa kazi");
+      const product = await db.query.products.findFirst({ where: eq(products.id, record.productId) });
+      if (!product) throw new Error("Product haipatikani");
+      const [updatedProduct] = await db.update(products).set({ currentStock: record.countedQuantity, updatedAt: new Date() }).where(eq(products.id, record.productId)).returning();
+      const [updated] = await db.update(stockReconciliations).set({ status: "approved", approvedBy: ctx.user?.id }).where(eq(stockReconciliations.id, input.id)).returning();
+      await db.insert(stockOut).values({ productId: record.productId, quantity: decimalString(Math.abs(Number(record.variance))), reason: "reconciliation", notes: `Reconciliation #${record.id}: ${record.adjustmentReason}` });
+      await recordAuditLog({ userId: ctx.user?.id, action: "approve", tableName: "stock_reconciliations", recordId: updated.id, oldValue: record, newValue: { ...updated, productStock: updatedProduct.currentStock } });
+      return updated;
+    }),
+  }),
+  // ===== FARMER PAYMENT APPROVALS =====
+  farmerApprovals: router({
+    list: protectedProcedure.query(async () => db.query.farmerPaymentApprovals.findMany({ orderBy: desc(farmerPaymentApprovals.requestedAt), limit: 300 })),
+    request: financeProcedure.input(z.object({ farmerPaymentId: z.number(), requestedAmount: z.number().positive() })).mutation(async ({ input, ctx }) => {
+      const ledger = await db.query.farmerPayments.findFirst({ where: eq(farmerPayments.id, input.farmerPaymentId) });
+      if (!ledger) throw new Error("Farmer ledger haipatikani");
+      const outstanding = Number(ledger.balance || 0);
+      if (outstanding <= 0 || input.requestedAmount > outstanding) throw new Error("Requested amount inazidi farmer balance");
+      const [request] = await db.insert(farmerPaymentApprovals).values({ farmerPaymentId: input.farmerPaymentId, requestedAmount: decimalString(input.requestedAmount), requestedBy: ctx.user?.id as number, status: "pending" }).returning();
+      await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "farmer_payment_approvals", recordId: request.id, newValue: request });
+      return request;
+    }),
+    approve: protectedProcedure.input(z.object({ id: z.number(), approve: z.boolean(), rejectionReason: z.string().optional() })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user || !["boss", "admin", "owner"].includes(ctx.user.role)) throw new Error("Boss/Admin approval required");
+      const request = await db.query.farmerPaymentApprovals.findFirst({ where: eq(farmerPaymentApprovals.id, input.id) });
+      if (!request || request.status !== "pending") throw new Error("Payment request haipo au tayari imefanyiwa kazi");
+      if (request.requestedBy === ctx.user.id) throw new Error("Muumba wa request hawezi ku-approve request yake mwenyewe");
+      const [updated] = await db.update(farmerPaymentApprovals).set({ status: input.approve ? "approved" : "rejected", approvedBy: ctx.user.id, approvedAt: new Date(), rejectionReason: input.approve ? undefined : input.rejectionReason }).where(eq(farmerPaymentApprovals.id, input.id)).returning();
+      await recordAuditLog({ userId: ctx.user.id, action: input.approve ? "approve" : "reject", tableName: "farmer_payment_approvals", recordId: updated.id, newValue: updated });
+      return updated;
+    }),
+    markPaid: financeProcedure.input(z.object({ id: z.number(), paymentReference: z.string().min(2), paymentMethod: z.string().default("cash") })).mutation(async ({ input, ctx }) => {
+      const request = await db.query.farmerPaymentApprovals.findFirst({ where: eq(farmerPaymentApprovals.id, input.id) });
+      if (!request || request.status !== "approved") throw new Error("Payment lazima iwe approved kwanza");
+      const ledger = await db.query.farmerPayments.findFirst({ where: eq(farmerPayments.id, request.farmerPaymentId) });
+      if (!ledger) throw new Error("Farmer ledger haipatikani");
+      const currentPaid = Number(ledger.paidAmount || 0);
+      const currentBalance = Number(ledger.balance || 0);
+      const paidAmount = Math.min(Number(request.requestedAmount), currentBalance);
+      const [updatedLedger] = await db.update(farmerPayments).set({ paidAmount: decimalString(currentPaid + paidAmount), balance: decimalString(currentBalance - paidAmount), paymentMethod: input.paymentMethod, paymentReference: input.paymentReference, paymentStatus: currentBalance - paidAmount <= 0 ? "paid" : "partial" }).where(eq(farmerPayments.id, ledger.id)).returning();
+      const [updated] = await db.update(farmerPaymentApprovals).set({ status: "paid", paidBy: ctx.user?.id, paidAt: new Date(), paymentReference: input.paymentReference }).where(eq(farmerPaymentApprovals.id, input.id)).returning();
+      await recordAuditLog({ userId: ctx.user?.id, action: "mark_paid", tableName: "farmer_payment_approvals", recordId: updated.id, oldValue: request, newValue: { ...updated, ledger: updatedLedger } });
+      return { approval: updated, ledger: updatedLedger };
+    }),
+  }),
   // ===== CUSTOMERS =====
   customers: router({
     list: protectedProcedure.query(async () => {
