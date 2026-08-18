@@ -195,7 +195,7 @@ export async function exportDataToJson(
       if (users) {
         backup['users'] = users as any[];
       }
-    } catch (err) {
+    } catch {
       console.warn("Could not export users table");
     }
 

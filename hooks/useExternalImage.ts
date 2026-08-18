@@ -53,7 +53,7 @@ export function useExternalImage({
         reader.onloadend = () => {
           const base64data = reader.result as string;
           // Cache the image
-          saveToCache(url, base64data, cacheTime);
+          saveToCache(url, base64data);
           setImageSrc(base64data);
           setIsLoading(false);
         };
@@ -114,7 +114,7 @@ function getFromCache(url: string): string | null {
 /**
  * Save image to localStorage cache
  */
-function saveToCache(url: string, data: string, duration: number): void {
+function saveToCache(url: string, data: string): void {
   if (typeof window === 'undefined') return;
 
   try {
