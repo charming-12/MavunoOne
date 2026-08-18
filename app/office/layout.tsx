@@ -71,9 +71,15 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
   }, {}), [visibleItems]);
 
   useEffect(() => {
-    if (!role || pathname === "/office") return;
+    if (!role) return;
+    const adminOnlyPath = ["/office/setup-wizard", "/office/hardware", "/office/settings"].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+    if (role === "boss" && adminOnlyPath) {
+      router.replace("/boss");
+      return;
+    }
+    if (pathname === "/office") return;
     const permitted = visibleItems.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
-    if (!permitted) router.replace("/office");
+    if (!permitted) router.replace(role === "boss" ? "/boss" : "/office");
   }, [pathname, role, router, visibleItems]);
 
   const handleLogout = async () => {
