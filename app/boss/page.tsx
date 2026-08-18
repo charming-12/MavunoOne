@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import Hls from "hls.js";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -12,6 +14,9 @@ import {
   ReceiptText,
   Truck,
   Wallet,
+  Camera,
+  ShieldCheck,
+  Printer,
 } from "lucide-react";
 import {
   Area,
@@ -104,6 +109,52 @@ function StatusBadge({ balance }: { balance: number }) {
   );
 }
 
+type BossCctvStatus = { configured: boolean; brand: string | null; protocol: string | null; streamName: string; gatewayUrl: string | null; hlsUrl: string | null };
+
+function BossPrinterStatus() {
+  const [status, setStatus] = useState<{ enabled: boolean; model: string | null; connectionType: string | null; status: string } | null>(null);
+  useEffect(() => {
+    fetch("/api/hardware/status", { cache: "no-store" }).then((response) => response.json()).then((data) => setStatus(data.printer)).catch(() => setStatus({ enabled: false, model: null, connectionType: null, status: "unknown" }));
+  }, []);
+  const ready = status?.status === "ready";
+  return <section className="mt-4 flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="rounded-xl bg-sky-50 p-3 text-sky-700"><Printer size={21} /></span><div><p className="font-bold text-slate-950">Printer ya risiti</p><p className="mt-1 text-sm text-slate-500">{status?.enabled ? `${status.model || "ESC/POS"} · ${status.connectionType}` : "Haija-configurewa kwenye Setup Wizard"}</p></div></div><span className={`rounded-full px-3 py-1.5 text-xs font-bold ${ready ? "bg-emerald-50 text-emerald-700" : status?.enabled ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{ready ? "READY" : status?.enabled ? "CONFIGURED · TEST REQUIRED" : "NOT CONFIGURED"}</span></section>;
+}
+
+function BossCctvPanel() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [status, setStatus] = useState<BossCctvStatus | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/cctv/status", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data: BossCctvStatus) => setStatus(data))
+      .catch(() => setStatus({ configured: false, brand: null, protocol: null, streamName: "camera_1", gatewayUrl: null, hlsUrl: null }));
+  }, []);
+
+  useEffect(() => {
+    if (!status?.configured || !status.hlsUrl || !videoRef.current) return;
+    const video = videoRef.current;
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = status.hlsUrl;
+      return () => { video.pause(); video.removeAttribute("src"); video.load(); };
+    }
+    if (!Hls.isSupported()) {
+      const timer = window.setTimeout(() => setError("Browser haiwezi kucheza HLS stream."), 0);
+      return () => window.clearTimeout(timer);
+    }
+    const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+    hls.loadSource(status.hlsUrl);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (data.fatal) setError("CCTV gateway haipatikani. Hakikisha go2rtc na cloudflared zinaendelea.");
+    });
+    return () => hls.destroy();
+  }, [status]);
+
+  return <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-950 shadow-[0_8px_30px_rgba(16,45,38,0.08)]"><div className="flex flex-col justify-between gap-3 border-b border-slate-800 px-5 py-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300"><Camera size={20} /></span><div><h3 className="font-bold text-white">Live CCTV / Fleet Security</h3><p className="text-xs text-slate-400">Read-only executive monitoring</p></div></div>{status?.configured ? <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300"><ShieldCheck size={14} /> Gateway configured</span> : <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-200">Setup required</span>}</div>{status?.configured ? <><div className="aspect-video bg-black"><video ref={videoRef} controls muted autoPlay playsInline className="h-full w-full object-contain" /></div>{error && <p className="border-t border-slate-800 px-5 py-3 text-sm text-amber-200">{error}</p>}</> : <div className="flex min-h-40 items-center justify-between gap-4 px-5 py-8"><div><p className="font-semibold text-white">CCTV haijaunganishwa</p><p className="mt-1 text-sm text-slate-400">Admin akiweka Gateway URL kwenye Setup Wizard, Boss ataona live preview hapa.</p></div><Link href="/office/cameras" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500">Angalia setup</Link></div>}</section>;
+}
+
 export default function BossDashboard() {
   const dashboardQuery = trpc.dashboard.stats.useQuery();
   const lowStockQuery = trpc.products.lowStock.useQuery();
@@ -160,6 +211,9 @@ export default function BossDashboard() {
             <KpiCard href="/boss/vehicles" label="Magari Yanayofanya Kazi" value={`${stats.activeVehicles} / ${stats.totalVehicles}`} detail="Hali ya magari" icon={Truck} tone="slate" />
           </div>
         )}
+
+        <BossCctvPanel />
+        <BossPrinterStatus />
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.55fr_1fr]">
           <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6">

@@ -1,286 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { Printer, Scale, Zap, Settings, Check, X, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Check, CircleAlert, Printer, Settings, ShieldCheck, X } from "lucide-react";
 
-interface HardwareDevice {
-  id: string;
-  type: "printer" | "scale" | "rfid";
-  name: string;
-  model: string;
-  connectionType: "usb" | "network" | "bluetooth";
-  ipAddress?: string;
-  port?: string;
-  isConnected: boolean;
-  lastSeen?: string;
-  config: Record<string, string>;
-}
+type PrinterStatus = { enabled: boolean; model: string | null; connectionType: string | null; status: string };
 
 export default function HardwareIntegrationPage() {
-  const [devices, setDevices] = useState<HardwareDevice[]>([
-    {
-      id: "printer-01",
-      type: "printer",
-      name: "Printa ya Tikiti",
-      model: "Epson TM-T20III",
-      connectionType: "usb",
-      isConnected: true,
-      lastSeen: "Sasa",
-      config: { printWidth: "80mm", autocut: "enabled" },
-    },
-  ]);
+  const [printer, setPrinter] = useState<PrinterStatus | null>(null);
+  const [testOutput, setTestOutput] = useState("");
+  const [testing, setTesting] = useState(false);
 
-  const [showAddDevice, setShowAddDevice] = useState(false);
-  const [editingDevice, setEditingDevice] = useState<HardwareDevice | null>(null);
-  const [testOutput, setTestOutput] = useState<string>("");
+  const loadStatus = () => {
+    fetch("/api/hardware/status", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => setPrinter(data.printer))
+      .catch(() => setPrinter({ enabled: false, model: null, connectionType: null, status: "unknown" }));
+  };
 
-  const handleTestDevice = async (device: HardwareDevice) => {
+  useEffect(() => { loadStatus(); }, []);
+
+  const testPrinter = async () => {
+    setTesting(true);
+    setTestOutput("");
     try {
-      const response = await fetch("/api/hardware/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deviceId: device.id,
-          type: device.type,
-          config: device.config,
-        }),
-      });
+      const response = await fetch("/api/hardware/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId: "thermal-printer", type: "printer", config: { model: printer?.model || "ESC/POS" } }) });
       const data = await response.json();
       setTestOutput(data.message || "Mtihani umekamilika");
-    } catch (error) {
-      setTestOutput(`Kosa: ${String(error)}`);
-    }
+      loadStatus();
+    } catch { setTestOutput("Hardware bridge haikupatikana."); } finally { setTesting(false); }
   };
 
-  const handleSaveDevice = async (device: HardwareDevice) => {
-    try {
-      const response = await fetch("/api/hardware/configure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(device),
-      });
-      if (response.ok) {
-        const updatedDevices = devices.map((d) => (d.id === device.id ? device : d));
-        setDevices(updatedDevices);
-        setEditingDevice(null);
-      }
-    } catch (error) {
-      console.error("Kosa wakati wa kubahatisha vifaa:", error);
-    }
-  };
-
-  const getDeviceIcon = (type: string) => {
-    switch (type) {
-      case "printer":
-        return <Printer className="text-blue-600" size={24} />;
-      case "scale":
-        return <Scale className="text-green-600" size={24} />;
-      default:
-        return <Zap className="text-gray-600" size={24} />;
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Settings className="text-blue-600" size={32} />
-            Vifaa vya Mtandao
-          </h1>
-          <p className="text-gray-600 mt-2">Dhibiti printa, kiwanja, na vifaa vingine</p>
-        </div>
-        <button
-          onClick={() => setShowAddDevice(true)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
-        >
-          + Kwanza Kiwanja
-        </button>
-      </div>
-
-      {/* Devices Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {devices.map((device) => (
-          <div key={device.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                    {getDeviceIcon(device.type)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">{device.name}</h3>
-                    <p className="text-sm text-gray-600">{device.model}</p>
-                  </div>
-                </div>
-                <div
-                  className={`w-3 h-3 rounded-full ${device.isConnected ? "bg-green-500" : "bg-red-500"}`}
-                />
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-gray-600">
-                  <span>Aina ya Mipango:</span>
-                  <span className="font-medium text-gray-900">{device.connectionType.toUpperCase()}</span>
-                </div>
-                {device.ipAddress && (
-                  <div className="flex justify-between text-gray-600">
-                    <span>IP Address:</span>
-                    <span className="font-medium text-gray-900">{device.ipAddress}</span>
-                  </div>
-                )}
-                {device.port && (
-                  <div className="flex justify-between text-gray-600">
-                    <span>Bandari:</span>
-                    <span className="font-medium text-gray-900">{device.port}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-gray-600">
-                  <span>Hali:</span>
-                  <div className="flex items-center gap-1">
-                    {device.isConnected ? (
-                      <>
-                        <Check size={16} className="text-green-600" />
-                        <span className="text-green-600 font-medium">Imeunganisha</span>
-                      </>
-                    ) : (
-                      <>
-                        <X size={16} className="text-red-600" />
-                        <span className="text-red-600 font-medium">Haijaunganishwa</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="p-4 bg-gray-50 flex gap-2">
-              <button
-                onClick={() => handleTestDevice(device)}
-                className="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium rounded-lg transition text-sm"
-              >
-                Jaribu
-              </button>
-              <button
-                onClick={() => setEditingDevice(device)}
-                className="flex-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition text-sm"
-              >
-                Hariri
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Test Output */}
-      {testOutput && (
-        <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-          <p className="text-blue-900 font-medium">Matokeo ya Mtihani:</p>
-          <p className="text-blue-800 mt-1">{testOutput}</p>
-        </div>
-      )}
-
-      {/* Edit Device Modal */}
-      {editingDevice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Hariri {editingDevice.name}</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Jina</label>
-                <input
-                  type="text"
-                  value={editingDevice.name}
-                  onChange={(e) => setEditingDevice({ ...editingDevice, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
-                <input
-                  type="text"
-                  value={editingDevice.model}
-                  onChange={(e) => setEditingDevice({ ...editingDevice, model: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">IP Address (kwa mtandao)</label>
-                <input
-                  type="text"
-                  value={editingDevice.ipAddress || ""}
-                  onChange={(e) => setEditingDevice({ ...editingDevice, ipAddress: e.target.value })}
-                  placeholder="192.168.1.100"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bandari</label>
-                <input
-                  type="text"
-                  value={editingDevice.port || ""}
-                  onChange={(e) => setEditingDevice({ ...editingDevice, port: e.target.value })}
-                  placeholder="9100"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setEditingDevice(null)}
-                className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition"
-              >
-                Ghairi
-              </button>
-              <button
-                onClick={() => {
-                  handleSaveDevice(editingDevice);
-                }}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center justify-center gap-2 transition"
-              >
-                <Save size={16} />
-                Hifadhi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Device Modal */}
-      {showAddDevice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Kwanza Kiwanja Kipya</h2>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-600 hover:bg-blue-50 transition text-center">
-                <Printer className="mx-auto mb-2 text-blue-600" size={24} />
-                <p className="font-medium text-gray-900">Printa</p>
-              </button>
-              <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-600 hover:bg-green-50 transition text-center">
-                <Scale className="mx-auto mb-2 text-green-600" size={24} />
-                <p className="font-medium text-gray-900">Kiwanja</p>
-              </button>
-            </div>
-
-            <div className="mt-6">
-              <button
-                onClick={() => setShowAddDevice(false)}
-                className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition"
-              >
-                Ghairi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  const configured = Boolean(printer?.enabled);
+  return <div className="space-y-6"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Hardware operations</p><h1 className="mt-1 flex items-center gap-3 text-3xl font-black text-slate-900"><Settings className="text-emerald-600" size={30} /> Vifaa vya kazi</h1><p className="mt-2 text-slate-500">Hali ya printer na hardware bridge inayotumika na POS.</p></div><Link href="/office/setup-wizard" className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Fungua Setup Wizard</Link></div>
+    <div className={`rounded-2xl border p-5 ${configured ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-white"}`}><div className="flex items-start gap-3"><CircleAlert className={configured ? "mt-0.5 text-amber-600" : "mt-0.5 text-slate-500"} size={21} /><div><h2 className="font-black text-slate-900">{configured ? "Printer ime-configurewa; test inahitajika" : "Printer haija-configurewa"}</h2><p className="mt-1 text-sm text-slate-600">{configured ? "Setup Wizard imehifadhi model ya printer. Hardware bridge ya ESC/POS lazima ithibitishwe kabla ya kusema printer iko ready." : "Washa printer kwenye Setup Wizard ili model na connection type zihifadhiwe kwenye production configuration."}</p></div></div></div>
+    <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]"><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between"><div className="flex items-center gap-4"><span className="rounded-xl bg-sky-50 p-3 text-sky-700"><Printer size={24} /></span><div><h2 className="font-black text-slate-900">Thermal receipt printer</h2><p className="mt-1 text-sm text-slate-500">{printer?.model || "ESC/POS printer"}</p></div></div><span className={`rounded-full px-3 py-1.5 text-xs font-bold ${printer?.status === "ready" ? "bg-emerald-50 text-emerald-700" : configured ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{printer?.status === "ready" ? "READY" : configured ? "TEST REQUIRED" : "NOT CONFIGURED"}</span></div><div className="mt-6 space-y-3 text-sm"><div className="flex justify-between border-b border-slate-100 pb-3"><span className="text-slate-500">Connection</span><span className="font-semibold text-slate-900">{printer?.connectionType || "—"}</span></div><div className="flex justify-between border-b border-slate-100 pb-3"><span className="text-slate-500">Data source</span><span className="font-semibold text-slate-900">Setup Wizard</span></div></div><button onClick={testPrinter} disabled={testing || !configured} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"><ShieldCheck size={16} />{testing ? "Inapima..." : "Test printer"}</button>{testOutput && <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">{testOutput}</p>}</section><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-black text-slate-900">Production checklist</h2><div className="mt-5 space-y-4 text-sm"><p className="flex gap-3"><Check className="shrink-0 text-emerald-600" size={18} />Printer model imehifadhiwa kwenye configuration</p><p className="flex gap-3"><Check className="shrink-0 text-emerald-600" size={18} />POS inaweza kuendelea hata printer ikiwa offline</p><p className="flex gap-3"><X className="shrink-0 text-amber-600" size={18} />Hardware bridge bado inahitaji test ya kifaa halisi</p><p className="flex gap-3"><Check className="shrink-0 text-emerald-600" size={18} />Secrets hazihifadhiwi GitHub</p></div><p className="mt-6 text-xs leading-5 text-slate-500">Kwa printer ya USB, bridge ya local Windows lazima iwe na access ya USB. Kwa printer ya network, weka IP/port ya printer kwenye hardware bridge; Setup Wizard huhifadhi profile, si kufanya USB discovery kutoka Render.</p></section></div></div>;
 }
