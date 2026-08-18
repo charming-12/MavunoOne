@@ -36,6 +36,7 @@ export const appRouter = router({
         productType: z.string().default("finished_goods"),
         categoryId: z.number().optional(),
         unit: z.string().default("kg"),
+        packageSizeKg: z.number().positive().default(1),
         costPrice: z.number(),
         sellPrice: z.number(),
         wholesalePrice: z.number().optional(),
@@ -47,11 +48,12 @@ export const appRouter = router({
           ...input,
           barcode: input.barcode || undefined,
           productType: input.productType,
+          packageSizeKg: decimalString(input.packageSizeKg),
           costPrice: decimalString(input.costPrice),
           sellPrice: decimalString(input.sellPrice),
           wholesalePrice: input.wholesalePrice !== undefined ? decimalString(input.wholesalePrice) : undefined,
           lowStockThreshold: decimalString(input.lowStockThreshold),
-          currentStock: decimalString(input.currentStock),
+          currentStock: decimalString(input.currentStock * input.packageSizeKg),
         }).returning();
       }),
 
@@ -133,11 +135,14 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (input.items.length === 0) throw new Error("Sale lazima iwe na bidhaa angalau moja");
+        const normalizedItems = [] as Array<{ item: (typeof input.items)[number]; product: typeof products.$inferSelect; baseQuantity: number }>;
         for (const item of input.items) {
           if (item.quantity <= 0) throw new Error("Quantity lazima iwe zaidi ya sifuri");
           const product = await db.query.products.findFirst({ where: and(eq(products.id, item.productId), eq(products.isActive, true)) });
           if (!product) throw new Error(`Product haipatikani: ${item.productId}`);
-          if (Number(product.currentStock) < item.quantity) throw new Error(`Stock haitoshi kwa ${product.name}. Iliyopo: ${product.currentStock}`);
+          const baseQuantity = item.quantity * Number(product.packageSizeKg || 1);
+          if (Number(product.currentStock) < baseQuantity) throw new Error(`Stock haitoshi kwa ${product.name}. Inayohitajika: ${baseQuantity} kg; iliyopo: ${product.currentStock} kg`);
+          normalizedItems.push({ item, product, baseQuantity });
         }
         const invoiceNumber = `INV-${Date.now()}`;
         
@@ -152,22 +157,23 @@ export const appRouter = router({
           cashierId: ctx.user?.id,
         }).returning();
 
-        for (const item of input.items) {
+        for (const { item, product, baseQuantity } of normalizedItems) {
           await db.insert(saleItems).values({
             saleId: newSale.id,
             productId: item.productId,
             quantity: decimalString(item.quantity),
+            baseQuantity: decimalString(baseQuantity),
             unitPrice: decimalString(item.unitPrice),
             discount: decimalString(item.discount),
             total: decimalString(item.total),
           });
 
           const [updatedProduct] = await db.update(products)
-            .set({ currentStock: sql`${products.currentStock} - ${item.quantity}` })
-            .where(and(eq(products.id, item.productId), gte(products.currentStock, decimalString(item.quantity))))
+            .set({ currentStock: sql`${products.currentStock} - ${baseQuantity}` })
+            .where(and(eq(products.id, item.productId), gte(products.currentStock, decimalString(baseQuantity))))
             .returning();
           if (!updatedProduct) throw new Error(`Stock imebadilika wakati wa sale; tafadhali jaribu tena kwa product ${item.productId}`);
-          await db.insert(stockOut).values({ productId: item.productId, quantity: decimalString(item.quantity), reason: "sale", notes: `Sale ${invoiceNumber}` });
+          await db.insert(stockOut).values({ productId: item.productId, quantity: decimalString(item.quantity), baseQuantity: decimalString(baseQuantity), reason: "sale", notes: `Sale ${invoiceNumber}: ${item.quantity} ${product.unit} = ${baseQuantity} kg` });
         }
 
         if (input.paymentMethod === "credit" && input.customerId) {
@@ -264,22 +270,26 @@ export const appRouter = router({
           costPerUnit: z.number().default(0),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input, ctx }) => {
+                .mutation(async ({ input, ctx }) => {
+          const product = await db.query.products.findFirst({ where: eq(products.id, input.productId) });
+          if (!product) throw new Error("Product haipatikani");
+          const packageSizeKg = Number(product.packageSizeKg || 1);
+          const baseQuantity = input.quantity * packageSizeKg;
           const totalCost = input.quantity * input.costPerUnit;
-          
           const [savedStockIn] = await db.insert(stockIn).values({
             productId: input.productId,
             quantity: decimalString(input.quantity),
+            entryUnit: product.unit || "kg",
+            baseQuantity: decimalString(baseQuantity),
             supplierName: input.supplierName,
             costPerUnit: decimalString(input.costPerUnit),
             totalCost: decimalString(totalCost),
-            notes: input.notes,
+            notes: `${input.notes || ""} Received: ${input.quantity} ${product.unit} = ${baseQuantity} kg`.trim(),
           }).returning();
-
           await db.update(products)
-            .set({ currentStock: sql`currentStock + ${input.quantity}` })
+            .set({ currentStock: sql`${products.currentStock} + ${baseQuantity}` })
             .where(eq(products.id, input.productId));
-          await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_in", recordId: savedStockIn.id, newValue: { productId: input.productId, quantity: input.quantity, totalCost } });
+          await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_in", recordId: savedStockIn.id, newValue: { productId: input.productId, quantity: input.quantity, entryUnit: product.unit, baseQuantity, totalCost } });
 
           return { success: true, id: savedStockIn.id };
         }),
@@ -297,18 +307,23 @@ export const appRouter = router({
           reason: z.string().default("sale"),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input, ctx }) => {
+                .mutation(async ({ input, ctx }) => {
+          const product = await db.query.products.findFirst({ where: eq(products.id, input.productId) });
+          if (!product) throw new Error("Product haipatikani");
+          const baseQuantity = input.quantity * Number(product.packageSizeKg || 1);
+          const [updatedProduct] = await db.update(products)
+            .set({ currentStock: sql`${products.currentStock} - ${baseQuantity}` })
+            .where(and(eq(products.id, input.productId), gte(products.currentStock, decimalString(baseQuantity))))
+            .returning();
+          if (!updatedProduct) throw new Error(`Stock haitoshi kwa ${product.name}`);
           const [savedStockOut] = await db.insert(stockOut).values({
             productId: input.productId,
             quantity: decimalString(input.quantity),
+            baseQuantity: decimalString(baseQuantity),
             reason: input.reason,
-            notes: input.notes,
+            notes: `${input.notes || ""} Issued: ${input.quantity} ${product.unit} = ${baseQuantity} kg`.trim(),
           }).returning();
-
-          await db.update(products)
-            .set({ currentStock: sql`currentStock - ${input.quantity}` })
-            .where(eq(products.id, input.productId));
-          await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_out", recordId: savedStockOut.id, newValue: { productId: input.productId, quantity: input.quantity, reason: input.reason } });
+          await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_out", recordId: savedStockOut.id, newValue: { productId: input.productId, quantity: input.quantity, unit: product.unit, baseQuantity, reason: input.reason } });
 
           return { success: true, id: savedStockOut.id };
         }),

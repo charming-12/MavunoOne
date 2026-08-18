@@ -184,7 +184,7 @@ export default function BossDashboard() {
   const salesTrend = (analyticsQuery.data?.daily ?? []).map((day) => ({ month: day.date.slice(5), sales: day.sales / 1_000_000, target: 0 }));
   const stockProducts = (productsQuery.data ?? []).filter((product) => Number(product.currentStock ?? 0) > 0).sort((a, b) => Number(b.currentStock ?? 0) - Number(a.currentStock ?? 0)).slice(0, 4);
   const stockTotal = stockProducts.reduce((sum, product) => sum + Number(product.currentStock ?? 0), 0);
-  const stockBreakdown = stockProducts.map((product, index) => ({ name: product.name, value: stockTotal ? Math.round((Number(product.currentStock ?? 0) / stockTotal) * 100) : 0, color: ["#16a66a", "#183a5c", "#e6a51b", "#aeb8b5"][index] }));
+  const stockBreakdown = stockProducts.map((product, index) => { const baseKg = Number(product.currentStock ?? 0); const packageSizeKg = Number(product.packageSizeKg ?? 1); return { name: product.name, display: `${(baseKg / packageSizeKg).toLocaleString()} ${product.unit}`, baseKg, value: stockTotal ? Math.round((baseKg / stockTotal) * 100) : 0, color: ["#16a66a", "#183a5c", "#e6a51b", "#aeb8b5"][index] }; });
   const isLoading = dashboardQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading || vehiclesQuery.isLoading || analyticsQuery.isLoading || productsQuery.isLoading || expensesQuery.isLoading || farmersQuery.isLoading;
 
   return (
@@ -284,15 +284,15 @@ export default function BossDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-slate-950">{stockTotal.toLocaleString()}</span>
-                  <span className="text-xs text-slate-500">jumla ya items</span>
+                  <span className="text-2xl font-bold text-slate-950">{stockTotal.toLocaleString()} kg</span>
+                  <span className="text-xs text-slate-500">normalized base stock</span>
                 </div>
               </div>
               <div className="w-full space-y-3 sm:max-w-[170px]">
                 {stockBreakdown.map((item) => (
                   <div key={item.name} className="flex items-center justify-between gap-3 text-sm">
                     <span className="flex items-center gap-2 text-slate-600"><i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
-                    <span className="font-semibold text-slate-800">{item.value}%</span>
+                    <span className="text-right font-semibold text-slate-800">{item.value}%<small className="block text-[10px] font-medium text-slate-500">{item.display}</small></span>
                   </div>
                 ))}
               </div>
