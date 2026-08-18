@@ -94,3 +94,28 @@ export function isPrivilegedRole(role: string | undefined) {
 export function isStaffRole(role: string | undefined) {
   return isPrivilegedRole(role) || ["manager", "cashier", "storekeeper", "machine_operator"].includes(role ?? "");
 }
+
+export function refreshSessionToken(token: string | undefined) {
+  if (!token) return null;
+  const [encodedPayload, signature] = token.split(".");
+  if (!encodedPayload || !signature) return null;
+  const expected = Buffer.from(sign(encodedPayload));
+  const received = Buffer.from(signature);
+  if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null;
+  try {
+    const payload = JSON.parse(decode(encodedPayload)) as SessionPayload;
+    const now = Math.floor(Date.now() / 1000);
+    const lastActivity = payload.lastActivity ?? payload.iat;
+    if (!payload.email || !payload.role || payload.exp <= now || now - lastActivity > SESSION_IDLE_TIMEOUT_SECONDS) return null;
+    const refreshedPayload: SessionPayload = { ...payload, iat: payload.iat, exp: payload.exp, lastActivity: now };
+    const refreshedEncoded = encode(JSON.stringify(refreshedPayload));
+    return `${refreshedEncoded}.${sign(refreshedEncoded)}`;
+  } catch {
+    return null;
+  }
+}
+
+export function getSessionTokenFromHeader(cookieHeader: string | null) {
+  const match = cookieHeader?.match(/(?:^|;\s*)mavunoone-user=([^;]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined;
+}
