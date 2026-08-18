@@ -1,4 +1,4 @@
-import { router, publicProcedure, protectedProcedure, officeProcedure } from "./trpc";
+import { router, publicProcedure, protectedProcedure, officeProcedure, financeProcedure } from "./trpc";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { 
@@ -413,7 +413,7 @@ export const appRouter = router({
 
   // ===== EXPENSES =====
   expenses: router({
-    create: officeProcedure
+    create: financeProcedure
       .input(z.object({
         category: z.string(),
         amount: z.number(),
@@ -541,7 +541,7 @@ export const appRouter = router({
       });
     }),
 
-    create: officeProcedure
+    create: financeProcedure
       .input(z.object({
         name: z.string(),
         phone: z.string().optional(),
@@ -583,13 +583,13 @@ export const appRouter = router({
 
     // Record a payment against a customer's debt/balance.
     // Reduces the outstanding balance and sends a payment-received SMS.
-    recordPayment: officeProcedure
+    recordPayment: financeProcedure
       .input(z.object({
         customerId: z.number(),
         amount: z.number().positive(),
         paymentMethod: z.string().default("cash"),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const customer = await db.query.customers.findFirst({
           where: eq(customers.id, input.customerId),
         });
@@ -621,11 +621,12 @@ export const appRouter = router({
           }
         }
 
+        await recordAuditLog({ userId: ctx.user?.id, action: "update", tableName: "customers", recordId: input.customerId, newValue: { paymentAmount: input.amount, paymentMethod: input.paymentMethod, remainingBalance } });
         return { success: true, customer: updated, sms };
       }),
 
     // Send debt-reminder SMS to every customer with an outstanding balance
-    sendDebtRemindersBulk: officeProcedure.mutation(async () => {
+    sendDebtRemindersBulk: financeProcedure.mutation(async () => {
       const debtors = await db.query.customers.findMany({
         where: and(gt(customers.balance, "0"), eq(customers.isActive, true)),
       });
