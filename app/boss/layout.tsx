@@ -15,9 +15,9 @@ const navItems = [
   { href: "/boss/vehicles", label: "Magari / GPS", icon: Truck },
   { href: "/boss/cameras", label: "CCTV", icon: Camera },
   { href: "/boss/customers", label: "Wateja", icon: UsersRound },
-  { href: "/boss/debt", label: "Madeni", icon: WalletCards },
   { href: "/boss/employees", label: "Wafanyakazi", icon: UsersRound },
-  { href: "/boss/reports", label: "Ripoti", icon: FileBarChart },
+  { href: "/boss/expenses", label: "Gharama / P&L", icon: WalletCards },
+  { href: "/boss/farmer-payments", label: "Malipo ya Wakulima", icon: FileBarChart },
   { href: "/boss/notifications", label: "Taarifa", icon: Bell },
 ];
 

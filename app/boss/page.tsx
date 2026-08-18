@@ -6,14 +6,8 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowUpRight,
-  Bell,
   CalendarDays,
   ChevronDown,
-  LayoutDashboard,
-  Menu,
-  X,
-  ShoppingCart,
-  Settings,
   BarChart3,
   Boxes,
   CheckCircle2,
@@ -44,14 +38,6 @@ import { trpc } from "@/lib/trpc";
 
 const formatMoney = (value: number) => `TZS ${value.toLocaleString("en-TZ")}`;
 
-const bossNavigation = [
-  { label: "Muhtasari", href: "/boss", icon: LayoutDashboard },
-  { label: "Mauzo", href: "/boss/sales", icon: ShoppingCart },
-  { label: "Stock", href: "/boss/stock", icon: Boxes },
-  { label: "Magari", href: "/boss/vehicles", icon: Truck },
-  { label: "Wateja", href: "/boss/customers", icon: Users },
-  { label: "Gharama", href: "/boss/expenses", icon: BarChart3 },
-];
 
 const formatDate = (value: string | Date | undefined) => {
   if (!value) return "—";
@@ -171,11 +157,10 @@ function BossCctvPanel() {
     return () => hls.destroy();
   }, [status]);
 
-  return <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-950 shadow-[0_8px_30px_rgba(16,45,38,0.08)]"><div className="flex flex-col justify-between gap-3 border-b border-slate-800 px-5 py-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300"><Camera size={20} /></span><div><h3 className="font-bold text-white">Live CCTV / Fleet Security</h3><p className="text-xs text-slate-400">Read-only executive monitoring</p></div></div>{status?.configured ? <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300"><ShieldCheck size={14} /> Gateway configured</span> : <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-200">Setup required</span>}</div>{status?.configured ? <><div className="aspect-video bg-black"><video ref={videoRef} controls muted autoPlay playsInline className="h-full w-full object-contain" /></div>{error && <p className="border-t border-slate-800 px-5 py-3 text-sm text-amber-200">{error}</p>}</> : <div className="flex min-h-40 items-center justify-between gap-4 px-5 py-8"><div><p className="font-semibold text-white">CCTV haijaunganishwa</p><p className="mt-1 text-sm text-slate-400">Admin akiweka Gateway URL kwenye Setup Wizard, Boss ataona live preview hapa.</p></div><Link href="/office/cameras" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500">Angalia setup</Link></div>}</section>;
+  return <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-950 shadow-[0_8px_30px_rgba(16,45,38,0.08)]"><div className="flex flex-col justify-between gap-3 border-b border-slate-800 px-5 py-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300"><Camera size={20} /></span><div><h3 className="font-bold text-white">Live CCTV / Fleet Security</h3><p className="text-xs text-slate-400">Read-only executive monitoring</p></div></div>{status?.configured ? <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300"><ShieldCheck size={14} /> Gateway configured</span> : <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-200">Setup required</span>}</div>{status?.configured ? <><div className="aspect-video bg-black"><video ref={videoRef} controls muted autoPlay playsInline className="h-full w-full object-contain" /></div>{error && <p className="border-t border-slate-800 px-5 py-3 text-sm text-amber-200">{error}</p>}</> : <div className="flex min-h-40 items-center justify-between gap-4 px-5 py-8"><div><p className="font-semibold text-white">CCTV haijaunganishwa</p><p className="mt-1 text-sm text-slate-400">Admin akiweka Gateway URL kwenye Setup Wizard, Boss ataona live preview hapa.</p></div><Link href="/boss/cameras" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500">Angalia CCTV</Link></div>}</section>;
 }
 
 export default function BossDashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const dashboardQuery = trpc.dashboard.stats.useQuery();
   const lowStockQuery = trpc.products.lowStock.useQuery();
   const salesQuery = trpc.sales.list.useQuery();
@@ -218,22 +203,8 @@ export default function BossDashboard() {
   const isLoading = dashboardQuery.isLoading;
 
   return (
-    <div className="min-h-screen bg-[#f4f7f5] text-slate-900">
-      <div className="flex min-h-screen">
-        <div className={`fixed inset-0 z-40 bg-slate-950/50 transition-opacity lg:hidden ${sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setSidebarOpen(false)} />
-        <aside className={`fixed inset-y-0 left-0 z-50 flex w-[258px] flex-col bg-[#06151b] px-4 py-5 text-white shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-          <div className="flex items-center justify-between px-2 pb-7">
-            <Link href="/boss" className="flex items-center gap-3" onClick={() => setSidebarOpen(false)}><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300"><LayoutDashboard size={20} /></span><span><span className="block text-xl font-black tracking-tight">Mavuno<span className="text-emerald-400">One</span></span><span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Boss workspace</span></span></Link>
-            <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-white/10 lg:hidden" aria-label="Funga menu"><X size={18} /></button>
-          </div>
-          <p className="px-3 pb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Executive monitoring</p>
-          <nav className="space-y-1.5">
-            {bossNavigation.map(({ label, href, icon: Icon }) => <Link key={href} href={href} onClick={() => setSidebarOpen(false)} className={`group flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${href === "/boss" ? "bg-emerald-500 text-white shadow-lg shadow-emerald-900/30" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}><Icon size={18} /><span>{label}</span>{href === "/boss" && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white" />}</Link>)}
-          </nav>
-          <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300"><ShieldCheck size={19} /></span><div><p className="text-sm font-bold">Boss access</p><p className="mt-0.5 text-xs text-slate-400">Read-only executive view</p></div></div><Link href="/boss/settings" className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-300 hover:text-emerald-200"><Settings size={14} /> Settings</Link></div>
-        </aside>
-        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-        <div className="mb-7 flex items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur sm:px-5 lg:hidden"><button onClick={() => setSidebarOpen(true)} className="rounded-xl bg-[#06151b] p-2.5 text-white" aria-label="Fungua menu"><Menu size={20} /></button><span className="text-sm font-black text-slate-900">MavunoOne · Boss</span><Bell size={19} className="text-slate-500" /></div>
+    <div className="min-h-screen bg-[#f7f9f8] text-slate-900">
+      <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Muhtasari wa biashara</p>
@@ -242,9 +213,7 @@ export default function BossDashboard() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 shadow-sm sm:flex"><CalendarDays size={16} className="text-emerald-700" />{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date())}<ChevronDown size={15} className="text-slate-400" /></div>
-            <button aria-label="Notifications" className="relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"><Bell size={18} /><span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-black text-white">3</span></button>
-            <Link href="/boss/reports" className="hidden items-center gap-2 rounded-xl bg-[#0c7355] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#095b44] sm:inline-flex"><FileText size={16} /> Ripoti</Link>
-            <div className="hidden h-10 w-10 items-center justify-center rounded-full border-4 border-white bg-slate-800 text-xs font-black text-white shadow-sm sm:flex">MK</div>
+            <Link href="/boss/expenses" className="inline-flex items-center gap-2 rounded-xl bg-[#0c7355] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#095b44]"><FileText size={16} /> Gharama / P&amp;L</Link>
           </div>
         </div>
 
@@ -401,8 +370,7 @@ export default function BossDashboard() {
             <div className="flex items-center gap-3"><span className="rounded-xl bg-white p-3 text-sky-700 shadow-sm"><Truck size={20} /></span><div><p className="font-bold text-sky-950">Fuatilia magari</p><p className="mt-1 text-sm text-sky-800/70">Angalia hali ya magari yako leo</p></div></div><ArrowUpRight className="text-sky-700" size={20} />
           </Link>
         </div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 }
