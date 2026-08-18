@@ -617,9 +617,12 @@ export const appRouter = router({
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       start.setDate(start.getDate() - 6);
-      const [recentSales, recentExpenses] = await Promise.all([
+      const [recentSales, recentExpenses, recentStockIn, recentFarmerPayments, recentMaintenance] = await Promise.all([
         db.query.sales.findMany({ where: gte(sales.createdAt, start) }),
         db.query.expenses.findMany({ where: gte(expenses.date, start) }),
+        db.query.stockIn.findMany({ where: gte(stockIn.date, start) }),
+        db.query.farmerPayments.findMany({ where: gte(farmerPayments.createdAt, start) }),
+        db.query.maintenanceCosts.findMany({ where: gte(maintenanceCosts.serviceDate, start) }),
       ]);
       const daily = Array.from({ length: 7 }, (_, index) => {
         const date = new Date(start);
@@ -627,11 +630,19 @@ export const appRouter = router({
         const key = date.toISOString().slice(0, 10);
         const salesTotal = recentSales.filter((sale) => sale.createdAt.toISOString().slice(0, 10) === key).reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
         const expensesTotal = recentExpenses.filter((expense) => expense.date.toISOString().slice(0, 10) === key).reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-        return { date: key, sales: salesTotal, expenses: expensesTotal, profit: salesTotal - expensesTotal };
+        const stockCost = recentStockIn.filter((entry) => entry.date.toISOString().slice(0, 10) === key).reduce((sum, entry) => sum + Number(entry.totalCost || 0), 0);
+        const farmerCost = recentFarmerPayments.filter((entry) => entry.createdAt.toISOString().slice(0, 10) === key).reduce((sum, entry) => sum + Number(entry.paidAmount || 0), 0);
+        const maintenanceCost = recentMaintenance.filter((entry) => entry.serviceDate.toISOString().slice(0, 10) === key).reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+        const operatingCosts = expensesTotal + stockCost + farmerCost + maintenanceCost;
+        return { date: key, sales: salesTotal, expenses: expensesTotal, stockCost, farmerCost, maintenanceCost, operatingCosts, profit: salesTotal - operatingCosts };
       });
       const totalSales = daily.reduce((sum, day) => sum + day.sales, 0);
       const totalExpenses = daily.reduce((sum, day) => sum + day.expenses, 0);
-      return { daily, totalSales, totalExpenses, totalProfit: totalSales - totalExpenses };
+      const totalStockCost = daily.reduce((sum, day) => sum + day.stockCost, 0);
+      const totalFarmerCost = daily.reduce((sum, day) => sum + day.farmerCost, 0);
+      const totalMaintenanceCost = daily.reduce((sum, day) => sum + day.maintenanceCost, 0);
+      const totalOperatingCosts = daily.reduce((sum, day) => sum + day.operatingCosts, 0);
+      return { daily, totalSales, totalExpenses, totalStockCost, totalFarmerCost, totalMaintenanceCost, totalOperatingCosts, totalProfit: totalSales - totalOperatingCosts };
     }),
     forecast: protectedProcedure.query(async () => {
       const start = new Date();
