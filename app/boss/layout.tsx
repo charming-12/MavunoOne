@@ -13,11 +13,11 @@ const navItems = [
   { href: "/boss/sales", label: "Mauzo", icon: ShoppingCart },
   { href: "/boss/stock", label: "Stock", icon: Boxes },
   { href: "/boss/vehicles", label: "Magari / GPS", icon: Truck },
-  { href: "/office/cameras", label: "CCTV", icon: Camera },
-  { href: "/office/customers", label: "Wateja", icon: UsersRound },
-  { href: "/office/debt", label: "Madeni", icon: WalletCards },
-  { href: "/office/employees", label: "Wafanyakazi", icon: UsersRound },
-  { href: "/office/reports", label: "Ripoti", icon: FileBarChart },
+  { href: "/boss/cameras", label: "CCTV", icon: Camera },
+  { href: "/boss/customers", label: "Wateja", icon: UsersRound },
+  { href: "/boss/debt", label: "Madeni", icon: WalletCards },
+  { href: "/boss/employees", label: "Wafanyakazi", icon: UsersRound },
+  { href: "/boss/reports", label: "Ripoti", icon: FileBarChart },
   { href: "/boss/notifications", label: "Taarifa", icon: Bell },
 ];
 
