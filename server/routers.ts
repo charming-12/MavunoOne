@@ -418,15 +418,16 @@ export const appRouter = router({
         category: z.string(),
         amount: z.number(),
         description: z.string().optional(),
+        date: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const [savedExpense] = await db.insert(expenses).values({
           category: input.category,
           amount: decimalString(input.amount),
           description: input.description,
-          date: new Date(),
+          date: input.date ? new Date(input.date) : new Date(),
         }).returning();
-        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "expenses", recordId: savedExpense.id, newValue: { category: input.category, amount: input.amount, description: input.description } });
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "expenses", recordId: savedExpense.id, newValue: { category: input.category, amount: input.amount, description: input.description, date: input.date } });
         return savedExpense;
       }),
 
