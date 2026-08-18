@@ -138,7 +138,6 @@ export function FeaturedImageCard({
   badgeColor = 'bg-green-600',
   ctaText,
   ctaHref,
-  overlay = 'dark',
   height = 400,
   className = '',
 }: FeaturedImageCardProps) {

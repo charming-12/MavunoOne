@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Package, Users, Clock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
@@ -17,22 +17,8 @@ export default function OfficeDashboard() {
     totalCustomerDebt: Number(dashboardQuery.data?.totalCustomerDebt ?? 0),
   };
 
-  const recentActivity = salesQuery.data?.slice(0, 5) ?? [
-    { invoiceNumber: "INV-0000", totalAmount: 450000, status: "Mock" },
-    { invoiceNumber: "Kujaza Stock", totalAmount: 0, status: "Stock" },
-    { invoiceNumber: "Mashine", totalAmount: 0, status: "Completed" },
-  ];
-
-  // Mock data for enhanced analytics
-  const dailyTarget = 1000000;
-  const weeklyAverage = 650000;
-  const topProducts = [
-    { name: "Mahindi", sales: 2500, revenue: 6250000 },
-    { name: "Unga wa Mahindi", sales: 1800, revenue: 5400000 },
-    { name: "Alizee", sales: 450, revenue: 2025000 },
-  ];
-
-  const salesProgress = (stats.todaySalesTotal / dailyTarget) * 100;
+  const recentActivity = salesQuery.data?.slice(0, 5) ?? [];
+  const trackedProducts = lowStockQuery.data ?? [];
 
   if (dashboardQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading) {
     return (
@@ -123,8 +109,8 @@ export default function OfficeDashboard() {
           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
           <div className="absolute inset-0 p-4 flex flex-col justify-end">
             <p className="text-xs text-gray-300 font-medium">Wastani wa Juma</p>
-            <p className="text-2xl font-bold text-white">TZS {(weeklyAverage / 1000000).toFixed(2)}M</p>
-            <p className="text-xs text-gray-200">Siku 7 zilizopita</p>
+            <p className="text-2xl font-bold text-white">{trackedProducts.length}</p>
+            <p className="text-xs text-gray-200">Bidhaa zinazohitaji kufuatiliwa</p>
           </div>
         </div>
       </div>
@@ -166,18 +152,12 @@ export default function OfficeDashboard() {
         <div className="lg:col-span-2 card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Bidhaa za Kuzunguka</h3>
           <div className="space-y-3">
-            {topProducts.map((product, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{product.name}</p>
-                  <p className="text-xs text-gray-600">{product.sales} vitengo</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-600">TZS {(product.revenue / 1000000).toFixed(2)}M</p>
-                  <p className="text-xs text-gray-500">mapato</p>
-                </div>
+            {trackedProducts.length ? trackedProducts.slice(0, 5).map((product) => (
+              <div key={product.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                <div className="flex-1"><p className="font-medium text-gray-900">{product.name}</p><p className="text-xs text-gray-600">Stock {Number(product.currentStock ?? 0).toLocaleString()} {product.unit}</p></div>
+                <div className="text-right"><p className="font-bold text-amber-600">Reorder</p><p className="text-xs text-gray-500">Threshold {Number(product.lowStockThreshold ?? 0).toLocaleString()}</p></div>
               </div>
-            ))}
+            )) : <p className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-700">Hakuna bidhaa inayohitaji kufuatiliwa sasa.</p>}
           </div>
         </div>
       </div>

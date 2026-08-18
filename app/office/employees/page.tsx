@@ -1,332 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import { Users, Plus, Edit2, Trash2, Phone, Mail, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Loader2, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { readStoredUser } from "@/lib/auth";
 
-// Mock employee data
-const mockEmployees = [
-  { id: 1, name: "Ahmed Hassan", role: "POS Operator", phone: "0712345678", email: "ahmed@mavunoone.com", department: "Sales", status: "active", salary: 800000, joinDate: "2023-06-15" },
-  { id: 2, name: "Zainab Mohamed", role: "Stock Manager", phone: "0723456789", email: "zainab@mavunoone.com", department: "Inventory", status: "active", salary: 1200000, joinDate: "2023-04-20" },
-  { id: 3, name: "John Kipchoge", role: "Delivery Driver", phone: "0734567890", email: "john@mavunoone.com", department: "Logistics", status: "active", salary: 900000, joinDate: "2023-08-10" },
-  { id: 4, name: "Mary Wanjiru", role: "Cashier", phone: "0745678901", email: "mary@mavunoone.com", department: "Finance", status: "active", salary: 750000, joinDate: "2023-07-25" },
-  { id: 5, name: "David Omondi", role: "Warehouse Assistant", phone: "0756789012", email: "david@mavunoone.com", department: "Warehouse", status: "inactive", salary: 600000, joinDate: "2023-09-01" },
-  { id: 6, name: "Grace Mwangi", role: "Customer Support", phone: "0767890123", email: "grace@mavunoone.com", department: "Operations", status: "active", salary: 700000, joinDate: "2023-11-15" },
-];
+type StaffUser = { id: number; name: string; email: string; phone: string | null; role: string; createdAt: string };
 
-const departments = ["Sales", "Inventory", "Logistics", "Finance", "Warehouse", "Operations", "Management"];
-const roles = ["POS Operator", "Stock Manager", "Delivery Driver", "Cashier", "Warehouse Assistant", "Customer Support", "Manager"];
+const roleLabels: Record<string, string> = { admin: "Admin", owner: "Owner", boss: "Boss", manager: "Manager", cashier: "Cashier", storekeeper: "Storekeeper", machine_operator: "Machine Operator", customer: "Customer" };
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState(mockEmployees);
-  const [showForm, setShowForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterDept, setFilterDept] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const actor = readStoredUser();
+  const canProvision = ["admin", "owner"].includes(actor?.role ?? "");
+  const [users, setUsers] = useState<StaffUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [setupUrl, setSetupUrl] = useState("");
+  const [form, setForm] = useState({ name: "", email: "", phone: "", role: "cashier" });
 
-  const filteredEmployees = employees.filter((emp) => {
-    const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          emp.phone.includes(searchTerm) ||
-                          emp.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDept = filterDept === "all" || emp.department === filterDept;
-    const matchesStatus = filterStatus === "all" || emp.status === filterStatus;
-    return matchesSearch && matchesDept && matchesStatus;
-  });
-
-  const activeCount = employees.filter((e) => e.status === "active").length;
-  const inactiveCount = employees.filter((e) => e.status === "inactive").length;
-  const totalPayroll = employees.reduce((sum, e) => sum + e.salary, 0);
-
-  const deleteEmployee = (id: number) => {
-    if (confirm("Taka kuondoa mfanyakazi huyu?")) {
-      setEmployees(employees.filter((e) => e.id !== id));
-    }
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/admin/users");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Users could not be loaded");
+      setUsers(data.users ?? []);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Users could not be loaded");
+    } finally { setLoading(false); }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="text-blue-600" size={32} />
-            Wafanyakazi
-          </h1>
-          <p className="text-gray-600 mt-1">Usimamizi wa timu na firimbi</p>
-        </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Mfanyakazi Mpya
-        </button>
-      </div>
+  useEffect(() => { const timer = window.setTimeout(() => { void loadUsers(); }, 0); return () => window.clearTimeout(timer); }, []);
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Employees */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop"
-            alt="Jumla ya Wafanyakazi"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Jumla ya Wafanyakazi</p>
-            <p className="text-2xl font-bold text-white">{employees.length}</p>
-            <p className="text-xs text-gray-200 mt-1">Juma nzima</p>
-          </div>
-        </div>
+  const createInvitation = async (event: React.FormEvent) => {
+    event.preventDefault(); setMessage(""); setSetupUrl("");
+    const response = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const data = await response.json();
+    if (!response.ok) { setMessage(data.message || "Account could not be created"); return; }
+    setSetupUrl(data.setupUrl); setMessage("Account imeundwa. Mtumie staff link ya kuweka password ndani ya saa 24."); setForm({ name: "", email: "", phone: "", role: "cashier" }); void loadUsers();
+  };
 
-        {/* Active Employees */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop"
-            alt="Wanafanya Kazi"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Wanafanya Kazi</p>
-            <p className="text-2xl font-bold text-white">{activeCount}</p>
-            <p className="text-xs text-gray-200 mt-1">Sasa hivi</p>
-          </div>
-        </div>
-
-        {/* Inactive Employees */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop"
-            alt="Kuchezaana"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Kuchezaana</p>
-            <p className="text-2xl font-bold text-white">{inactiveCount}</p>
-            <p className="text-xs text-gray-200 mt-1">Hawakatikika</p>
-          </div>
-        </div>
-
-        {/* Total Payroll */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
-            alt="Jumla ya Malipo"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Jumla ya Malipo</p>
-            <p className="text-2xl font-bold text-white">
-              TZS {(totalPayroll / 1000000).toFixed(1)}M
-            </p>
-            <p className="text-xs text-gray-200 mt-1">Kwa mwezi</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Add Employee Form */}
-      {showForm && (
-        <div className="card bg-blue-50">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ongeza Mfanyakazi Mpya</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" placeholder="Jina Kamili" className="form-input" />
-            <select className="form-input">
-              <option value="">-- Chagua Jukumu --</option>
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-
-            <input type="tel" placeholder="Simu" className="form-input" />
-            <input type="email" placeholder="Barua Pepe" className="form-input" />
-
-            <select className="form-input">
-              <option value="">-- Chagua Idara --</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-
-            <input type="number" placeholder="Mshahara (TZS)" className="form-input" />
-
-            <input type="date" placeholder="Tarehe ya Kuajiriwa" className="form-input" />
-            <select className="form-input">
-              <option value="active">Kazi</option>
-              <option value="inactive">Hakatikika</option>
-            </select>
-
-            <div className="md:col-span-2 flex gap-2">
-              <button className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                Hifadhi Mfanyakazi
-              </button>
-              <button
-                onClick={() => setShowForm(false)}
-                className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition font-semibold"
-              >
-                Kataa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="card flex flex-col md:flex-row gap-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Tafuta jina, simu, au email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="form-input"
-          />
-        </div>
-
-        <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="form-input md:w-48">
-          <option value="all">-- Idara Zote --</option>
-          {departments.map((dept) => (
-            <option key={dept} value={dept}>
-              {dept}
-            </option>
-          ))}
-        </select>
-
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="form-input md:w-40">
-          <option value="all">-- Hali Zote --</option>
-          <option value="active">Kazi</option>
-          <option value="inactive">Hakatikika</option>
-        </select>
-      </div>
-
-      {/* Employees Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100 border-b">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Jina</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Jukumu</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Idara</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Simu & Email</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Mshahara</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Hali</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Vitendo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filteredEmployees.map((emp) => (
-                <tr key={emp.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 font-medium text-gray-900">{emp.name}</td>
-                  <td className="px-4 py-3 text-gray-600 text-sm">{emp.role}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                      {emp.department}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Phone size={14} className="text-gray-500" />
-                      {emp.phone}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Mail size={12} className="text-gray-500" />
-                      {emp.email}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                    TZS {(emp.salary / 1000000).toFixed(2)}M
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        emp.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-orange-100 text-orange-800"
-                      }`}
-                    >
-                      {emp.status === "active" ? "✅ Kazi" : "⏸️ Hakatikika"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-100 rounded transition">
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => deleteEmployee(emp.id)}
-                        className="text-red-600 hover:text-red-800 p-1 hover:bg-red-100 rounded transition"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredEmployees.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <Users size={32} className="mx-auto mb-2 opacity-50" />
-            <p>Hakuna wafanyakazi wanaolingana na hiari yako</p>
-          </div>
-        )}
-      </div>
-
-      {/* Payroll Summary */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Muhtasari wa Malipo</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <p className="text-sm text-gray-600 mb-1">Wastani wa Mshahara</p>
-            <p className="text-2xl font-bold text-green-600">
-              TZS {Math.round(totalPayroll / employees.length / 1000).toLocaleString()}K
-            </p>
-          </div>
-
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <p className="text-sm text-gray-600 mb-1">Jumla ya Malipo (Mwezi)</p>
-            <p className="text-2xl font-bold text-blue-600">
-              TZS {(totalPayroll / 1000000).toFixed(1)}M
-            </p>
-          </div>
-
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <p className="text-sm text-gray-600 mb-1">Wastani kwa Kila Kama</p>
-            <p className="text-2xl font-bold text-purple-600">
-              TZS {Math.round((totalPayroll / employees.length) / 4 / 1000).toLocaleString()}K
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Upcoming Events */}
-      <div className="card bg-yellow-50 border-l-4 border-yellow-500">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="text-yellow-600 flex-shrink-0 mt-1" size={24} />
-          <div>
-            <h3 className="font-semibold text-gray-900">Tukio Ijayo</h3>
-            <ul className="text-sm text-gray-700 mt-2 space-y-1">
-              <li>• Ahmed Hassan - Mwezi wa Kazi wa Miezi 6 (2024-02-15)</li>
-              <li>• Zainab Mohamed - Kuzaliwa (2024-02-22)</li>
-              <li>• John Kipchoge - Likizo ya Kuzaliwa (2024-03-10)</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="space-y-6"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Identity & access</p><h1 className="mt-1 flex items-center gap-2 text-3xl font-black text-slate-900"><Users size={28} className="text-emerald-600" />Accounts za staff</h1><p className="mt-2 text-slate-500">Kila mtu ana account yake; hakuna password ya pamoja ya Boss au Admin.</p></div></div>
+    {!canProvision && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"><ShieldCheck className="mb-2 text-amber-700" size={20} /><p>Unaweza kuona account list, lakini Admin/Owner pekee ndiye anayeweza kutengeneza invitation.</p></div>}
+    {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{message}</div>}
+    {setupUrl && <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5"><p className="font-bold text-sky-950">One-time password setup link</p><p className="mt-1 text-sm text-sky-800">Mtumie staff link hii kupitia njia salama. Itamalizika ndani ya saa 24 na staff ataweka password yake mwenyewe.</p><div className="mt-3 flex flex-col gap-2 sm:flex-row"><input readOnly value={setupUrl} className="min-w-0 flex-1 rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-700" /><button type="button" onClick={() => void navigator.clipboard.writeText(setupUrl)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-700 px-4 py-2 text-sm font-bold text-white"><Copy size={16} />Copy link</button></div></div>}
+    {canProvision && <form onSubmit={createInvitation} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center gap-2"><UserPlus className="text-emerald-600" size={20} /><h2 className="text-lg font-black text-slate-900">Tengeneza staff account</h2></div><div className="grid gap-3 sm:grid-cols-2"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Jina kamili" className="rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-600" /><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email ya staff" className="rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-600" /><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone (optional)" className="rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-600" /><select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-600"><option value="cashier">Cashier</option><option value="storekeeper">Storekeeper</option><option value="machine_operator">Machine Operator</option><option value="manager">Manager</option><option value="boss">Boss</option><option value="admin">Admin</option></select></div><button type="submit" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800"><UserPlus size={18} />Create invitation</button></form>}
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">Watumiaji wa mfumo</h2><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">{users.length} accounts</span></div>{loading ? <div className="flex items-center gap-2 py-10 text-slate-500"><Loader2 className="animate-spin" size={18} />Inapakia users...</div> : users.length === 0 ? <p className="py-10 text-center text-slate-500">Hakuna user record.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left"><thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-3">Jina</th><th className="px-3 py-3">Email</th><th className="px-3 py-3">Role</th><th className="px-3 py-3">Created</th></tr></thead><tbody className="divide-y divide-slate-100">{users.map((user) => <tr key={user.id}><td className="px-3 py-4 font-bold text-slate-800">{user.name}</td><td className="px-3 py-4 text-slate-600">{user.email}</td><td className="px-3 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{roleLabels[user.role] ?? user.role}</span></td><td className="px-3 py-4 text-sm text-slate-500">{new Date(user.createdAt).toLocaleDateString("sw-TZ")}</td></tr>)}</tbody></table></div>}</section>
+  </div>;
 }
