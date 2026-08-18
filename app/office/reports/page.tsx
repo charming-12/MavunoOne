@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Download, Loader2, Printer, TrendingUp } from "lucide-react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 
 const money = (value: number) => `TZS ${value.toLocaleString()}`;
@@ -15,20 +16,35 @@ export default function ReportsPage() {
   const averageExpenses = daily.length ? (analytics?.totalExpenses ?? 0) / daily.length : 0;
   const margin = analytics?.totalSales ? ((analytics.totalProfit / analytics.totalSales) * 100).toFixed(1) : "0.0";
   const bestDay = daily.reduce((best, day) => day.profit > (best?.profit ?? -Infinity) ? day : best, daily[0]);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [exportError, setExportError] = useState("");
 
   const downloadReport = async (format: "pdf" | "csv" | "json") => {
     const from = daily[0]?.date ?? new Date().toISOString().slice(0, 10);
     const to = daily[daily.length - 1]?.date ?? from;
     const payload = { period: `${from} to ${to}`, reports: daily.map((day) => ({ date: day.date, totalSales: day.sales, totalExpenses: day.expenses, profit: day.profit, transactions: 0, topProduct: "—" })), summary: { totalRevenue: analytics?.totalSales ?? 0, totalExpenses: analytics?.totalExpenses ?? 0, netProfit: analytics?.totalProfit ?? 0, averageTransaction: 0, topProducts: [], customerCount: 0 } };
-    const response = await fetch("/api/analytics/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: payload, format, period: { from, to } }) });
-    if (!response.ok) throw new Error("Report export failed");
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `mavunoone-analytics-${from}-${to}.${format}`;
-    link.click();
-    URL.revokeObjectURL(url);
+    setExporting(format);
+    setExportError("");
+    try {
+      const response = await fetch("/api/analytics/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: payload, format, period: { from, to } }) });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null) as { error?: string; message?: string } | null;
+        throw new Error(errorBody?.error || errorBody?.message || `Export failed (${response.status})`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `mavunoone-analytics-${from}-${to}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Report export failed");
+    } finally {
+      setExporting(null);
+    }
   };
 
   if (analyticsQuery.isLoading) return <div className="flex min-h-[320px] items-center justify-center gap-2 text-slate-500"><Loader2 className="animate-spin" size={20} />Inapakia ripoti...</div>;
@@ -36,7 +52,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Business intelligence</p><h1 className="mt-1 text-3xl font-black text-slate-900">Ripoti za biashara</h1><p className="mt-2 text-slate-500">Mauzo, matumizi na faida halisi za siku saba zilizopita.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void downloadReport("pdf")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-800"><Download size={17} />Download PDF</button><button type="button" onClick={() => void downloadReport("csv")} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50"><Download size={16} />CSV</button><button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50"><Printer size={17} />Print</button></div></div>
+      <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Business intelligence</p><h1 className="mt-1 text-3xl font-black text-slate-900">Ripoti za biashara</h1><p className="mt-2 text-slate-500">Mauzo, matumizi na faida halisi za siku saba zilizopita.</p></div><div className="flex flex-wrap gap-2"><button type="button" disabled={Boolean(exporting)} onClick={() => void downloadReport("pdf")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60"><Download size={17} />{exporting === "pdf" ? "Inatengeneza PDF..." : "Download PDF"}</button><button type="button" disabled={Boolean(exporting)} onClick={() => void downloadReport("csv")} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"><Download size={16} />CSV</button><button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50"><Printer size={17} />Print</button></div></div>{exportError && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">PDF/export haikufanikiwa: {exportError}</div>}
 
       <div className="grid gap-4 md:grid-cols-3"><div className="rounded-2xl bg-emerald-700 p-5 text-white shadow-lg"><p className="text-sm text-emerald-100">Jumla ya mauzo</p><p className="mt-2 text-3xl font-black">{money(analytics?.totalSales ?? 0)}</p><p className="mt-1 text-xs text-emerald-100">Siku 7 zilizopita</p></div><div className="rounded-2xl bg-slate-900 p-5 text-white shadow-lg"><p className="text-sm text-slate-300">Jumla ya matumizi</p><p className="mt-2 text-3xl font-black">{money(analytics?.totalExpenses ?? 0)}</p><p className="mt-1 text-xs text-slate-400">Gharama zilizorekodiwa</p></div><div className="rounded-2xl bg-amber-500 p-5 text-slate-950 shadow-lg"><p className="text-sm text-amber-950/70">Faida ya kipindi</p><p className="mt-2 text-3xl font-black">{money(analytics?.totalProfit ?? 0)}</p><p className="mt-1 text-xs text-amber-950/70">Margin {margin}%</p></div></div>
 
