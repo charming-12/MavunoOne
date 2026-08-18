@@ -15,8 +15,8 @@ async function main() {
   console.log("🌱 Starting MavunoOne Database Seed...\n");
   console.log("Environment loaded:");
   console.log(`  DATABASE_URL: ${process.env.DATABASE_URL ? '✓' : '✗'}`);
-  console.log(`  ADMIN Email:  ${process.env.MAVUNO_SUPER_ADMIN_EMAIL || 'default'}`);
-  console.log(`  BOSS Email:   ${process.env.MAVUNO_BOSS_EMAIL || 'default'}\n`);
+  console.log(`  ADMIN Email configured: ${process.env.MAVUNO_SUPER_ADMIN_EMAIL ? '✓' : '✗'}`);
+  console.log(`  BOSS Email configured:  ${process.env.MAVUNO_BOSS_EMAIL ? '✓' : '✗'}\n`);
 
   try {
     const result = await seedDatabase();
@@ -25,14 +25,12 @@ async function main() {
     console.log("📝 Test Credentials Created:\n");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("\n👤 ADMIN Account:");
-    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_EMAIL || process.env.MAVUNO_SUPER_ADMIN_EMAIL || "admin@mavunoone.co.tz"}`);
-    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_SUPER_ADMIN_PASSWORD || process.env.MAVUNO_SUPER_ADMIN_PASSWORD || "Admin@Mavuno2026!"}`);
+    console.log("   Credentials: use the configured Render environment variables");
     console.log(`   Role:     admin`);
     console.log(`   Path:     /office\n`);
 
     console.log("👔 BOSS Account:");
-    console.log(`   Email:    ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_EMAIL || process.env.MAVUNO_BOSS_EMAIL || "boss@mavunoone.co.tz"}`);
-    console.log(`   Password: ${process.env.NEXT_PUBLIC_MAVUNO_BOSS_PASSWORD || process.env.MAVUNO_BOSS_PASSWORD || "Boss@Mavuno2026!"}`);
+    console.log("   Credentials: use the configured Render environment variables");
     console.log(`   Role:     boss`);
     console.log(`   Path:     /boss\n`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");

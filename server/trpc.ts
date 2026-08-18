@@ -18,3 +18,11 @@ export const protectedProcedure = t.procedure.use(async (opts) => {
   if (!user) throw new Error("Unauthorized");
   return opts.next({ ctx: { user } });
 });
+
+const officeRoles = new Set(["admin", "owner", "manager", "cashier", "storekeeper", "machine_operator"]);
+export const officeProcedure = t.procedure.use(async (opts) => {
+  const user = opts.ctx.user;
+  if (!user) throw new Error("Unauthorized");
+  if (!officeRoles.has(user.role)) throw new Error("Office action is not allowed for this role");
+  return opts.next({ ctx: { user } });
+});

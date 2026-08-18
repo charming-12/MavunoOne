@@ -6,9 +6,9 @@ import { verifyPassword } from "@/lib/password";
 import { createSessionToken, sessionCookieOptions } from "@/lib/session";
 import { checkRateLimit, getClientId, RATE_LIMITS, formatResetTime } from "@/lib/rate-limit";
 
-const SUPER_ADMIN_EMAIL = process.env.MAVUNO_SUPER_ADMIN_EMAIL ?? "admin@mavunoone.co.tz";
+const SUPER_ADMIN_EMAIL = process.env.MAVUNO_SUPER_ADMIN_EMAIL ?? "";
 const SUPER_ADMIN_PASSWORD = process.env.MAVUNO_SUPER_ADMIN_PASSWORD;
-const BOSS_EMAIL = process.env.MAVUNO_BOSS_EMAIL ?? "boss@mavunoone.co.tz";
+const BOSS_EMAIL = process.env.MAVUNO_BOSS_EMAIL ?? "";
 const BOSS_PASSWORD = process.env.MAVUNO_BOSS_PASSWORD;
 const defaultCredentials = [
   { email: SUPER_ADMIN_EMAIL, password: SUPER_ADMIN_PASSWORD, role: "admin", name: "Super Admin" },

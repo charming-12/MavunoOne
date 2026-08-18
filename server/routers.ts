@@ -1,4 +1,4 @@
-import { router, publicProcedure, protectedProcedure } from "./trpc";
+import { router, publicProcedure, protectedProcedure, officeProcedure } from "./trpc";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { 
@@ -28,7 +28,7 @@ export const appRouter = router({
       });
     }),
     
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         name: z.string().min(1),
         categoryId: z.number().optional(),
@@ -50,7 +50,7 @@ export const appRouter = router({
         }).returning();
       }),
     
-    updateStock: protectedProcedure
+    updateStock: officeProcedure
       .input(z.object({ id: z.number(), amount: z.number() }))
       .mutation(async ({ input }) => {
         const [updated] = await db.update(products)
@@ -100,7 +100,7 @@ export const appRouter = router({
       });
     }),
 
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         customerId: z.number().optional(),
         customerType: z.string().default("walk_in"),
@@ -292,7 +292,7 @@ export const appRouter = router({
 
   // ===== MACHINE JOBS =====
   machineJobs: router({
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         customerId: z.number().optional(),
         jobType: z.string(),
@@ -345,7 +345,7 @@ export const appRouter = router({
       });
     }),
 
-    updatePosition: protectedProcedure
+    updatePosition: officeProcedure
       .input(z.object({
         id: z.number(),
         lat: z.number(),
@@ -365,7 +365,7 @@ export const appRouter = router({
   }),
 
   deliveries: router({
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         vehicleId: z.number().optional(),
         driverName: z.string(),
@@ -413,7 +413,7 @@ export const appRouter = router({
 
   // ===== EXPENSES =====
   expenses: router({
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         category: z.string(),
         amount: z.number(),
@@ -449,7 +449,7 @@ export const appRouter = router({
 
   // ===== DAILY CLOSURES =====
   dailyClosures: router({
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         openingBalance: z.number(),
         closingBalance: z.number(),
@@ -540,7 +540,7 @@ export const appRouter = router({
       });
     }),
 
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         name: z.string(),
         phone: z.string().optional(),
@@ -582,7 +582,7 @@ export const appRouter = router({
 
     // Record a payment against a customer's debt/balance.
     // Reduces the outstanding balance and sends a payment-received SMS.
-    recordPayment: protectedProcedure
+    recordPayment: officeProcedure
       .input(z.object({
         customerId: z.number(),
         amount: z.number().positive(),
@@ -624,7 +624,7 @@ export const appRouter = router({
       }),
 
     // Send debt-reminder SMS to every customer with an outstanding balance
-    sendDebtRemindersBulk: protectedProcedure.mutation(async () => {
+    sendDebtRemindersBulk: officeProcedure.mutation(async () => {
       const debtors = await db.query.customers.findMany({
         where: and(gt(customers.balance, "0"), eq(customers.isActive, true)),
       });
@@ -658,7 +658,7 @@ export const appRouter = router({
 
   // ===== NOTIFICATIONS =====
   notifications: router({
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         type: z.string(),
         title: z.string(),
@@ -689,7 +689,7 @@ export const appRouter = router({
       return await db.query.categories.findMany();
     }),
 
-    create: protectedProcedure
+    create: officeProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
@@ -715,7 +715,7 @@ export const appRouter = router({
   // ===== SMS NOTIFICATIONS =====
   sms: router({
     // Send raw SMS
-    send: protectedProcedure
+    send: officeProcedure
       .input(z.object({
         phone: z.string(),
         message: z.string(),
@@ -731,7 +731,7 @@ export const appRouter = router({
       }),
 
     // Send bulk SMS
-    sendBulk: protectedProcedure
+    sendBulk: officeProcedure
       .input(z.object({
         recipients: z.array(z.string()),
         message: z.string(),
@@ -743,7 +743,7 @@ export const appRouter = router({
       }),
 
     // Send debt reminder SMS
-    sendDebtReminder: protectedProcedure
+    sendDebtReminder: officeProcedure
       .input(z.object({
         customerPhone: z.string(),
         customerName: z.string(),
@@ -761,7 +761,7 @@ export const appRouter = router({
       }),
 
     // Send sale confirmation SMS
-    sendSaleConfirmation: protectedProcedure
+    sendSaleConfirmation: officeProcedure
       .input(z.object({
         customerPhone: z.string(),
         customerName: z.string(),
@@ -779,7 +779,7 @@ export const appRouter = router({
       }),
 
     // Send payment received SMS
-    sendPaymentReceived: protectedProcedure
+    sendPaymentReceived: officeProcedure
       .input(z.object({
         customerPhone: z.string(),
         customerName: z.string(),
@@ -797,7 +797,7 @@ export const appRouter = router({
       }),
 
     // Send stock alert SMS
-    sendStockAlert: protectedProcedure
+    sendStockAlert: officeProcedure
       .input(z.object({
         managerPhone: z.string(),
         productName: z.string(),
@@ -815,7 +815,7 @@ export const appRouter = router({
       }),
 
     // Sales receipt SMS template
-    sendSalesReceipt: protectedProcedure
+    sendSalesReceipt: officeProcedure
       .input(z.object({
         customerPhone: z.string(),
         customerName: z.string(),
@@ -839,7 +839,7 @@ export const appRouter = router({
       }),
 
     // Welcome SMS template
-    sendWelcome: protectedProcedure
+    sendWelcome: officeProcedure
       .input(z.object({
         customerPhone: z.string(),
         customerName: z.string(),
@@ -850,7 +850,7 @@ export const appRouter = router({
       }),
 
     // Vehicle dispatch SMS template
-    sendVehicleDispatch: protectedProcedure
+    sendVehicleDispatch: officeProcedure
       .input(z.object({
         recipientPhone: z.string(),
         invoiceNumber: z.string(),
@@ -865,7 +865,7 @@ export const appRouter = router({
       }),
 
     // Low-stock admin alert
-    sendLowStockAlert: protectedProcedure
+    sendLowStockAlert: officeProcedure
       .input(z.object({
         managerPhone: z.string(),
         productName: z.string(),

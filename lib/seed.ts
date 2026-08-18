@@ -10,9 +10,9 @@ const requiredSeedSecret = (value: string | undefined, name: string) => {
 
 
 export async function seedDatabase() {
-  const SEED_SUPER_ADMIN_EMAIL = process.env.MAVUNO_SUPER_ADMIN_EMAIL ?? "admin@mavunoone.co.tz";
+  const SEED_SUPER_ADMIN_EMAIL = requiredSeedSecret(process.env.MAVUNO_SUPER_ADMIN_EMAIL, "MAVUNO_SUPER_ADMIN_EMAIL");
   const SEED_SUPER_ADMIN_PASSWORD = requiredSeedSecret(process.env.MAVUNO_SUPER_ADMIN_PASSWORD, "MAVUNO_SUPER_ADMIN_PASSWORD");
-  const SEED_BOSS_EMAIL = process.env.MAVUNO_BOSS_EMAIL ?? "boss@mavunoone.co.tz";
+  const SEED_BOSS_EMAIL = requiredSeedSecret(process.env.MAVUNO_BOSS_EMAIL, "MAVUNO_BOSS_EMAIL");
   const SEED_BOSS_PASSWORD = requiredSeedSecret(process.env.MAVUNO_BOSS_PASSWORD, "MAVUNO_BOSS_PASSWORD");
   try {
     console.log("🌱 Starting database seed...");
