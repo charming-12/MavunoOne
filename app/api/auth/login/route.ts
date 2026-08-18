@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { users } from "@/drizzle/schema";
 import { verifyPassword } from "@/lib/password";
 import { createSessionToken, sessionCookieOptions } from "@/lib/session";
-import { checkRateLimit, getClientId, RATE_LIMITS, formatResetTime } from "@/lib/rate-limit";
+import { getRateLimitStatus, recordRateLimitFailure, getClientId, RATE_LIMITS, formatResetTime } from "@/lib/rate-limit";
 
 const SUPER_ADMIN_EMAIL = process.env.MAVUNO_SUPER_ADMIN_EMAIL ?? "";
 const SUPER_ADMIN_PASSWORD = process.env.MAVUNO_SUPER_ADMIN_PASSWORD;
@@ -32,7 +32,8 @@ function authenticatedResponse(user: { id?: number; name?: string; email: string
 
 export async function POST(request: NextRequest) {
   const clientId = getClientId(request);
-  const loginLimit = checkRateLimit(`login:${clientId}`, RATE_LIMITS.LOGIN);
+  const loginKey = `login:${clientId}`;
+  const loginLimit = getRateLimitStatus(loginKey, RATE_LIMITS.LOGIN);
   if (!loginLimit.allowed) {
     return NextResponse.json({ message: `Majaribio mengi ya kuingia. Jaribu tena baada ya ${formatResetTime(loginLimit.resetTime)}.` }, { status: 429 });
   }
@@ -47,14 +48,29 @@ export async function POST(request: NextRequest) {
       return authenticatedResponse({ email: defaultUser.email, role: defaultUser.role, name: defaultUser.name });
     }
 
-    const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) });
-    if (!existingUser) return NextResponse.json({ message: "Akaunti hii haipo. Tumia akaunti ya MavunoOne." }, { status: 401 });
-    if (!existingUser.passwordHash) return NextResponse.json({ message: "Akaunti ya mtumiaji haijaanzishwa vizuri. Tumia invitation link kuweka password." }, { status: 401 });
+    const existingUser = await Promise.race([
+      db.query.users.findFirst({ where: eq(users.email, email) }),
+      new Promise<undefined>((_, reject) => setTimeout(() => reject(new Error("AUTH_DATABASE_TIMEOUT")), 15000)),
+    ]);
+    if (!existingUser) {
+      recordRateLimitFailure(loginKey, RATE_LIMITS.LOGIN);
+      return NextResponse.json({ message: "Akaunti hii haipo. Tumia akaunti ya MavunoOne." }, { status: 401 });
+    }
+    if (!existingUser.passwordHash) {
+      recordRateLimitFailure(loginKey, RATE_LIMITS.LOGIN);
+      return NextResponse.json({ message: "Akaunti ya mtumiaji haijaanzishwa vizuri. Tumia invitation link kuweka password." }, { status: 401 });
+    }
     const isValid = await verifyPassword(password, existingUser.passwordHash);
-    if (!isValid) return NextResponse.json({ message: "Neno la siri lisilo sahihi." }, { status: 401 });
+    if (!isValid) {
+      recordRateLimitFailure(loginKey, RATE_LIMITS.LOGIN);
+      return NextResponse.json({ message: "Neno la siri lisilo sahihi." }, { status: 401 });
+    }
     return authenticatedResponse({ id: existingUser.id, name: existingUser.name, email: existingUser.email, role: existingUser.role });
   } catch (error) {
     console.error("Login error:", error);
+    if (error instanceof Error && error.message === "AUTH_DATABASE_TIMEOUT") {
+      return NextResponse.json({ message: "Database inachelewa kuamka. Subiri sekunde 15 kisha jaribu mara moja tena; request hii haijahesabiwa kama password failure." }, { status: 503 });
+    }
     return NextResponse.json({ message: "Kumetokea kosa katika kuingia." }, { status: 500 });
   }
 }

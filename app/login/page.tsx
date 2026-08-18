@@ -32,6 +32,8 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setSlowLoginNotice(false);
     const slowTimer = window.setTimeout(() => setSlowLoginNotice(true), 4000);
+    const controller = new AbortController();
+    const timeoutTimer = window.setTimeout(() => controller.abort(), 20000);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -43,6 +45,8 @@ export default function LoginPage() {
           email: formData.email.trim(),
           password: formData.password,
         }),
+        signal: controller.signal,
+        cache: "no-store",
       });
 
       const result = await response.json();
@@ -67,9 +71,10 @@ export default function LoginPage() {
 
       router.replace("/shop");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Login failed.");
+      setError(submitError instanceof DOMException && submitError.name === "AbortError" ? "Login imechukua muda mrefu kuliko kawaida. Render/Neon inaweza kuwa inaamka; subiri kidogo kisha jaribu mara moja tena." : submitError instanceof Error ? submitError.message : "Login failed.");
     } finally {
       window.clearTimeout(slowTimer);
+      window.clearTimeout(timeoutTimer);
       setIsSubmitting(false);
     }
   };
