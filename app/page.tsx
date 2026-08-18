@@ -12,22 +12,19 @@ const stats = [
 
 const productCards = [
   {
-    title: "Mahindi & Alizeti",
-    description: "Track inventory, pricing, and sales across maize and oilseed products.",
-    image:
-      "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80",
+    title: "Mafuta ya Alizeti",
+    description: "Picha halisi ya mafuta ya alizeti, mbegu zake, na ufuatiliaji wa stock ya bidhaa.",
+    image: "/products/sunflower-oil-sizes.jpg",
   },
   {
-    title: "Mifugo & Feed",
-    description: "Manage animal feed, livestock items, and farm essentials with one dashboard.",
-    image:
-      "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=900&q=80",
+    title: "Mahindi na Unga wa Mahindi",
+    description: "Tenganisha nafaka ya mahindi na unga wa mahindi kwa bei, unit, na stock sahihi.",
+    image: "/products/maize-cobs-commons.jpg",
   },
   {
-    title: "Uwasilishaji",
-    description: "Monitor delivery flow, routing, and dispatch updates in real time.",
-    image:
-      "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=900&q=80",
+    title: "Animal Feeds na By-products",
+    description: "Dhibiti uduv, mashudu, pumba, chokka na bidhaa nyingine za mifugo kwa picha husika.",
+    image: "/products/animal-feeds.jpg",
   },
 ];
 

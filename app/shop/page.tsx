@@ -10,11 +10,12 @@ type CartItem = { id: number; name: string; price: number; quantity: number; uni
 const CART_KEY = "mavunoone-shop-cart";
 const visualStyles = ["from-emerald-700 to-teal-500", "from-amber-600 to-yellow-400", "from-sky-700 to-cyan-400", "from-slate-800 to-slate-500"];
 const productImages: Array<{ keywords: string[]; src: string; alt: string }> = [
-  { keywords: ["mafuta", "oil"], src: "/products/sunflower-oil.jpg", alt: "Mafuta ya alizeti" },
-  { keywords: ["alizeti", "sunflower"], src: "/products/sunflower-flower.jpg", alt: "Alizeti na mbegu zake" },
-  { keywords: ["unga", "flour"], src: "/products/maize-flour.jpg", alt: "Unga wa mahindi" },
-  { keywords: ["mahindi", "maize", "corn"], src: "/products/maize-grain.jpg", alt: "Mahindi" },
-  { keywords: ["udaga", "choka"], src: "/products/udaga-choka.jpg", alt: "Udaga na choka" },
+  { keywords: ["mafuta", "oil"], src: "/products/sunflower-oil-sizes.jpg", alt: "Mafuta ya alizeti kwenye chupa na gallon za sizes tofauti" },
+  { keywords: ["animal", "feed", "uduv", "chakula cha mifugo", "mifugo"], src: "/products/animal-feeds.jpg", alt: "Animal feeds kwa mifugo" },
+  { keywords: ["mashudu", "pumba", "bran", "cake", "by-product", "byproduct", "chokka", "choka", "udaga"], src: "/products/byproducts.jpg", alt: "Mashudu, pumba na by-products" },
+  { keywords: ["unga", "flour", "meal"], src: "/products/maize-flour.jpg", alt: "Unga wa mahindi" },
+  { keywords: ["mahindi", "maize", "corn", "grain"], src: "/products/maize-cobs-commons.jpg", alt: "Mahindi ya nafaka na magunzi" },
+  { keywords: ["alizeti", "sunflower", "seed"], src: "/products/sunflower-flower-commons.jpg", alt: "Ua la alizeti" },
 ];
 const imageForProduct = (name: string) => {
   const normalized = name.toLowerCase();

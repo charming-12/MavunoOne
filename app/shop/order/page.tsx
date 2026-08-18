@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { CheckCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+type ProviderInstruction = { name: string | null; number: string | null };
+type PaymentInstructions = { enabled: boolean; provider: string | null; merchantName: string | null; merchantNumber: string | null; mpesa: ProviderInstruction | null; tigopesa: ProviderInstruction | null };
+
 export default function OrderPage() {
   const [step, setStep] = useState(1);
   const [cartTotal, setCartTotal] = useState(0);
-  const [paymentInstructions, setPaymentInstructions] = useState<{ enabled: boolean; provider: string | null; merchantNumber: string | null }>({ enabled: false, provider: null, merchantNumber: null });
+  const [paymentInstructions, setPaymentInstructions] = useState<PaymentInstructions>({ enabled: false, provider: null, merchantName: null, merchantNumber: null, mpesa: null, tigopesa: null });
 
   useEffect(() => {
     try {
@@ -23,7 +26,7 @@ export default function OrderPage() {
     fetch("/api/payment/instructions")
       .then((response) => response.json())
       .then((data) => setPaymentInstructions(data))
-      .catch(() => setPaymentInstructions({ enabled: false, provider: null, merchantNumber: null }));
+      .catch(() => setPaymentInstructions({ enabled: false, provider: null, merchantName: null, merchantNumber: null, mpesa: null, tigopesa: null }));
   }, []);
 
   const [formData, setFormData] = useState({
@@ -35,6 +38,7 @@ export default function OrderPage() {
     paymentMethod: "cash",
   });
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const activePayment = formData.paymentMethod === "mpesa" ? paymentInstructions.mpesa : formData.paymentMethod === "tigopesa" ? paymentInstructions.tigopesa : null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -220,7 +224,7 @@ export default function OrderPage() {
             <div className="card">
               <h2 className="text-lg font-semibold mb-4">Njia ya Malipo</h2>
               <div className="space-y-3">
-                {["cash", "mpesa", "bank"].map((method) => (
+                {["cash", "mpesa", "tigopesa", "bank"].map((method) => (
                   <label key={method} className="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50" style={{
                     borderColor: formData.paymentMethod === method ? '#16a34a' : '#e5e7eb'
                   }}>
@@ -236,17 +240,19 @@ export default function OrderPage() {
                       <p className="font-medium text-gray-900">
                         {method === "cash" && "Pesa Taslimu (COD)"}
                         {method === "mpesa" && "M-Pesa"}
+                        {method === "tigopesa" && "Tigo Pesa / Mixx by Yas"}
                         {method === "bank" && "Benki"}
                       </p>
                       <p className="text-sm text-gray-600">
                         {method === "cash" && "Lipi mlangoni"}
-                        {method === "mpesa" && "Unify mlipuko M-Pesa"}
+                        {method === "mpesa" && "Lipa kwa namba ya Vodacom M-Pesa"}
+                        {method === "tigopesa" && "Lipa kwa namba ya Tigo Pesa / Mixx by Yas"}
                         {method === "bank" && "Toka benki yako"}
                       </p>
                     </div>
                   </label>
                 ))}
-                {formData.paymentMethod === "mpesa" && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"><p className="font-bold">Maelekezo ya M-Pesa / Tigo Pesa</p>{paymentInstructions.enabled ? <p className="mt-1">Tuma TZS {cartTotal.toLocaleString()} kwenda <strong>{paymentInstructions.merchantNumber}</strong> ({paymentInstructions.provider}). Tutathibitisha oda baada ya mawasiliano ya simu.</p> : <p className="mt-1">Lipa number bado haijawekwa na biashara. Chagua Cash au wasiliana na biashara kabla ya kutuma pesa.</p>}</div>}
+                {(formData.paymentMethod === "mpesa" || formData.paymentMethod === "tigopesa") && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"><p className="font-bold">Maelekezo ya {formData.paymentMethod === "mpesa" ? "M-Pesa" : "Tigo Pesa / Mixx by Yas"}</p>{paymentInstructions.enabled && activePayment?.number ? <p className="mt-1">Tuma TZS {cartTotal.toLocaleString()} kwenda <strong>{activePayment.number}</strong>{activePayment.name ? <> ({activePayment.name})</> : null}. Tutathibitisha oda baada ya mawasiliano ya simu.</p> : <p className="mt-1">Lipa Number ya {formData.paymentMethod === "mpesa" ? "M-Pesa" : "Tigo Pesa"} bado haijawekwa. Admin aweke namba yake kwenye Setup Wizard.</p>}</div>}
               </div>
             </div>
           )}
