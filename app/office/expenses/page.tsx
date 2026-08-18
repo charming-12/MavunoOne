@@ -1,360 +1,58 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import { Receipt, AlertCircle, Plus, Trash2, Edit2, Calendar } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertCircle, Calendar, CheckCircle2, Loader2, Plus, Receipt, Save, Wallet } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
-// Mock expense data
-const mockExpenses = [
-  { id: 1, category: "Electricity", amount: 450000, date: "2024-01-20", description: "Monthly power bill", recurring: true, vendor: "Tanzania Power" },
-  { id: 2, category: "Transport", amount: 200000, date: "2024-01-20", description: "Fuel for delivery", recurring: false, vendor: "Petrol Station" },
-  { id: 3, category: "Maintenance", amount: 150000, date: "2024-01-18", description: "Vehicle repair", recurring: false, vendor: "Garage XYZ" },
-  { id: 4, category: "Rent", amount: 5000000, date: "2024-01-15", description: "Monthly rent", recurring: true, vendor: "Landlord" },
-  { id: 5, category: "Supplies", amount: 350000, date: "2024-01-19", description: "Office supplies", recurring: false, vendor: "Supplies Store" },
-  { id: 6, category: "Marketing", amount: 250000, date: "2024-01-17", description: "Radio ads", recurring: true, vendor: "Radio Station" },
-  { id: 7, category: "Staff Salary", amount: 3000000, date: "2024-01-01", description: "Monthly salaries", recurring: true, vendor: "Payroll" },
+const categories = [
+  "Umeme", "Maji", "Internet", "Simu", "Kodi ya Pango", "Mafuta ya Magari",
+  "Transport", "Maintenance", "Security", "Usafi", "Insurance", "Leseni na Vibali",
+  "Supplies", "Mishahara", "Marketing", "Bank Charges", "Supplier", "Nyingine",
 ];
 
-const categories = ["Electricity", "Transport", "Maintenance", "Rent", "Supplies", "Staff Salary", "Marketing", "Insurance", "Training", "Other"];
-
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState(mockExpenses);
+  const expensesQuery = trpc.expenses.list.useQuery({});
+  const createExpense = trpc.expenses.create.useMutation({ onSuccess: () => void expensesQuery.refetch() });
   const [showForm, setShowForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("date");
+  const [form, setForm] = useState({ category: "", amount: "", date: new Date().toISOString().slice(0, 10), provider: "", reference: "", description: "", recurring: false });
 
-  // Calculate metrics
-  const monthlyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const recurringTotal = expenses.filter((e) => e.recurring).reduce((sum, e) => sum + e.amount, 0);
-  const largestExpense = expenses.length > 0 ? Math.max(...expenses.map((e) => e.amount)) : 0;
-  const averageExpense = expenses.length > 0 ? Math.round(monthlyTotal / expenses.length) : 0;
+  const rows = useMemo(() => (expensesQuery.data ?? []).map((expense) => ({
+    ...expense,
+    amountNumber: Number(expense.amount || 0),
+  })), [expensesQuery.data]);
+  const filteredExpenses = useMemo(() => rows.filter((expense) => filterCategory === "all" || expense.category === filterCategory).sort((a, b) => sortBy === "amount" ? b.amountNumber - a.amountNumber : sortBy === "category" ? a.category.localeCompare(b.category) : new Date(b.date).getTime() - new Date(a.date).getTime()), [rows, filterCategory, sortBy]);
+  const total = rows.reduce((sum, expense) => sum + expense.amountNumber, 0);
+  const largest = rows.length ? Math.max(...rows.map((expense) => expense.amountNumber)) : 0;
+  const average = rows.length ? total / rows.length : 0;
+  const categoryBreakdown = categories.map((category) => ({ category, amount: rows.filter((expense) => expense.category === category).reduce((sum, expense) => sum + expense.amountNumber, 0), count: rows.filter((expense) => expense.category === category).length })).filter((item) => item.count > 0);
 
-  const categoryBreakdown = categories.map((cat) => {
-    const categoryExpenses = expenses.filter((e) => e.category === cat);
-    return {
-      category: cat,
-      amount: categoryExpenses.reduce((sum, e) => sum + e.amount, 0),
-      count: categoryExpenses.length,
-    };
-  }).filter((c) => c.amount > 0);
-
-  const filteredExpenses = expenses
-    .filter((e) => filterCategory === "all" || e.category === filterCategory)
-    .sort((a, b) => {
-      if (sortBy === "date") return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (sortBy === "amount") return b.amount - a.amount;
-      if (sortBy === "category") return a.category.localeCompare(b.category);
-      return 0;
-    });
-
-  const deleteExpense = (id: number) => {
-    if (confirm("Taka kuondoa gharama?")) {
-      setExpenses(expenses.filter((e) => e.id !== id));
-    }
+  const submitExpense = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const amount = Number(form.amount);
+    if (!form.category || !Number.isFinite(amount) || amount <= 0) return;
+    const detail = [form.provider && `Provider: ${form.provider}`, form.reference && `Reference: ${form.reference}`, form.recurring && "Recurring: monthly", form.description].filter(Boolean).join(" • ");
+    await createExpense.mutateAsync({ category: form.category, amount, description: detail || undefined, date: form.date ? new Date(`${form.date}T12:00:00`).toISOString() : undefined });
+    setForm({ category: "", amount: "", date: new Date().toISOString().slice(0, 10), provider: "", reference: "", description: "", recurring: false });
+    setShowForm(false);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Receipt className="text-orange-600" size={32} />
-            Gharama za Biashara
-          </h1>
-          <p className="text-gray-600 mt-1">Fuatilia na kufa taharrifu haji gharama</p>
-        </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Gharama Mpya
-        </button>
-      </div>
+  return <div className="space-y-6">
+    <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Bills & expenses</p><h1 className="mt-1 flex items-center gap-2 text-3xl font-black text-slate-900"><Receipt className="text-orange-600" size={30} /> Bills na Gharama</h1><p className="mt-2 text-slate-500">Rekodi umeme, maji, internet, kodi, mafuta, suppliers na gharama nyingine kutoka database halisi.</p></div><button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white shadow-sm hover:bg-emerald-800"><Plus size={18} /> Rekodi bill/gharama</button></header>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Expenses */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
-            alt="Jumla ya Gharama"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Jumla ya Gharama</p>
-            <p className="text-2xl font-bold text-white">
-              TZS {(monthlyTotal / 1000000).toFixed(2)}M
-            </p>
-            <p className="text-xs text-gray-200 mt-1">Mwezi huu</p>
-          </div>
-        </div>
+    {expensesQuery.isLoading && <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500"><Loader2 className="animate-spin" size={18} />Inapakia bills na expenses...</div>}
+    {expensesQuery.error && <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"><AlertCircle size={18} />Bills hazikuweza kupakiwa kutoka database.</div>}
+    {createExpense.error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">Gharama haijahifadhiwa. Tafadhali jaribu tena.</div>}
 
-        {/* Recurring Expenses */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
-            alt="Gharama Zinazorudia"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Gharama Zinazorudia</p>
-            <p className="text-2xl font-bold text-white">
-              TZS {(recurringTotal / 1000000).toFixed(2)}M
-            </p>
-            <p className="text-xs text-gray-200 mt-1">Kila mwezi</p>
-          </div>
-        </div>
+    {showForm && <form onSubmit={submitExpense} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm"><div className="mb-4 flex items-center gap-2"><Wallet className="text-emerald-700" size={20} /><h2 className="text-lg font-black text-emerald-950">Rekodi bill au gharama mpya</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><select required value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm"><option value="">Chagua category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select><input required type="number" min="1" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} placeholder="Kiasi (TZS)" className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm" /><input required type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm" /><input value={form.provider} onChange={(event) => setForm({ ...form, provider: event.target.value })} placeholder="Provider/Muuzaji" className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm" /><input value={form.reference} onChange={(event) => setForm({ ...form, reference: event.target.value })} placeholder="Invoice/reference number" className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm" /><input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Maelezo ya bill" className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm" /></div><label className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-950"><input type="checkbox" checked={form.recurring} onChange={(event) => setForm({ ...form, recurring: event.target.checked })} className="h-4 w-4 accent-emerald-700" />Hii ni bill inayojirudia kila mwezi</label><div className="mt-5 flex flex-wrap gap-3"><button type="submit" disabled={createExpense.isPending} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white disabled:opacity-60"><Save size={17} />{createExpense.isPending ? "Inahifadhi..." : "Hifadhi bill"}</button><button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-slate-200 bg-white px-5 py-3 font-bold text-slate-700">Ghairi</button></div></form>}
 
-        {/* Largest Expense */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
-            alt="Gharama Kubwa Zaidi"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Gharama Kubwa Zaidi</p>
-            <p className="text-2xl font-bold text-white">
-              TZS {(largestExpense / 1000000).toFixed(2)}M
-            </p>
-            <p className="text-xs text-gray-200 mt-1">Katika orodha</p>
-          </div>
-        </div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Total recorded</p><p className="mt-2 text-2xl font-black text-slate-900">TZS {total.toLocaleString()}</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Bills/expenses</p><p className="mt-2 text-2xl font-black text-slate-900">{rows.length}</p></div><div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm"><p className="text-sm text-amber-700">Largest entry</p><p className="mt-2 text-2xl font-black text-amber-950">TZS {largest.toLocaleString()}</p></div><div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm"><p className="text-sm text-emerald-700">Average entry</p><p className="mt-2 text-2xl font-black text-emerald-950">TZS {Math.round(average).toLocaleString()}</p></div></div>
 
-        {/* Average Expense */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
-            alt="Wastani ya Gharama"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Wastani ya Gharama</p>
-            <p className="text-2xl font-bold text-white">
-              TZS {(averageExpense / 1000).toLocaleString()}K
-            </p>
-            <p className="text-xs text-gray-200 mt-1">Kwa kila kaidi</p>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setFilterCategory("all")} className={`rounded-xl px-3 py-2 text-sm font-bold ${filterCategory === "all" ? "bg-slate-900 text-white" : "bg-white text-slate-600"}`}>Zote</button>{categories.slice(0, 6).map((category) => <button type="button" key={category} onClick={() => setFilterCategory(category)} className={`rounded-xl px-3 py-2 text-sm font-bold ${filterCategory === category ? "bg-emerald-700 text-white" : "bg-white text-slate-600"}`}>{category}</button>)}</div><select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"><option value="date">Mpya kwanza</option><option value="amount">Kiasi kikubwa</option><option value="category">Category</option></select></div>
 
-      {/* Add Expense Form */}
-      {showForm && (
-        <div className="card bg-green-50">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Rekodi Gharama Mpya</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <select className="form-input">
-              <option value="">-- Chagua Kategori --</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="min-w-[760px] w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-4">Category</th><th className="px-5 py-4">Maelezo/Provider</th><th className="px-5 py-4">Tarehe</th><th className="px-5 py-4 text-right">Kiasi</th><th className="px-5 py-4">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredExpenses.length ? filteredExpenses.map((expense) => <tr key={expense.id} className="hover:bg-emerald-50/30"><td className="px-5 py-4"><span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-800">{expense.category}</span></td><td className="max-w-[380px] px-5 py-4 text-slate-600">{expense.description || "—"}</td><td className="px-5 py-4 text-slate-500"><span className="inline-flex items-center gap-1"><Calendar size={14} />{new Date(expense.date).toLocaleDateString()}</span></td><td className="px-5 py-4 text-right font-black text-slate-900">TZS {expense.amountNumber.toLocaleString()}</td><td className="px-5 py-4"><span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800"><CheckCircle2 size={13} />Recorded</span></td></tr>) : <tr><td colSpan={5} className="px-6 py-14 text-center text-slate-500">Hakuna bills/expenses za kuonyesha. Anza kwa kubonyeza “Rekodi bill/gharama”.</td></tr>}</tbody></table></div></div>
 
-            <input type="number" placeholder="Kiasi (TZS)" className="form-input" />
-
-            <input type="date" className="form-input" />
-
-            <input type="text" placeholder="Jina la Muuzaji" className="form-input" />
-
-            <textarea placeholder="Maelezo" className="form-input md:col-span-2" rows={3}></textarea>
-
-            <label className="flex items-center gap-2">
-              <input type="checkbox" className="form-checkbox" />
-              <span className="text-sm text-gray-700">Gharama Zinazorudia?</span>
-            </label>
-
-            <div className="md:col-span-2 flex gap-2">
-              <button className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                Hifadhi Gharama
-              </button>
-              <button
-                onClick={() => setShowForm(false)}
-                className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition font-semibold"
-              >
-                Kataa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Category Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Gharama kwa Kategori</h3>
-          <div className="space-y-3">
-            {categoryBreakdown.map((cat) => (
-              <div key={cat.category}>
-                <div className="flex justify-between mb-1">
-                  <p className="text-sm font-medium text-gray-700">{cat.category}</p>
-                  <p className="text-sm font-bold text-gray-900">TZS {(cat.amount / 1000000).toFixed(2)}M</p>
-                </div>
-                <div className="bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-gradient-to-r from-orange-400 to-red-500 h-3 rounded-full transition-all"
-                    style={{ width: `${(cat.amount / monthlyTotal) * 100}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">{cat.count} kaidi</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Budget vs Actual */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Bajeti vs Halisi</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-2">
-                <p className="text-sm font-medium text-gray-700">Bajeti ya Mwezi</p>
-                <p className="text-sm font-bold text-gray-900">TZS 8.0M</p>
-              </div>
-              <div className="bg-blue-100 rounded-full h-4">
-                <div className="bg-blue-600 h-4 rounded-full" style={{ width: "100%" }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between mb-2">
-                <p className="text-sm font-medium text-gray-700">Gharama Halisi</p>
-                <p className="text-sm font-bold text-red-600">TZS {(monthlyTotal / 1000000).toFixed(2)}M</p>
-              </div>
-              <div className="bg-red-100 rounded-full h-4">
-                <div className="bg-red-600 h-4 rounded-full" style={{ width: `${(monthlyTotal / 8000000) * 100}%` }} />
-              </div>
-            </div>
-
-            <div className="pt-3 border-t">
-              <div className="flex justify-between">
-                <p className="text-sm font-medium text-gray-700">Iliyobaki</p>
-                <p className={`text-sm font-bold ${8000000 - monthlyTotal >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  TZS {((8000000 - monthlyTotal) / 1000000).toFixed(2)}M
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and Sorting */}
-      <div className="card flex flex-col md:flex-row gap-4">
-        <div className="flex-1">
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="form-input"
-          >
-            <option value="all">-- Kategori Zote --</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="form-input md:w-48">
-          <option value="date">Tarehe (Mpya Kwanza)</option>
-          <option value="amount">Kiasi (Kubwa Kwanza)</option>
-          <option value="category">Kategori</option>
-        </select>
-      </div>
-
-      {/* Expenses Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100 border-b">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Kategori</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Maelezo</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Muuzaji</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Tarehe</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Kiasi</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Rudia?</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Vitendo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filteredExpenses.map((exp) => (
-                <tr key={exp.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3">
-                    <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
-                      {exp.category}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{exp.description}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{exp.vendor}</td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-600">
-                    <div className="flex items-center justify-center gap-1">
-                      <Calendar size={14} className="text-gray-500" />
-                      {new Date(exp.date).toLocaleDateString("sw-TZ")}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-red-600">
-                    TZS {(exp.amount / 1000).toLocaleString()}K
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`text-sm font-semibold ${exp.recurring ? "text-green-600" : "text-gray-500"}`}>
-                      {exp.recurring ? "✅ Ndiyo" : "❌ Hapana"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-100 rounded transition">
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => deleteExpense(exp.id)}
-                        className="text-red-600 hover:text-red-800 p-1 hover:bg-red-100 rounded transition"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredExpenses.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-gray-600">Hakuna gharama iliyorekodishwa</p>
-          </div>
-        )}
-      </div>
-
-      {/* Budget Alert */}
-      {monthlyTotal > 7200000 && (
-        <div className="card bg-red-50 border-l-4 border-red-600">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-1" size={24} />
-            <div>
-              <h3 className="font-semibold text-gray-900">Onyo wa Bajeti!</h3>
-              <p className="text-sm text-gray-700 mt-1">
-                Umekuwa na gharama kubwa sana! Umechelewa kwa {((monthlyTotal / 8000000 - 1) * 100).toFixed(0)}% juu ya bajeti.
-              </p>
-              <p className="text-sm text-gray-700 mt-2">
-                Angalia gharama na fanya hatua za kupunguza.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    {categoryBreakdown.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-black text-slate-900">Gharama kwa category</h2><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{categoryBreakdown.map((item) => <div key={item.category} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"><span className="text-sm font-semibold text-slate-700">{item.category} <span className="text-xs text-slate-400">({item.count})</span></span><span className="text-sm font-black text-slate-900">TZS {item.amount.toLocaleString()}</span></div>)}</div></section>}
+  </div>;
 }
