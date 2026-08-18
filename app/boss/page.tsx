@@ -176,6 +176,9 @@ export default function BossDashboard() {
     todaySalesCount: Number(dashboardQuery.data?.todaySalesCount ?? 0),
     lowStockCount: Number(lowStockQuery.data?.length ?? 0),
     totalCustomerDebt: Number(dashboardQuery.data?.totalCustomerDebt ?? 0),
+    stockInKgToday: Number(dashboardQuery.data?.stockInKgToday ?? 0),
+    stockOutKgToday: Number(dashboardQuery.data?.stockOutKgToday ?? 0),
+    inventoryValue: Number(dashboardQuery.data?.inventoryValue ?? 0),
     activeVehicles: vehiclesQuery.data?.filter((vehicle) => ["active", "moving", "delivering"].includes(vehicle.status ?? "")).length ?? 0,
     totalVehicles: vehiclesQuery.data?.length ?? 0,
   };
@@ -216,6 +219,8 @@ export default function BossDashboard() {
             <KpiCard href="/boss/sales" label="Mauzo ya Leo" value={formatMoney(stats.todaySalesTotal)} detail={`${stats.todaySalesCount} mauzo leo`} icon={Wallet} />
             <KpiCard href="/boss/sales" label="Madeni ya Wateja" value={formatMoney(stats.totalCustomerDebt)} detail="Yanahitaji ufuatiliaji" icon={ReceiptText} tone="amber" />
             <KpiCard href="/boss/stock" label="Stock ya Chini" value={`${stats.lowStockCount} bidhaa`} detail="Zinahitaji kuagizwa" icon={Boxes} tone="blue" />
+            <KpiCard href="/boss/stock" label="Stock Movement" value={`${stats.stockInKgToday.toLocaleString()} / ${stats.stockOutKgToday.toLocaleString()} kg`} detail="In / Out leo" icon={Package} tone="slate" />
+            <KpiCard href="/boss/stock" label="Inventory Value" value={formatMoney(stats.inventoryValue)} detail="Cost value ya stock" icon={BarChart3} tone="green" />
             <KpiCard href="/boss/vehicles" label="Magari Yanayofanya Kazi" value={`${stats.activeVehicles} / ${stats.totalVehicles}`} detail="Hali ya magari" icon={Truck} tone="slate" />
           </div>
         )}

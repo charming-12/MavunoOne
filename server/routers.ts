@@ -592,9 +592,15 @@ export const appRouter = router({
   // ===== DASHBOARD STATS =====
   dashboard: router({
     stats: protectedProcedure.query(async () => {
+      const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
       const todaySales = await db.query.sales.findMany({
-        where: gte(sales.createdAt, new Date(new Date().setHours(0, 0, 0, 0))),
+        where: gte(sales.createdAt, todayStart),
       });
+      const [todayStockIn, todayStockOut, inventoryProducts] = await Promise.all([
+        db.query.stockIn.findMany({ where: gte(stockIn.date, todayStart) }),
+        db.query.stockOut.findMany({ where: gte(stockOut.date, todayStart) }),
+        db.query.products.findMany({ where: eq(products.isActive, true) }),
+      ]);
 
       const lowStock = await db.query.products.findMany({
         where: and(
@@ -616,12 +622,18 @@ export const appRouter = router({
         (sum, c) => sum + Number(c.balance || 0),
         0
       );
+      const stockInKgToday = todayStockIn.reduce((sum, row) => sum + Number(row.baseQuantity || row.quantity || 0), 0);
+      const stockOutKgToday = todayStockOut.reduce((sum, row) => sum + Number(row.baseQuantity || row.quantity || 0), 0);
+      const inventoryValue = inventoryProducts.reduce((sum, product) => sum + Number(product.currentStock || 0) * Number(product.costPrice || 0), 0);
 
       return {
         todaySalesTotal,
         todaySalesCount: todaySales.length,
         lowStockCount: lowStock.length,
         totalCustomerDebt,
+        stockInKgToday,
+        stockOutKgToday,
+        inventoryValue,
       };
     }),
   }),
