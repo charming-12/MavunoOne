@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { users } from "@/drizzle/schema";
 import { verifyPassword } from "@/lib/password";
 import { createSessionToken, sessionCookieOptions } from "@/lib/session";
+import { checkRateLimit, getClientId, RATE_LIMITS, formatResetTime } from "@/lib/rate-limit";
 
 const SUPER_ADMIN_EMAIL = process.env.MAVUNO_SUPER_ADMIN_EMAIL ?? "admin@mavunoone.co.tz";
 const SUPER_ADMIN_PASSWORD = process.env.MAVUNO_SUPER_ADMIN_PASSWORD;
@@ -22,6 +23,11 @@ function authenticatedResponse(user: { id?: number; name?: string; email: string
 }
 
 export async function POST(request: NextRequest) {
+  const clientId = getClientId(request);
+  const loginLimit = checkRateLimit(`login:${clientId}`, RATE_LIMITS.LOGIN);
+  if (!loginLimit.allowed) {
+    return NextResponse.json({ message: `Majaribio mengi ya kuingia. Jaribu tena baada ya ${formatResetTime(loginLimit.resetTime)}.` }, { status: 429 });
+  }
   try {
     const body = await request.json();
     const email = String(body.email || "").trim().toLowerCase();
