@@ -243,3 +243,33 @@ export const errorLogs = pgTable("error_logs", {
   emailSentAt: timestamp("emailSentAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+// ===== 21. FARMERS (Wakulima) =====
+export const farmers = pgTable("farmers", {
+  id: serial("id").primaryKey(),
+  farmerNumber: varchar("farmerNumber", { length: 32 }).notNull().unique(),
+  name: varchar("name", { length: 256 }).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  location: varchar("location", { length: 128 }),
+  farmSize: decimal("farmSize", { precision: 10, scale: 2 }),
+  farmSizeUnit: varchar("farmSizeUnit", { length: 16 }).default("acres").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 22. FARMER PAYMENTS / PURCHASE LEDGER =====
+export const farmerPayments = pgTable("farmer_payments", {
+  id: serial("id").primaryKey(),
+  farmerId: integer("farmerId").notNull(),
+  productName: varchar("productName", { length: 256 }).notNull(),
+  quantityKg: decimal("quantityKg", { precision: 12, scale: 2 }).notNull(),
+  pricePerKg: decimal("pricePerKg", { precision: 12, scale: 2 }).notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  paidAmount: decimal("paidAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 32 }).default("cash").notNull(),
+  paymentStatus: varchar("paymentStatus", { length: 32 }).default("unpaid").notNull(),
+  paymentReference: varchar("paymentReference", { length: 128 }),
+  createdBy: integer("createdBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

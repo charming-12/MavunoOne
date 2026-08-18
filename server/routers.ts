@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { 
   products, sales, saleItems, stockIn, stockOut, machineJobs,
   vehicles, deliveries, expenses, dailyClosures, notifications,
-  customers, categories, users, auditLogs
+  customers, categories, users, auditLogs, farmers, farmerPayments
 } from "@/drizzle/schema";
 import { desc, eq, and, gt, gte, lte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
@@ -446,6 +446,37 @@ export const appRouter = router({
         }
         return await db.query.expenses.findMany({ where, orderBy: desc(expenses.date), limit: 200 });
       }),
+  }),
+
+  // ===== FARMERS & FARMER PAYMENTS =====
+  farmers: router({
+    list: protectedProcedure.query(async () => {
+      const rows = await db.query.farmers.findMany({ where: eq(farmers.isActive, true), orderBy: desc(farmers.createdAt), limit: 500 });
+      const ledger = await db.query.farmerPayments.findMany({ orderBy: desc(farmerPayments.createdAt), limit: 1000 });
+      return rows.map((farmer) => {
+        const records = ledger.filter((entry) => entry.farmerId === farmer.id);
+        const totalSupplied = records.reduce((sum, entry) => sum + Number(entry.quantityKg || 0), 0);
+        const totalAmount = records.reduce((sum, entry) => sum + Number(entry.totalAmount || 0), 0);
+        const totalPaid = records.reduce((sum, entry) => sum + Number(entry.paidAmount || 0), 0);
+        return { ...farmer, totalSupplied, totalAmount, totalPaid, balance: totalAmount - totalPaid };
+      });
+    }),
+    payments: protectedProcedure.query(async () => db.query.farmerPayments.findMany({ orderBy: desc(farmerPayments.createdAt), limit: 500 })),
+    create: financeProcedure.input(z.object({ name: z.string().min(2), phone: z.string().optional(), location: z.string().optional(), farmSize: z.number().nonnegative().optional() })).mutation(async ({ input, ctx }) => {
+      const farmerNumber = `F-${Date.now().toString().slice(-8)}`;
+      const [farmer] = await db.insert(farmers).values({ farmerNumber, name: input.name, phone: input.phone, location: input.location, farmSize: input.farmSize ? decimalString(input.farmSize) : null }).returning();
+      await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "farmers", recordId: farmer.id, newValue: farmer });
+      return farmer;
+    }),
+    recordPurchase: financeProcedure.input(z.object({ farmerId: z.number(), productName: z.string().min(1), quantityKg: z.number().positive(), pricePerKg: z.number().positive(), paidAmount: z.number().nonnegative(), paymentMethod: z.string().default("cash"), paymentReference: z.string().optional() })).mutation(async ({ input, ctx }) => {
+      const farmer = await db.query.farmers.findFirst({ where: eq(farmers.id, input.farmerId) });
+      if (!farmer) throw new Error("Farmer not found");
+      const totalAmount = input.quantityKg * input.pricePerKg;
+      const paidAmount = Math.min(input.paidAmount, totalAmount);
+      const [record] = await db.insert(farmerPayments).values({ farmerId: input.farmerId, productName: input.productName, quantityKg: decimalString(input.quantityKg), pricePerKg: decimalString(input.pricePerKg), totalAmount: decimalString(totalAmount), paidAmount: decimalString(paidAmount), balance: decimalString(totalAmount - paidAmount), paymentMethod: input.paymentMethod, paymentReference: input.paymentReference, paymentStatus: paidAmount >= totalAmount ? "paid" : paidAmount > 0 ? "partial" : "unpaid", createdBy: ctx.user?.id }).returning();
+      await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "farmer_payments", recordId: record.id, newValue: record });
+      return record;
+    }),
   }),
 
   // ===== DAILY CLOSURES =====

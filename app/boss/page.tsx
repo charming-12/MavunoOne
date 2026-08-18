@@ -17,6 +17,8 @@ import {
   Camera,
   ShieldCheck,
   Printer,
+  Users,
+  FileText,
 } from "lucide-react";
 import {
   Area,
@@ -162,6 +164,12 @@ export default function BossDashboard() {
   const vehiclesQuery = trpc.vehicles.list.useQuery();
   const analyticsQuery = trpc.analytics.summary.useQuery();
   const productsQuery = trpc.products.list.useQuery();
+  const expensesQuery = trpc.expenses.list.useQuery({});
+  const farmersQuery = trpc.farmers.list.useQuery();
+  const farmerRows = farmersQuery.data ?? [];
+  const totalFarmerDebt = farmerRows.reduce((sum, farmer) => sum + Number(farmer.balance ?? 0), 0);
+  const recentExpenses = (expensesQuery.data ?? []).slice(0, 5);
+  const expenseTotal = (expensesQuery.data ?? []).reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
 
   const stats = {
     todaySalesTotal: Number(dashboardQuery.data?.todaySalesTotal ?? 0),
@@ -177,7 +185,7 @@ export default function BossDashboard() {
   const stockProducts = (productsQuery.data ?? []).filter((product) => Number(product.currentStock ?? 0) > 0).sort((a, b) => Number(b.currentStock ?? 0) - Number(a.currentStock ?? 0)).slice(0, 4);
   const stockTotal = stockProducts.reduce((sum, product) => sum + Number(product.currentStock ?? 0), 0);
   const stockBreakdown = stockProducts.map((product, index) => ({ name: product.name, value: stockTotal ? Math.round((Number(product.currentStock ?? 0) / stockTotal) * 100) : 0, color: ["#16a66a", "#183a5c", "#e6a51b", "#aeb8b5"][index] }));
-  const isLoading = dashboardQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading || vehiclesQuery.isLoading || analyticsQuery.isLoading || productsQuery.isLoading;
+  const isLoading = dashboardQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading || vehiclesQuery.isLoading || analyticsQuery.isLoading || productsQuery.isLoading || expensesQuery.isLoading || farmersQuery.isLoading;
 
   return (
     <div className="min-h-screen bg-[#f7f9f8] text-slate-900">
@@ -214,6 +222,15 @@ export default function BossDashboard() {
 
         <BossCctvPanel />
         <BossPrinterStatus />
+
+        <section className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6">
+            <div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><FileText size={19} className="text-amber-700" /><h3 className="text-lg font-bold text-slate-950">Executive Expenses</h3></div><p className="mt-1 text-sm text-slate-500">Gharama zote zilizorekodiwa na Finance</p></div><Link href="/office/expenses" className="text-xs font-bold text-emerald-700 hover:text-emerald-800">Fungua ledger</Link></div>
+            <div className="mt-4 flex items-end justify-between rounded-xl bg-amber-50 px-4 py-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Total kwenye ledger</p><p className="mt-1 text-2xl font-bold text-amber-950">{formatMoney(expenseTotal)}</p></div><span className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-amber-800">{recentExpenses.length} latest</span></div>
+            <div className="mt-4 divide-y divide-slate-100">{recentExpenses.length ? recentExpenses.map((expense) => <div key={expense.id} className="flex items-center justify-between gap-3 py-3"><div><p className="font-semibold text-slate-900">{expense.description || expense.category}</p><p className="text-xs text-slate-500">{expense.category} · {formatDate(expense.date)}</p></div><p className="whitespace-nowrap text-sm font-bold text-slate-900">{formatMoney(Number(expense.amount ?? 0))}</p></div>) : <p className="py-5 text-sm text-slate-500">Hakuna expenses zilizorekodiwa.</p>}</div>
+          </div>
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6"><div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Users size={19} className="text-emerald-700" /><h3 className="text-lg font-bold text-slate-950">Farmer payments</h3></div><p className="mt-1 text-sm text-slate-500">Muhtasari wa madeni ya wakulima</p></div><Link href="/office/farmers" className="text-xs font-bold text-emerald-700">Angalia</Link></div><p className="mt-6 text-3xl font-bold text-slate-950">{formatMoney(totalFarmerDebt)}</p><p className="mt-1 text-sm text-slate-500">Outstanding farmer balance</p><div className="mt-5 space-y-2">{farmerRows.filter((farmer) => Number(farmer.balance ?? 0) > 0).slice(0, 3).map((farmer) => <div key={farmer.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5"><span className="text-sm font-semibold text-slate-700">{farmer.name}</span><span className="text-sm font-bold text-amber-700">{formatMoney(Number(farmer.balance ?? 0))}</span></div>)}{farmerRows.length === 0 && <p className="text-sm text-slate-500">Hakuna wakulima kwenye database.</p>}</div></div>
+        </section>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.55fr_1fr]">
           <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6">
