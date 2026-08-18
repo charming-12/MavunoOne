@@ -14,7 +14,7 @@ export default function SetupWizardPage() {
     businessName: "",
     location: "",
     timezone: "Africa/Dar_es_Salaam",
-    thermalPrinter: { enabled: false, model: "ESC/POS" },
+    thermalPrinter: { enabled: false, model: "ESC/POS", connectionType: "network", ipAddress: "", port: "9100", paperWidth: "80mm", autoCut: true },
     scale: { enabled: false, model: "URID" },
     payment: { enabled: false, provider: "mpesa", merchantNumber: "", apiBaseUrl: "" , apiKey: "" },
     cctv: { enabled: false, brand: "hikvision", protocol: "rtsp", gatewayUrl: "", streamName: "camera_1", host: "", port: "554", username: "", password: "", streamPath: "" },
@@ -227,6 +227,14 @@ export default function SetupWizardPage() {
                         />
                         Niko na printa
                       </label>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <select value={config.thermalPrinter.connectionType} onChange={(e) => setConfig({ ...config, thermalPrinter: { ...config.thermalPrinter, connectionType: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="network">Network / Ethernet</option><option value="usb">USB kupitia desktop bridge</option></select>
+                        <input value={config.thermalPrinter.model} onChange={(e) => setConfig({ ...config, thermalPrinter: { ...config.thermalPrinter, model: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Model: Epson TM-T20" />
+                        {config.thermalPrinter.connectionType === "network" && <input value={config.thermalPrinter.ipAddress} onChange={(e) => setConfig({ ...config, thermalPrinter: { ...config.thermalPrinter, ipAddress: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Printer IP: 192.168.1.80" />}
+                        {config.thermalPrinter.connectionType === "network" && <input value={config.thermalPrinter.port} onChange={(e) => setConfig({ ...config, thermalPrinter: { ...config.thermalPrinter, port: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Port: 9100" />}
+                        <select value={config.thermalPrinter.paperWidth} onChange={(e) => setConfig({ ...config, thermalPrinter: { ...config.thermalPrinter, paperWidth: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="58mm">Paper 58mm</option><option value="80mm">Paper 80mm</option></select>
+                        <label className="flex items-center gap-2 text-sm text-emerald-100"><input type="checkbox" checked={config.thermalPrinter.autoCut} onChange={(e) => setConfig({ ...config, thermalPrinter: { ...config.thermalPrinter, autoCut: e.target.checked } })} className="h-4 w-4 accent-amber-400" />Auto-cut risiti</label>
+                      </div>
                     </div>
                   </div>
                 </div>
