@@ -322,35 +322,40 @@ export const appRouter = router({
         .mutation(async ({ input, ctx }) => {
           const product = await db.query.products.findFirst({ where: eq(products.id, input.productId) });
           if (!product) throw new Error("Product haipatikani");
-          if (input.qualityStatus === "rejected") throw new Error("Stock iliyokataliwa haiwezi kuingizwa kwenye inventory");
           const packageSizeKg = Number(product.packageSizeKg || 1);
+          if (!Number.isFinite(packageSizeKg) || packageSizeKg <= 0) throw new Error("Package size ya bidhaa si sahihi");
           const baseQuantity = input.entryUnit === "kg" ? input.quantity : input.quantity * packageSizeKg;
           const totalCost = input.quantity * input.costPerUnit;
           const receivedBy = input.receivedBy || ctx.user?.name || ctx.user?.email || "Office user";
-          const [savedStockIn] = await db.insert(stockIn).values({
-            productId: input.productId,
-            quantity: decimalString(input.quantity),
-            entryUnit: input.entryUnit,
-            baseQuantity: decimalString(baseQuantity),
-            supplierName: input.supplierName,
-            supplierPhone: input.supplierPhone,
-            sourceType: input.sourceType,
-            purchaseReference: input.purchaseReference,
-            batchNumber: input.batchNumber,
-            vehicleReference: input.vehicleReference,
-            warehouseLocation: input.warehouseLocation,
-            receivedBy,
-            qualityStatus: input.qualityStatus,
-            costPerUnit: decimalString(input.costPerUnit),
-            totalCost: decimalString(totalCost),
-            notes: `${input.notes || ""} Received: ${input.quantity} ${input.entryUnit} = ${baseQuantity} kg`.trim(),
-          }).returning();
-          await db.update(products)
-            .set({ currentStock: sql`${products.currentStock} + ${baseQuantity}` })
-            .where(eq(products.id, input.productId));
+          const [savedStockIn] = await db.transaction(async (tx) => {
+            const [created] = await tx.insert(stockIn).values({
+              productId: input.productId,
+              quantity: decimalString(input.quantity),
+              entryUnit: input.entryUnit,
+              baseQuantity: decimalString(baseQuantity),
+              supplierName: input.supplierName,
+              supplierPhone: input.supplierPhone,
+              sourceType: input.sourceType,
+              purchaseReference: input.purchaseReference,
+              batchNumber: input.batchNumber,
+              vehicleReference: input.vehicleReference,
+              warehouseLocation: input.warehouseLocation,
+              receivedBy,
+              qualityStatus: input.qualityStatus,
+              costPerUnit: decimalString(input.costPerUnit),
+              totalCost: decimalString(totalCost),
+              notes: `${input.notes || ""} Received: ${input.quantity} ${input.entryUnit} = ${baseQuantity} kg`.trim(),
+            }).returning();
+            if (input.qualityStatus !== "rejected") {
+              await tx.update(products)
+                .set({ currentStock: sql`${products.currentStock} + ${baseQuantity}` })
+                .where(eq(products.id, input.productId));
+            }
+            return [created];
+          });
           await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_in", recordId: savedStockIn.id, newValue: { productId: input.productId, quantity: input.quantity, entryUnit: input.entryUnit, baseQuantity, sourceType: input.sourceType, purchaseReference: input.purchaseReference, batchNumber: input.batchNumber, vehicleReference: input.vehicleReference, warehouseLocation: input.warehouseLocation, receivedBy, qualityStatus: input.qualityStatus, totalCost } });
 
-          return { success: true, id: savedStockIn.id, baseQuantity, totalCost };
+          return { success: true, id: savedStockIn.id, baseQuantity, totalCost, stockAdded: input.qualityStatus !== "rejected" };
         }),
     }),
 
