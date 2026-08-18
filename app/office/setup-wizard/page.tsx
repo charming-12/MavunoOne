@@ -16,8 +16,10 @@ export default function SetupWizardPage() {
     timezone: "Africa/Dar_es_Salaam",
     thermalPrinter: { enabled: false, model: "ESC/POS" },
     scale: { enabled: false, model: "URID" },
-    mpesa: { enabled: false, apiKey: "" },
-    resend: { enabled: false, apiKey: "" },
+    payment: { enabled: false, provider: "mpesa", merchantNumber: "", apiBaseUrl: "" , apiKey: "" },
+    cctv: { enabled: false, brand: "hikvision", protocol: "rtsp", host: "", port: "554", username: "", password: "", streamPath: "" },
+    gps: { enabled: false, provider: "teltonika", protocol: "http_webhook", serverUrl: "", deviceId: "", username: "", password: "" },
+    notifications: { enabled: false, resendApiKey: "" },
   });
 
   const steps: WizardStep[] = ["welcome", "database", "hardware", "payments", "notifications", "complete"];
@@ -46,15 +48,39 @@ export default function SetupWizardPage() {
           key: "SETUP_WIZARD_CONFIG",
           value: JSON.stringify({
             ...config,
-            mpesa: { ...config.mpesa, apiKey: config.mpesa.apiKey ? "[provided-in-setup]" : "" },
-            resend: { ...config.resend, apiKey: config.resend.apiKey ? "[provided-in-setup]" : "" },
+            payment: { ...config.payment, apiKey: undefined },
+            cctv: { ...config.cctv, password: undefined },
+            gps: { ...config.gps, password: undefined },
+            notifications: { ...config.notifications, resendApiKey: undefined },
           }),
           description: "Initial MavunoOne setup configuration",
+          isEncrypted: false,
         }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to save setup configuration");
+      }
+
+      const secretProfiles = [
+        { key: "PAYMENT_PROVIDER_SECRETS", value: { apiKey: config.payment.apiKey } },
+        { key: "CCTV_CONNECTION_SECRETS", value: { username: config.cctv.username, password: config.cctv.password } },
+        { key: "GPS_CONNECTION_SECRETS", value: { username: config.gps.username, password: config.gps.password } },
+        { key: "NOTIFICATION_SECRETS", value: { resendApiKey: config.notifications.resendApiKey } },
+      ];
+
+      for (const profile of secretProfiles) {
+        const secretResponse = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            key: profile.key,
+            value: JSON.stringify(profile.value),
+            description: `Encrypted ${profile.key.toLowerCase()} profile`,
+            isEncrypted: true,
+          }),
+        });
+        if (!secretResponse.ok) throw new Error(`Failed to save ${profile.key}`);
       }
 
       handleNext();
@@ -232,6 +258,36 @@ export default function SetupWizardPage() {
                 </div>
               </div>
 
+              <div className="mt-6 grid gap-6 lg:grid-cols-2">
+                <div className="rounded-xl border border-sky-800 bg-[#041915] p-5">
+                  <h3 className="font-bold text-white">CCTV / Kamera</h3>
+                  <p className="mt-1 text-xs text-emerald-200">Weka taarifa za DVR/NVR; credentials zitaenda kwenye secret profile.</p>
+                  <label className="mt-4 flex items-center gap-2 text-sm text-emerald-100"><input type="checkbox" checked={config.cctv.enabled} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, enabled: e.target.checked } })} className="h-4 w-4 accent-amber-400" />Washa CCTV</label>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <select value={config.cctv.brand} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, brand: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="hikvision">Hikvision</option><option value="dahua">Dahua</option><option value="uniview">Uniview</option><option value="cp_plus">CP Plus</option><option value="generic_onvif">Generic ONVIF</option><option value="other">Other</option></select>
+                    <select value={config.cctv.protocol} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, protocol: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="rtsp">RTSP</option><option value="onvif">ONVIF</option><option value="hls">HLS</option><option value="http">HTTP</option></select>
+                    <input value={config.cctv.host} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, host: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="IP / hostname" />
+                    <input value={config.cctv.port} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, port: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Port: 554" />
+                    <input value={config.cctv.username} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, username: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Username" />
+                    <input type="password" value={config.cctv.password} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, password: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Password" />
+                    <input value={config.cctv.streamPath} onChange={(e) => setConfig({ ...config, cctv: { ...config.cctv, streamPath: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Stream path (optional)" />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-sky-800 bg-[#041915] p-5">
+                  <h3 className="font-bold text-white">GPS Tracker</h3>
+                  <p className="mt-1 text-xs text-emerald-200">Chagua tracker yako; ukikosa chagua Other na uweke endpoint.</p>
+                  <label className="mt-4 flex items-center gap-2 text-sm text-emerald-100"><input type="checkbox" checked={config.gps.enabled} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, enabled: e.target.checked } })} className="h-4 w-4 accent-amber-400" />Washa GPS</label>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <select value={config.gps.provider} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, provider: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="teltonika">Teltonika</option><option value="concox">Concox</option><option value="gt06">GT06 / TK103</option><option value="traccar">Traccar</option><option value="coban">Coban</option><option value="other">Other</option></select>
+                    <select value={config.gps.protocol} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, protocol: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="http_webhook">HTTP webhook</option><option value="traccar_api">Traccar API</option><option value="tcp">TCP gateway</option><option value="other">Other</option></select>
+                    <input value={config.gps.serverUrl} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, serverUrl: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Tracker server URL / webhook" />
+                    <input value={config.gps.deviceId} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, deviceId: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Device ID / IMEI" />
+                    <input value={config.gps.username} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, username: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Username (optional)" />
+                    <input type="password" value={config.gps.password} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, password: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Password (optional)" />
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-8 flex gap-4">
                 <button
                   onClick={handleBack}
@@ -261,26 +317,14 @@ export default function SetupWizardPage() {
                 </div>
               </div>
               <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">LIPA API</label>
-                  <input
-                    value={config.mpesa.apiKey}
-                    onChange={(e) => setConfig({ ...config, mpesa: { ...config.mpesa, apiKey: e.target.value } })}
-                    type="password"
-                    className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600 outline-none focus:border-amber-400"
-                    placeholder="Weka kwenye Render Environment Variables"
-                  />
+                <label className="flex items-center gap-2 text-sm font-semibold text-emerald-100"><input type="checkbox" checked={config.payment.enabled} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, enabled: e.target.checked } })} className="h-4 w-4 accent-amber-400" />Washa malipo ya simu</label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Provider</label><select value={config.payment.provider} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, provider: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white"><option value="mpesa">Vodacom M-Pesa</option><option value="tigopesa">Tigo Pesa / Mixx by Yas</option><option value="both">M-Pesa na Tigo Pesa</option><option value="other">Other provider</option></select></div>
+                  <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Lipa number</label><input value={config.payment.merchantNumber} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNumber: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Mfano: 07XXXXXXXX" /></div>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Resend API</label>
-                  <input
-                    value={config.resend.apiKey}
-                    onChange={(e) => setConfig({ ...config, resend: { ...config.resend, apiKey: e.target.value } })}
-                    type="password"
-                    className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600 outline-none focus:border-amber-400"
-                    placeholder="Weka kwenye Render Environment Variables"
-                  />
-                </div>
+                <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Provider API base URL (optional)</label><input value={config.payment.apiBaseUrl} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, apiBaseUrl: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Weka tu kama provider amekupa API endpoint" /></div>
+                <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">API key / secret (optional)</label><input type="password" value={config.payment.apiKey} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, apiKey: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Itahifadhiwa kama secret profile" /></div>
+                <p className="text-xs text-amber-100/80">Lipa number itaonekana kwa instructions za mteja. Automatic confirmation inahitaji API credentials na callback/webhook ya provider.</p>
               </div>
 
               <div className="mt-8 flex gap-4">

@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function OrderPage() {
   const [step, setStep] = useState(1);
   const [cartTotal, setCartTotal] = useState(0);
+  const [paymentInstructions, setPaymentInstructions] = useState<{ enabled: boolean; provider: string | null; merchantNumber: string | null }>({ enabled: false, provider: null, merchantNumber: null });
 
   useEffect(() => {
     try {
@@ -17,6 +18,14 @@ export default function OrderPage() {
       window.setTimeout(() => setCartTotal(0), 0);
     }
   }, []);
+
+  useEffect(() => {
+    fetch("/api/payment/instructions")
+      .then((response) => response.json())
+      .then((data) => setPaymentInstructions(data))
+      .catch(() => setPaymentInstructions({ enabled: false, provider: null, merchantNumber: null }));
+  }, []);
+
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -237,6 +246,7 @@ export default function OrderPage() {
                     </div>
                   </label>
                 ))}
+                {formData.paymentMethod === "mpesa" && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"><p className="font-bold">Maelekezo ya M-Pesa / Tigo Pesa</p>{paymentInstructions.enabled ? <p className="mt-1">Tuma TZS {cartTotal.toLocaleString()} kwenda <strong>{paymentInstructions.merchantNumber}</strong> ({paymentInstructions.provider}). Tutathibitisha oda baada ya mawasiliano ya simu.</p> : <p className="mt-1">Lipa number bado haijawekwa na biashara. Chagua Cash au wasiliana na biashara kabla ya kutuma pesa.</p>}</div>}
               </div>
             </div>
           )}
