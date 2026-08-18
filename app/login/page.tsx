@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, ArrowRight, Eye, EyeOff, Leaf, LockKeyhole, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { writeStoredUser } from "@/lib/auth";
@@ -12,22 +12,19 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slowLoginNotice, setSlowLoginNotice] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "" });
+
   useEffect(() => {
-    // Warm Render/Neon while the user is entering credentials.
     void fetch("/api/config/ready", { cache: "no-store" }).catch(() => undefined);
   }, []);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError("");
     setIsSubmitting(true);
     setSlowLoginNotice(false);
@@ -38,40 +35,29 @@ export default function LoginPage() {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          password: formData.password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
         signal: controller.signal,
         cache: "no-store",
       });
-
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Barua pepe au neno la siri silizoifikiwa. Jaribu tena.");
-      }
+      if (!response.ok) throw new Error(result.message || "Barua pepe au neno la siri si sahihi. Jaribu tena.");
 
       writeStoredUser(result.user);
-
       const role = result.user.role;
-
       if (role === "boss") {
         router.replace("/boss");
         return;
       }
-
-      if (role === "admin" || role === "owner" || role === "manager" || role === "cashier" || role === "storekeeper" || role === "machine_operator") {
+      if (["admin", "owner", "manager", "cashier", "storekeeper", "machine_operator"].includes(role)) {
         router.replace("/office");
         return;
       }
-
       router.replace("/shop");
     } catch (submitError) {
-      setError(submitError instanceof DOMException && submitError.name === "AbortError" ? "Login imechukua muda mrefu kuliko kawaida. Render/Neon inaweza kuwa inaamka; subiri kidogo kisha jaribu mara moja tena." : submitError instanceof Error ? submitError.message : "Login failed.");
+      setError(submitError instanceof DOMException && submitError.name === "AbortError"
+        ? "Login imechukua muda mrefu kuliko kawaida. Server inaweza kuwa inaamka; subiri kidogo kisha jaribu tena."
+        : submitError instanceof Error ? submitError.message : "Login haikufanikiwa.");
     } finally {
       window.clearTimeout(slowTimer);
       window.clearTimeout(timeoutTimer);
@@ -80,148 +66,61 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#07150f] via-[#0a1e18] to-[#051511] flex items-center justify-center p-4 relative">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-amber-400 opacity-8 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500 opacity-8 rounded-full blur-3xl"></div>
+    <main className="min-h-screen bg-[#07150f] text-white">
+      <div className="mx-auto grid min-h-screen max-w-7xl lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative hidden overflow-hidden border-r border-white/10 px-10 py-10 lg:flex lg:flex-col lg:justify-between xl:px-16">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,_rgba(16,185,129,0.28),transparent_35%),radial-gradient(circle_at_80%_90%,_rgba(234,179,8,0.18),transparent_30%)]" />
+          <div className="relative">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400 text-[#07150f]"><Leaf size={23} /></span>
+              <span className="text-2xl font-black tracking-tight">Mavuno<span className="text-emerald-400">One</span></span>
+            </Link>
+            <div className="mt-24 max-w-xl">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">Secure operations platform</p>
+              <h1 className="mt-5 text-5xl font-black leading-[1.05] tracking-tight xl:text-6xl">Karibu kwenye kituo cha usimamizi wa MavunoOne.</h1>
+              <p className="mt-6 max-w-lg text-base leading-8 text-emerald-100/80">Taarifa za stock, mauzo, fedha, usafirishaji na wafanyakazi zinapatikana kwa watumiaji walioidhinishwa pekee.</p>
+            </div>
+          </div>
+          <div className="relative grid max-w-xl gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><ShieldCheck className="mb-3 text-emerald-300" size={21} /><p className="text-sm font-bold">Role-based access</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Boss na Office wana mipaka tofauti.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><LockKeyhole className="mb-3 text-amber-300" size={21} /><p className="text-sm font-bold">Protected session</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Session na credentials zinalindwa.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><Leaf className="mb-3 text-cyan-300" size={21} /><p className="text-sm font-bold">Live business data</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Dashboards zinasoma database halisi.</p></div>
+          </div>
+        </section>
+
+        <section className="flex items-center justify-center px-5 py-10 sm:px-8">
+          <div className="w-full max-w-md">
+            <div className="mb-8 flex items-center gap-3 lg:hidden">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400 text-[#07150f]"><Leaf size={21} /></span>
+              <span className="text-xl font-black">Mavuno<span className="text-emerald-400">One</span></span>
+            </div>
+            <div className="mb-8">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Authorized access</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Ingia kwenye akaunti</h2>
+              <p className="mt-3 text-sm leading-6 text-emerald-100/70">Tumia credentials ulizopewa na kampuni. Mfumo utakufungulia dashboard kulingana na role yako.</p>
+            </div>
+
+            <div className="rounded-3xl border border-emerald-900/70 bg-[#0a1e18]/90 p-6 shadow-2xl shadow-black/20 sm:p-8">
+              {error && <div role="alert" className="mb-5 flex gap-3 rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200"><AlertCircle className="mt-0.5 shrink-0 text-red-300" size={18} /><p>{error}</p></div>}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label htmlFor="email" className="mb-2 block text-sm font-bold text-emerald-100">Email ya kampuni</label>
+                  <input id="email" required type="email" name="email" autoComplete="username" value={formData.email} onChange={handleInputChange} placeholder="jina@kampuni.co.tz" className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-3.5 text-white outline-none transition placeholder:text-emerald-700 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" />
+                </div>
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3"><label htmlFor="password" className="block text-sm font-bold text-emerald-100">Neno la siri</label><Link href="/forgot-password" className="text-xs font-bold text-amber-300 transition hover:text-amber-200">Umesahau password?</Link></div>
+                  <div className="relative"><input id="password" required type={showPassword ? "text" : "password"} name="password" autoComplete="current-password" value={formData.password} onChange={handleInputChange} placeholder="Ingiza neno la siri" className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-3.5 pr-12 text-white outline-none transition placeholder:text-emerald-700 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" /><button type="button" aria-label={showPassword ? "Ficha password" : "Onyesha password"} onClick={() => setShowPassword((value) => !value)} className="absolute right-3 top-3.5 rounded-lg p-1 text-emerald-400 transition hover:text-amber-300">{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
+                </div>
+                <button type="submit" disabled={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-amber-500 py-3.5 font-black text-emerald-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? "Inathibitisha..." : "Ingia kwenye mfumo"}{!isSubmitting && <ArrowRight size={18} />}</button>
+              </form>
+              {slowLoginNotice && <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">Server ilikuwa inaamka. Tafadhali subiri; usibonyeze kitufe mara nyingi.</p>}
+              <div className="mt-6 flex items-start gap-3 border-t border-white/10 pt-5 text-xs leading-5 text-emerald-100/60"><LockKeyhole className="mt-0.5 shrink-0 text-emerald-300" size={16} /><p>Usishirikishe password yako. Ukisahau, tumia OTP ya simu kupitia <Link href="/forgot-password" className="font-bold text-amber-300 hover:text-amber-200">Password Recovery</Link>.</p></div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm"><Link href="/" className="text-emerald-200/70 transition hover:text-white">← Rudi mwanzo</Link><Link href="/shop" className="inline-flex items-center gap-1 font-bold text-amber-300 transition hover:text-amber-200">Nenda Shop <ArrowRight size={15} /></Link></div>
+          </div>
+        </section>
       </div>
-
-      <div className="relative w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-black text-white mb-2 tracking-tight">🌾 MavunoOne</h1>
-          <p className="text-amber-300 font-black text-lg">Premium Platform</p>
-          <p className="text-emerald-200 text-sm mt-2 font-semibold uppercase tracking-wider">Agribusiness Operations</p>
-        </div>
-
-        {/* Login Card */}
-        <div className="bg-[#0a1e18]/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 mb-6 border border-emerald-900/40">
-          <h2 className="text-2xl font-black text-white mb-6">Ingia kwenye Akaunti</h2>
-
-          {error && (
-            <div className="bg-red-500/20 border-l-4 border-red-400 p-4 mb-4 rounded">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="text-red-400" size={20} />
-                <p className="text-red-300 text-sm">{error}</p>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-emerald-200 mb-2 uppercase tracking-wider">
-                Barua Pepe
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Ingiza email ya taasisi"
-                className="w-full px-4 py-3 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-emerald-200 mb-2 uppercase tracking-wider">
-                Neno la Siri
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-emerald-400 hover:text-amber-300"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-              <div className="mt-2 text-right">
-                <Link href="/forgot-password" className="text-sm text-amber-400 hover:text-amber-300 font-semibold">
-                  Badili nenosiri? 🔐
-                </Link>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-emerald-950 py-3 rounded-lg font-black hover:from-amber-300 hover:to-amber-400 transition transform hover:shadow-[0_0_30px_rgba(251,191,36,0.3)] disabled:opacity-60 disabled:cursor-not-allowed uppercase tracking-wide"
-            >
-              {isSubmitting ? "Ingia..." : "Ingia"}
-            </button>
-          </form>
-          {slowLoginNotice && <p className="mt-3 text-center text-xs font-semibold text-amber-200">Server ya Render ilikuwa imelala; inaamshwa sasa. Tafadhali subiri kidogo, credentials zako bado zinalindwa.</p>}
-
-          <div className="mt-8 pt-6 border-t">
-            <p className="text-center text-gray-700 text-sm font-semibold mb-4">� Jinsi ya Kufanya Kazi</p>
-            <div className="space-y-3">
-              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
-                <span className="text-2xl flex-shrink-0">1️⃣</span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-xs">Ingiza Bidhaa</p>
-                  <p className="text-gray-600 text-xs mt-0.5">Ongeza mahindi, alizeti, na pembejeo zingine kwenye mfumo</p>
-                </div>
-              </div>
-              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
-                <span className="text-2xl flex-shrink-0">2️⃣</span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-xs">Duka Online (Shop)</p>
-                  <p className="text-gray-600 text-xs mt-0.5">Wauzaji wanunulia moja kwa moja kwenye huduma ya mteja</p>
-                </div>
-              </div>
-              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
-                <span className="text-2xl flex-shrink-0">3️⃣</span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-xs">Usafiri & Uwasilishaji</p>
-                  <p className="text-gray-600 text-xs mt-0.5">Kuunda agizo na kutuma kwa wauzaji kwa njia ya GPS</p>
-                </div>
-              </div>
-              <div className="flex gap-3 bg-gray-50 p-3 rounded-lg">
-                <span className="text-2xl flex-shrink-0">4️⃣</span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-xs">Ripoti Haraka</p>
-                  <p className="text-gray-600 text-xs mt-0.5">Angalia faida, mauzo, na habari kwa sekunde</p>
-                </div>
-              </div>
-            </div>
-            <p className="text-center text-gray-500 text-xs mt-4">✨ Mfumo wa MavunoOne unasaidia wakulima kutoka shambani hadi sokoni</p>
-          </div>
-        </div>
-
-        {/* Features Info */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white bg-opacity-10 backdrop-blur text-white rounded-lg p-3 text-center">
-            <p className="text-2xl mb-1">📊</p>
-            <p className="text-xs font-semibold">Ripoti Haraka</p>
-          </div>
-          <div className="bg-white bg-opacity-10 backdrop-blur text-white rounded-lg p-3 text-center">
-            <p className="text-2xl mb-1">🚚</p>
-            <p className="text-xs font-semibold">Usafiri GPS</p>
-          </div>
-          <div className="bg-white bg-opacity-10 backdrop-blur text-white rounded-lg p-3 text-center">
-            <p className="text-2xl mb-1">📱</p>
-            <p className="text-xs font-semibold">Simu PWA</p>
-          </div>
-        </div>
-
-        {/* Back to Landing */}
-        <div className="text-center mt-6">
-          <Link href="/">
-            <button className="text-yellow-300 hover:text-yellow-200 text-sm underline transition">
-              ← Back
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
+    </main>
   );
 }

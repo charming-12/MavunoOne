@@ -35,6 +35,7 @@ import {
   YAxis,
 } from "recharts";
 import { trpc } from "@/lib/trpc";
+import { readStoredUser } from "@/lib/auth";
 
 const formatMoney = (value: number) => `TZS ${value.toLocaleString("en-TZ")}`;
 
@@ -161,6 +162,10 @@ function BossCctvPanel() {
 }
 
 export default function BossDashboard() {
+  const [bossDisplayName] = useState(() => {
+    const accountName = readStoredUser()?.name?.trim();
+    return accountName && !["boss", "boss user", "administrator"].includes(accountName.toLowerCase()) ? accountName : "Mzee Kisiri";
+  });
   const dashboardQuery = trpc.dashboard.stats.useQuery();
   const lowStockQuery = trpc.products.lowStock.useQuery();
   const salesQuery = trpc.sales.list.useQuery();
@@ -208,11 +213,11 @@ export default function BossDashboard() {
           <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Muhtasari wa biashara</p>
-            <h2 className="text-3xl font-bold tracking-tight text-[#102b25] sm:text-4xl">Habari, Mzee Kiasi</h2>
-            <p className="mt-2 text-sm text-slate-500">Huu ni muhtasari wa biashara yako leo.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-[#102b25] sm:text-4xl">Karibu, {bossDisplayName}</h2>
+            <p className="mt-2 text-sm text-slate-500">Huu ni muhtasari wa biashara yako kwa leo, kwa ajili ya maamuzi ya uongozi.</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 shadow-sm sm:flex"><CalendarDays size={16} className="text-emerald-700" />{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date())}<ChevronDown size={15} className="text-slate-400" /></div>
+            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 shadow-sm sm:flex"><CalendarDays size={16} className="text-emerald-700" />{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "Africa/Dar_es_Salaam" }).format(new Date())}<ChevronDown size={15} className="text-slate-400" /></div>
             <Link href="/boss/expenses" className="inline-flex items-center gap-2 rounded-xl bg-[#0c7355] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#095b44]"><FileText size={16} /> Gharama / P&amp;L</Link>
           </div>
         </div>

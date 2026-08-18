@@ -241,6 +241,7 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
   token: varchar("token", { length: 255 }).notNull().unique(),
+  otpCodeHash: varchar("otpCodeHash", { length: 128 }),
   expiresAt: timestamp("expiresAt").notNull(),
   usedAt: timestamp("usedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

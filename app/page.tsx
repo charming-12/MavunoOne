@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Leaf, PackageCheck, BarChart3 } from "lucide-react";
+import { ArrowRight, PackageCheck } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -30,24 +30,10 @@ const productCards = [
 
 const platformCards = [
   {
-    title: "Office Portal",
-    icon: <BarChart3 className="h-7 w-7" />,
-    accent: "bg-emerald-500/10 text-emerald-200 border-emerald-400/30",
-    text: "Operations, stock, customers, costs, and reports in a single control center.",
-    link: "/office",
-  },
-  {
-    title: "Boss App",
-    icon: <Leaf className="h-7 w-7" />,
-    accent: "bg-yellow-500/10 text-yellow-200 border-yellow-400/30",
-    text: "Fast summaries, alerts, deliveries, and mobile-first business monitoring.",
-    link: "/boss",
-  },
-  {
-    title: "Shop Portal",
+    title: "MavunoOne Shop",
     icon: <PackageCheck className="h-7 w-7" />,
     accent: "bg-cyan-500/10 text-cyan-200 border-cyan-400/30",
-    text: "Simple ordering for customers and farmers with clear product availability.",
+    text: "Tazama bidhaa halisi, bei na upatikanaji, kisha tuma oda kwa timu ya MavunoOne.",
     link: "/shop",
   },
 ];
@@ -205,11 +191,11 @@ export default function LandingPage() {
           <section className="px-6 py-14 md:px-12 md:py-20">
             <div className="mx-auto max-w-7xl">
               <div className="mb-10 text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Platform access</p>
-                <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Choose the workflow you need</h2>
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Public customer access</p>
+                <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Anza kununua kwa usalama</h2>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-3">
+              <div className="mx-auto max-w-md">
                 {platformCards.map((card) => (
                   <Link key={card.title} href={card.link} className="group block rounded-[28px] border border-white/10 bg-white/5 p-6 transition hover:border-emerald-400/40 hover:bg-white/10">
                     <div className={`mb-5 inline-flex rounded-2xl border p-3 ${card.accent}`}>

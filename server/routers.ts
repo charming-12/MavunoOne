@@ -7,7 +7,7 @@ import {
   customers, categories, users, auditLogs, farmers, farmerPayments, maintenanceCosts,
   stockReconciliations, farmerPaymentApprovals
 } from "@/drizzle/schema";
-import { desc, eq, and, gt, gte, lte } from "drizzle-orm";
+import { desc, eq, and, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { recordAuditLog } from "@/lib/audit";
 
@@ -17,6 +17,12 @@ const decimalString = (value?: number | string | null, fallback = "0") => {
   }
   return String(value);
 };
+
+async function notifyRoles(roles: Array<typeof users.$inferSelect.role>, type: string, title: string, message: string) {
+  const recipients = await db.select({ id: users.id }).from(users).where(inArray(users.role, roles));
+  if (recipients.length === 0) return;
+  await db.insert(notifications).values(recipients.map((recipient) => ({ type, title, message, userId: recipient.id, isRead: false })));
+}
 
 export const appRouter = router({
   // ===== PRODUCTS =====
@@ -43,8 +49,8 @@ export const appRouter = router({
         lowStockThreshold: z.number().default(10),
         currentStock: z.number().default(0),
       }))
-      .mutation(async ({ input }) => {
-        return await db.insert(products).values({
+      .mutation(async ({ input, ctx }) => {
+        const [created] = await db.insert(products).values({
           ...input,
           barcode: input.barcode || undefined,
           productType: input.productType,
@@ -55,25 +61,44 @@ export const appRouter = router({
           lowStockThreshold: decimalString(input.lowStockThreshold),
           currentStock: decimalString(input.currentStock * input.packageSizeKg),
         }).returning();
+        await recordAuditLog({
+          userId: ctx.user?.id,
+          action: "create",
+          tableName: "products",
+          recordId: created?.id,
+          newValue: { ...input, currentStockKg: input.currentStock * input.packageSizeKg },
+        });
+        return created;
       }),
 
     byBarcode: protectedProcedure.input(z.object({ barcode: z.string().min(3) })).query(async ({ input }) => {
       return await db.query.products.findFirst({ where: and(eq(products.barcode, input.barcode.trim()), eq(products.isActive, true)) });
     }),
     updatePricing: financeProcedure.input(z.object({ id: z.number(), costPrice: z.number().nonnegative(), sellPrice: z.number().nonnegative(), wholesalePrice: z.number().nonnegative().optional() })).mutation(async ({ input, ctx }) => {
+      const before = await db.query.products.findFirst({ where: eq(products.id, input.id) });
       const [updated] = await db.update(products).set({ costPrice: decimalString(input.costPrice), sellPrice: decimalString(input.sellPrice), wholesalePrice: input.wholesalePrice === undefined ? undefined : decimalString(input.wholesalePrice), updatedAt: new Date() }).where(eq(products.id, input.id)).returning();
       if (!updated) throw new Error("Product haipatikani");
-      await recordAuditLog({ userId: ctx.user?.id, action: "update", tableName: "products", recordId: updated.id, newValue: { costPrice: input.costPrice, sellPrice: input.sellPrice, wholesalePrice: input.wholesalePrice } });
+      await recordAuditLog({ userId: ctx.user?.id, action: "update", tableName: "products", recordId: updated.id, oldValue: before ? { costPrice: before.costPrice, sellPrice: before.sellPrice, wholesalePrice: before.wholesalePrice } : undefined, newValue: { costPrice: input.costPrice, sellPrice: input.sellPrice, wholesalePrice: input.wholesalePrice } });
       return updated;
     }),
     
     updateStock: officeProcedure
       .input(z.object({ id: z.number(), amount: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const [updated] = await db.update(products)
           .set({ currentStock: sql`currentStock + ${input.amount}` })
           .where(eq(products.id, input.id))
           .returning();
+
+        if (updated) {
+          await recordAuditLog({
+            userId: ctx.user?.id,
+            action: "update",
+            tableName: "products",
+            recordId: updated.id,
+            newValue: { field: "currentStock", adjustment: input.amount, currentStock: updated.currentStock },
+          });
+        }
 
         try {
           if (updated && Number(updated.currentStock) <= Number(updated.lowStockThreshold)) {
@@ -97,6 +122,19 @@ export const appRouter = router({
 
         return updated;
       }),
+
+    audit: protectedProcedure.query(async () => {
+      return await db.select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        recordId: auditLogs.recordId,
+        oldValueJson: auditLogs.oldValueJson,
+        newValueJson: auditLogs.newValueJson,
+        timestamp: auditLogs.timestamp,
+        userName: users.name,
+        userEmail: users.email,
+      }).from(auditLogs).leftJoin(users, eq(auditLogs.userId, users.id)).where(eq(auditLogs.tableName, "products")).orderBy(desc(auditLogs.timestamp)).limit(200);
+    }),
 
     lowStock: protectedProcedure.query(async () => {
       return await db.query.products.findMany({
@@ -388,6 +426,14 @@ export const appRouter = router({
             notes: `${input.notes || ""} Issued: ${input.quantity} ${product.unit} = ${baseQuantity} kg`.trim(),
           }).returning();
           await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_out", recordId: savedStockOut.id, newValue: { productId: input.productId, quantity: input.quantity, unit: product.unit, baseQuantity, reason: input.reason } });
+          if (Number(updatedProduct.currentStock) <= Number(product.lowStockThreshold)) {
+            await notifyRoles(
+              ["admin", "owner", "manager", "storekeeper"],
+              "stock_alert",
+              `Stock iko chini: ${product.name}`,
+              `${product.name} imefika ${Number(updatedProduct.currentStock).toLocaleString()} kg, chini ya threshold ya ${Number(product.lowStockThreshold).toLocaleString()} kg. Tafadhali panga replenishment.`
+            );
+          }
 
           return { success: true, id: savedStockOut.id };
         }),
@@ -957,8 +1003,11 @@ export const appRouter = router({
         }).returning();
       }),
 
-    list: protectedProcedure.query(async () => {
+    list: protectedProcedure.query(async ({ ctx }) => {
       return await db.query.notifications.findMany({
+        where: ctx.user.id
+          ? or(isNull(notifications.userId), eq(notifications.userId, ctx.user.id))
+          : isNull(notifications.userId),
         orderBy: desc(notifications.createdAt),
         limit: 50,
       });

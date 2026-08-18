@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, ShoppingCart, History, Package, ArrowLeft, ArrowDownToLine, ArrowUpFromLine, Users, Cog, Truck, Receipt, Settings, FileBarChart, Bell, Wrench, Camera, Zap, DollarSign, BarChart3, Settings2, Rocket, Menu, X, UserRound } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, History, Package, ArrowLeft, ArrowDownToLine, ArrowUpFromLine, Users, Cog, Truck, Receipt, Settings, FileBarChart, Bell, Wrench, Camera, Zap, DollarSign, BarChart3, Settings2, Rocket, ShieldAlert, Menu, X, UserRound } from "lucide-react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { clearStoredUser, readStoredUser, type AppUserRole } from "@/lib/auth";
 
@@ -32,10 +32,12 @@ const sidebarItems: SidebarItem[] = [
   { href: "/office/closures", label: "Daily Closure", icon: Cog, group: "Finance", roles: ["admin", "owner", "manager", "cashier"] },
   { href: "/office/reports", label: "Reports", icon: FileBarChart, group: "Reports", roles: ["admin", "owner", "manager"] },
   { href: "/office/advanced-analytics", label: "Advanced Analytics", icon: BarChart3, group: "Reports", roles: ["admin", "owner", "manager"] },
+  { href: "/office/technical-issues", label: "Technical Issues", icon: ShieldAlert, group: "Advanced", roles: ["admin", "owner"] },
   { href: "/office/hardware", label: "Hardware", icon: Settings2, group: "Advanced", roles: ["admin", "owner"] },
   { href: "/office/setup-wizard", label: "Setup Wizard", icon: Rocket, group: "Advanced", roles: ["admin", "owner"] },
   { href: "/office/notifications", label: "Notifications", icon: Bell, group: "System", roles: ["admin", "owner", "manager", "cashier", "storekeeper", "machine_operator"] },
   { href: "/office/settings", label: "Settings", icon: Settings, group: "System", roles: ["admin", "owner"] },
+  { href: "/shop", label: "Fungua Public Shop", icon: ShoppingCart, group: "Public access", roles: ["admin", "owner", "manager", "cashier", "storekeeper", "machine_operator"] },
 ];
 
 const roleLabels: Record<string, string> = { admin: "Administrator", owner: "Owner", manager: "Operations Manager", cashier: "Cashier", storekeeper: "Storekeeper", machine_operator: "Machine Operator", boss: "Executive View" };

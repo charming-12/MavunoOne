@@ -8,11 +8,11 @@ import crypto from "crypto";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, newPassword, confirmPassword } = body;
+    const { token, otp, newPassword, confirmPassword } = body;
 
-    if (!token || !newPassword) {
+    if ((!token && !otp) || !newPassword) {
       return NextResponse.json(
-        { message: "Token na neno mpya vinahitajika" },
+        { message: "Token/OTP na neno mpya vinahitajika" },
         { status: 400 }
       );
     }
@@ -31,16 +31,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash the token to find in database
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const tokenHash = token ? crypto.createHash("sha256").update(token).digest("hex") : null;
+    const otpHash = otp ? crypto.createHash("sha256").update(otp).digest("hex") : null;
 
-    // Find valid reset token
     const resetToken = await db.query.passwordResetTokens.findFirst({
       where: and(
-        eq(passwordResetTokens.token, tokenHash),
+        tokenHash ? eq(passwordResetTokens.token, tokenHash) : eq(passwordResetTokens.otpCodeHash, otpHash!),
         isNull(passwordResetTokens.usedAt)
       ),
     });

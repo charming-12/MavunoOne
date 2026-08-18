@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+import { sendSms } from "./sms";
+
 let resend: Resend | null = null;
 
 function getResendClient() {
@@ -206,31 +208,13 @@ export async function sendPasswordResetEmail(
 }
 
 export async function sendSMSNotification(phoneNumber: string, message: string) {
-  try {
-    // Using NextSMS that's already configured
-    const response = await fetch("https://api.nextsms.com/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.NEXTSMS_TOKEN}`,
-      },
-      body: JSON.stringify({
-        to: phoneNumber,
-        text: message,
-        from: process.env.NEXTSMS_SENDER_ID || "MavunoOne",
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`SMS API error: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    console.log("✅ SMS notification sent:", result);
-    return result;
-  } catch (error) {
-    console.error("❌ Failed to send SMS notification:", error);
+  const result = await sendSms({ phone: phoneNumber, message, senderID: process.env.NEXTSMS_SENDER_ID });
+  if (result.success) {
+    console.log("SMS notification sent:", result.messageID);
+  } else {
+    console.error("Failed to send SMS notification:", result.error);
   }
+  return result;
 }
 
 function escapeHtml(text: string): string {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { errorLogs } from "@/drizzle/schema";
+import { errorLogs, notifications, users } from "@/drizzle/schema";
 import { sendErrorNotification } from "@/server/utils/email";
 
 export async function POST(request: NextRequest) {
@@ -28,6 +28,17 @@ export async function POST(request: NextRequest) {
         isResolved: false,
       })
       .returning();
+
+    const adminRecipients = await db.select({ id: users.id }).from(users).where(inArray(users.role, ["admin", "owner"]));
+    if (adminRecipients.length > 0) {
+      await db.insert(notifications).values(adminRecipients.map((recipient) => ({
+        type: "technical_error",
+        title: `Technical issue: ${route || "system"}`,
+        message: `${errorMessage}${route ? ` | Route: ${route}` : ""}. Fungua Technical Issues Center kwa troubleshooting.`,
+        userId: recipient.id,
+        isRead: false,
+      })));
+    }
 
     // Send email notification to admin
     if (process.env.RESEND_API_KEY) {

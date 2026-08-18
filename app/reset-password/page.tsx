@@ -10,7 +10,9 @@ function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
+  const isSmsReset = searchParams.get("method") === "sms";
 
+  const [otp, setOtp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ function ResetPasswordForm() {
     confirmPassword: "",
   });
 
-  if (!token) {
+  if (!token && !isSmsReset) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8 text-center">
@@ -61,7 +63,7 @@ function ResetPasswordForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token,
+          ...(token ? { token } : { otp }),
           newPassword: formData.newPassword,
           confirmPassword: formData.confirmPassword,
         }),
@@ -121,6 +123,21 @@ function ResetPasswordForm() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isSmsReset && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">OTP ya simu</label>
+              <input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\\D/g, "").slice(0, 6))}
+                placeholder="Ingiza tarakimu 6 ulizotumiwa kwa SMS"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">OTP inaisha baada ya dakika 15. Usimpe mtu mwingine.</p>
+            </div>
+          )}
           {/* New Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

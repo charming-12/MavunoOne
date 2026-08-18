@@ -38,6 +38,8 @@ export default function OrderPage() {
     paymentMethod: "cash",
   });
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const activePayment = formData.paymentMethod === "mpesa" ? paymentInstructions.mpesa : formData.paymentMethod === "tigopesa" ? paymentInstructions.tigopesa : null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -45,13 +47,33 @@ export default function OrderPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError("");
     if (step < 3) {
       setStep(step + 1);
-    } else {
+      return;
+    }
+
+    try {
+      const saved = window.localStorage.getItem("mavunoone-shop-cart");
+      const cartItems = saved ? (JSON.parse(saved) as Array<{ id: number; quantity: number }>) : [];
+      if (cartItems.length === 0) {
+        setSubmitError("Kikapu chako hakina bidhaa. Rudi Shop uanze tena.");
+        return;
+      }
+      const response = await fetch("/api/shop/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, items: cartItems.map((item) => ({ productId: item.id, quantity: item.quantity })) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Oda haikuweza kuhifadhiwa.");
       window.localStorage.removeItem("mavunoone-shop-cart");
+      setOrderNumber(data.orderNumber || "");
       setOrderPlaced(true);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Oda haikuweza kuhifadhiwa.");
     }
   };
 
@@ -62,7 +84,7 @@ export default function OrderPage() {
           <CheckCircle className="mx-auto text-green-600 mb-4" size={64} />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Oda Ilibonyeza!</h1>
           <p className="text-gray-600 mb-4">
-            Jina la Oda: <strong>#ODR-2024-001</strong>
+            Jina la Oda: <strong>{orderNumber || "Linasubiri"}</strong>
           </p>
           <p className="text-gray-600 mb-6">
             Tutakupigia simu ndani ya saa 2 kubaini maelezo ya delivery.
@@ -122,6 +144,7 @@ export default function OrderPage() {
         </div>
 
         {/* Form */}
+        {submitError && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{submitError}</div>}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Step 1: Personal Info */}
           {step >= 1 && (

@@ -19,6 +19,7 @@ const navItems = [
   { href: "/boss/expenses", label: "Gharama / P&L", icon: WalletCards },
   { href: "/boss/farmer-payments", label: "Malipo ya Wakulima", icon: FileBarChart },
   { href: "/boss/notifications", label: "Taarifa", icon: Bell },
+  { href: "/shop", label: "Fungua Public Shop", icon: ShoppingCart },
 ];
 
 function Brand() {

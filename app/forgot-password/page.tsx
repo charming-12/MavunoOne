@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Mail, Phone, ArrowLeft, Loader } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -33,6 +35,10 @@ export default function ForgotPasswordPage() {
         setMessage({ type: "error", text: data.message });
       } else {
         setMessage({ type: "success", text: data.message });
+        if (method === "phone") {
+          router.push("/reset-password?method=sms");
+          return;
+        }
         setSent(true);
         // Reset form
         setTimeout(() => {

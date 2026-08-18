@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getLatestSampleDataBackup, resetSampleData } from "@/lib/backup";
 import { requireAdminUser } from "@/lib/api-auth";
 
+function sampleDataActionsEnabled() {
+  return process.env.NODE_ENV !== "production" && process.env.MAVUNO_ALLOW_SAMPLE_RESET === "true";
+}
+
 export async function GET(request: NextRequest) {
   const user = requireAdminUser(request);
   if (!user) {
@@ -11,6 +15,7 @@ export async function GET(request: NextRequest) {
   const backup = await getLatestSampleDataBackup();
 
   return NextResponse.json({
+    sampleDataActionsEnabled: sampleDataActionsEnabled(),
     lastBackup: backup
       ? {
           id: backup.id,
@@ -25,6 +30,10 @@ export async function POST(request: NextRequest) {
   const user = requireAdminUser(request);
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+  }
+
+  if (!sampleDataActionsEnabled()) {
+    return NextResponse.json({ message: "Sample-data reset is disabled in production." }, { status: 403 });
   }
 
   try {
