@@ -18,7 +18,7 @@ export default function SetupWizardPage() {
     scale: { enabled: false, model: "URID" },
     payment: { enabled: false, provider: "mpesa", merchantNumber: "", apiBaseUrl: "" , apiKey: "" },
     cctv: { enabled: false, brand: "hikvision", protocol: "rtsp", host: "", port: "554", username: "", password: "", streamPath: "" },
-    gps: { enabled: false, provider: "teltonika", protocol: "http_webhook", serverUrl: "", deviceId: "", username: "", password: "" },
+    gps: { enabled: false, provider: "teltonika", protocol: "http_webhook", serverUrl: "", deviceId: "", vehiclePlateNumber: "", username: "", password: "" },
     notifications: { enabled: false, resendApiKey: "" },
   });
 
@@ -282,6 +282,7 @@ export default function SetupWizardPage() {
                     <select value={config.gps.protocol} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, protocol: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="http_webhook">HTTP webhook</option><option value="traccar_api">Traccar API</option><option value="tcp">TCP gateway</option><option value="other">Other</option></select>
                     <input value={config.gps.serverUrl} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, serverUrl: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Tracker server URL / webhook" />
                     <input value={config.gps.deviceId} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, deviceId: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Device ID / IMEI" />
+                    <input value={config.gps.vehiclePlateNumber} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, vehiclePlateNumber: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Vehicle plate: T 123 ABC" />
                     <input value={config.gps.username} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, username: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Username (optional)" />
                     <input type="password" value={config.gps.password} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, password: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Password (optional)" />
                   </div>

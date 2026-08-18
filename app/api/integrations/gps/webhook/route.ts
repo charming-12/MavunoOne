@@ -10,6 +10,12 @@ async function getGpsSecret() {
   try { return JSON.parse(decryptConfigValue(config.value)) as { password?: string }; } catch { return null; }
 }
 
+async function getGpsMapping() {
+  const config = await db.query.configurations.findFirst({ where: eq(configurations.key, "SETUP_WIZARD_CONFIG") });
+  if (!config) return null;
+  try { return (JSON.parse(config.value) as { gps?: { deviceId?: string; vehiclePlateNumber?: string } }).gps ?? null; } catch { return null; }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const expectedToken = (await getGpsSecret())?.password;
@@ -22,8 +28,14 @@ export async function POST(request: NextRequest) {
     const lng = Number(body.lng ?? body.lon ?? body.longitude);
     if (!deviceId || !Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return NextResponse.json({ message: "deviceId, latitude and longitude are required" }, { status: 400 });
 
-    const updated = await db.update(vehicles).set({ lastPositionLat: lat.toFixed(6), lastPositionLng: lng.toFixed(6), status: String(body.status ?? "moving"), lastUpdate: new Date() }).where(eq(vehicles.gpsDeviceId, deviceId)).returning({ id: vehicles.id, plateNumber: vehicles.plateNumber });
-    if (!updated.length) return NextResponse.json({ message: "No vehicle is registered for this deviceId" }, { status: 404 });
+    let updated = await db.update(vehicles).set({ lastPositionLat: lat.toFixed(6), lastPositionLng: lng.toFixed(6), status: String(body.status ?? "moving"), lastUpdate: new Date() }).where(eq(vehicles.gpsDeviceId, deviceId)).returning({ id: vehicles.id, plateNumber: vehicles.plateNumber });
+    if (!updated.length) {
+      const mapping = await getGpsMapping();
+      if (mapping?.deviceId === deviceId && mapping.vehiclePlateNumber) {
+        updated = await db.update(vehicles).set({ gpsDeviceId: deviceId, lastPositionLat: lat.toFixed(6), lastPositionLng: lng.toFixed(6), status: String(body.status ?? "moving"), lastUpdate: new Date() }).where(eq(vehicles.plateNumber, mapping.vehiclePlateNumber)).returning({ id: vehicles.id, plateNumber: vehicles.plateNumber });
+      }
+    }
+    if (!updated.length) return NextResponse.json({ message: "No vehicle is registered for this deviceId or configured plate" }, { status: 404 });
     return NextResponse.json({ ok: true, vehicle: updated[0] });
   } catch (error) {
     console.error("GPS webhook error:", error);
