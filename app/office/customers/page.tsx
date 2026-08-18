@@ -1,92 +1,22 @@
 "use client";
 
-import Image from "next/image";
-import { Plus, Phone, Mail, TrendingUp } from "lucide-react";
+import { Loader2, Mail, Phone, Plus, TrendingUp, Users } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+
+const money = (value: number) => `TZS ${value.toLocaleString()}`;
 
 export default function CustomersPage() {
-  const customers = [
-    { id: 1, name: "John Mkwambi", phone: "+255718123456", email: "john@mail.com", type: "Wholesale", debt: 450000, status: "Active" },
-    { id: 2, name: "Amina Hassan", phone: "+255716543210", email: "amina@mail.com", type: "Retail", debt: 0, status: "Active" },
-    { id: 3, name: "Emmanuel Kamari", phone: "+255719876543", email: "emma@mail.com", type: "Wholesale", debt: 250000, status: "Active" },
-    { id: 4, name: "Mary Pamba", phone: "+255715555555", email: "mary@mail.com", type: "Retail", debt: 100000, status: "Suspended" },
-  ];
+  const customersQuery = trpc.customers.list.useQuery();
+  const customers = customersQuery.data ?? [];
+
+  if (customersQuery.isLoading) return <div className="flex min-h-[320px] items-center justify-center gap-2 text-emerald-700"><Loader2 className="animate-spin" size={20} />Inapakia wateja...</div>;
+  if (customersQuery.error) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">Wateja hawakuweza kupakiwa. Hakikisha umeingia kama staff na database inapatikana.</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Wateja</h1>
-          <p className="text-gray-600 mt-2">Dhumana na kueneza wateja</p>
-        </div>
-        <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
-          <Plus size={20} />
-          Mteja Mpya
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {customers.map(customer => (
-          <div key={customer.id} className="rounded-lg shadow hover:shadow-lg transition overflow-hidden group cursor-pointer">
-            {/* Image Background */}
-            <div className="relative h-28 bg-gray-200">
-              <Image
-                src={
-                  customer.type === "Wholesale"
-                    ? "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500&h=300&fit=crop"
-                    : "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=500&h=300&fit=crop"
-                }
-                alt={customer.name}
-                fill
-                className="object-cover group-hover:scale-105 transition duration-300"
-              />
-              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-              <div className="absolute inset-0 p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-white">{customer.name}</h3>
-                  <p className="text-sm text-gray-200">{customer.type}</p>
-                </div>
-                <span className={`px-3 py-1 rounded text-xs font-medium ${
-                  customer.status === "Active"
-                    ? "bg-green-500 text-white"
-                    : "bg-red-500 text-white"
-                }`}>
-                  {customer.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="bg-white p-4">
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Phone size={16} className="text-green-600" />
-                  <a href={`tel:${customer.phone}`} className="text-blue-600 hover:underline text-sm">
-                    {customer.phone}
-                  </a>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Mail size={16} className="text-blue-600" />
-                  <a href={`mailto:${customer.email}`} className="text-blue-600 hover:underline text-sm">
-                    {customer.email}
-                  </a>
-                </div>
-              </div>
-
-              <div className="border-t pt-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className={customer.debt > 0 ? "text-red-600" : "text-green-600"} size={16} />
-                    <span className="text-xs text-gray-600">Deni:</span>
-                  </div>
-                  <span className={`font-bold text-sm ${customer.debt > 0 ? "text-red-600" : "text-green-600"}`}>
-                    TZS {customer.debt.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Customer operations</p><h1 className="mt-1 text-3xl font-black text-slate-900">Wateja</h1><p className="mt-2 text-slate-500">Customer directory na madeni kutoka database halisi.</p></div><button type="button" className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white shadow-sm hover:bg-emerald-800"><Plus size={18} />Mteja Mpya</button></div>
+      <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><Users className="text-emerald-600" size={20} /><p className="mt-4 text-sm text-slate-500">Wateja active</p><p className="mt-1 text-3xl font-black text-slate-900">{customers.length}</p></div><div className="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm"><TrendingUp className="text-red-600" size={20} /><p className="mt-4 text-sm text-red-700">Jumla ya deni</p><p className="mt-1 text-2xl font-black text-red-900">{money(customers.reduce((sum, customer) => sum + Number(customer.balance || 0), 0))}</p></div><div className="rounded-2xl border border-amber-100 bg-amber-50 p-5 shadow-sm"><p className="text-sm text-amber-800">Wholesale customers</p><p className="mt-1 text-3xl font-black text-amber-950">{customers.filter((customer) => customer.customerType === "wholesale").length}</p></div></div>
+      {customers.length === 0 ? <div className="rounded-2xl bg-white p-16 text-center text-slate-500 shadow-sm">Hakuna customer aliyesajiliwa bado.</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{customers.map((customer) => { const debt = Number(customer.balance || 0); return <article key={customer.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-start justify-between gap-3"><div><h2 className="font-black text-slate-900">{customer.name}</h2><p className="mt-1 text-xs font-bold uppercase tracking-wide text-emerald-600">{customer.customerType}</p></div><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">Active</span></div><div className="mt-5 space-y-2">{customer.phone ? <a href={`tel:${customer.phone}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-emerald-700"><Phone size={15} className="text-emerald-600" />{customer.phone}</a> : <p className="text-sm text-slate-400">Phone haijawekwa</p>}{customer.email ? <a href={`mailto:${customer.email}`} className="flex min-w-0 items-center gap-2 text-sm text-slate-600 hover:text-emerald-700"><Mail size={15} className="shrink-0 text-sky-600" /><span className="truncate">{customer.email}</span></a> : <p className="text-sm text-slate-400">Email haijawekwa</p>}</div><div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-sm text-slate-500">Deni</span><strong className={debt > 0 ? "text-red-600" : "text-emerald-700"}>{money(debt)}</strong></div></article>; })}</div>}
     </div>
   );
 }
