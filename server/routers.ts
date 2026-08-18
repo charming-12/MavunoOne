@@ -314,7 +314,7 @@ export const appRouter = router({
         }).returning();
       }),
 
-    list: publicProcedure.query(async () => {
+    list: protectedProcedure.query(async () => {
       return await db.query.machineJobs.findMany({
         orderBy: desc(machineJobs.createdAt),
       });
@@ -323,7 +323,7 @@ export const appRouter = router({
 
   // ===== VEHICLES & DELIVERIES =====
   vehicles: router({
-    list: publicProcedure.query(async () => {
+    list: protectedProcedure.query(async () => {
       return await db.query.vehicles.findMany();
     }),
 
@@ -410,7 +410,7 @@ export const appRouter = router({
         }).returning();
       }),
 
-    list: publicProcedure
+    list: protectedProcedure
       .input(z.object({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
@@ -512,7 +512,7 @@ export const appRouter = router({
 
   // ===== CUSTOMERS =====
   customers: router({
-    list: publicProcedure.query(async () => {
+    list: protectedProcedure.query(async () => {
       return await db.query.customers.findMany({
         where: eq(customers.isActive, true),
       });
@@ -652,7 +652,7 @@ export const appRouter = router({
         }).returning();
       }),
 
-    list: publicProcedure.query(async () => {
+    list: protectedProcedure.query(async () => {
       return await db.query.notifications.findMany({
         orderBy: desc(notifications.createdAt),
         limit: 20,
