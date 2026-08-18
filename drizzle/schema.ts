@@ -225,6 +225,29 @@ export const auditLogs = pgTable("audit_logs", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// ===== 18. PUBLIC CONTENT (Approved marketing and Shop content) =====
+export const publicContent = pgTable("public_content", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 160 }).notNull().unique(),
+  contentType: varchar("contentType", { length: 32 }).default("announcement").notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  subtitle: varchar("subtitle", { length: 512 }),
+  body: text("body"),
+  imageUrl: text("imageUrl"),
+  ctaLabel: varchar("ctaLabel", { length: 128 }),
+  ctaHref: varchar("ctaHref", { length: 512 }),
+  status: varchar("status", { length: 32 }).default("draft").notNull(),
+  isPublic: boolean("isPublic").default(false).notNull(),
+  sortOrder: integer("sortOrder").default(0).notNull(),
+  createdBy: integer("createdBy"),
+  reviewedBy: integer("reviewedBy"),
+  publishedBy: integer("publishedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+  publishedAt: timestamp("publishedAt"),
+});
+
 // ===== 18. CONFIGURATIONS (Dynamic Settings & Credentials) =====
 export const configurations = pgTable("configurations", {
   id: serial("id").primaryKey(),

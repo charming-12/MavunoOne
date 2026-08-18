@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, PackageCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -39,6 +40,15 @@ const platformCards = [
 ];
 
 export default function LandingPage() {
+  const [publicContent, setPublicContent] = useState<Array<{ id: number; title: string; subtitle: string | null; body: string | null; imageUrl: string | null; ctaLabel: string | null; ctaHref: string | null; contentType: string }>>([]);
+
+  useEffect(() => {
+    fetch("/api/public/content")
+      .then((response) => response.ok ? response.json() : { content: [] })
+      .then((data) => setPublicContent(data.content ?? []))
+      .catch(() => setPublicContent([]));
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#07150f] text-white">
       <div className="relative isolate overflow-hidden">
@@ -187,6 +197,8 @@ export default function LandingPage() {
               </div>
             </div>
           </section>
+
+          {publicContent.length > 0 && <section className="px-6 py-10 md:px-12 md:py-14"><div className="mx-auto max-w-7xl"><div className="mb-7"><p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Latest from MavunoOne</p><h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Habari na ofa zilizothibitishwa</h2></div><div className="grid gap-5 md:grid-cols-2">{publicContent.map((item) => <article key={item.id} className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">{item.imageUrl && <div className="relative h-48 overflow-hidden"><Image src={item.imageUrl} alt={item.title} fill className="object-cover" /></div>}<div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{item.contentType.replace("_", " ")}</p><h3 className="mt-2 text-2xl font-black text-white">{item.title}</h3>{item.subtitle && <p className="mt-2 font-semibold text-emerald-100">{item.subtitle}</p>}{item.body && <p className="mt-3 text-sm leading-7 text-emerald-100/75">{item.body}</p>}{item.ctaLabel && item.ctaHref && <Link href={item.ctaHref} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-amber-300">{item.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>}</div></article>)}</div></div></section>}
 
           <section className="px-6 py-14 md:px-12 md:py-20">
             <div className="mx-auto max-w-7xl">

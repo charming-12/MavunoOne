@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { 
   products, sales, saleItems, stockIn, stockOut, machineJobs,
   vehicles, deliveries, expenses, dailyClosures, notifications,
-  customers, categories, users, auditLogs, farmers, farmerPayments, maintenanceCosts,
+  customers, categories, users, auditLogs, publicContent, farmers, farmerPayments, maintenanceCosts,
   stockReconciliations, farmerPaymentApprovals
 } from "@/drizzle/schema";
 import { desc, eq, and, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
@@ -25,6 +25,95 @@ async function notifyRoles(roles: Array<typeof users.$inferSelect.role>, type: s
 }
 
 export const appRouter = router({
+  // ===== PUBLIC CONTENT =====
+  content: router({
+    publicList: publicProcedure.query(async () => {
+      return await db.select().from(publicContent).where(and(eq(publicContent.isPublic, true), eq(publicContent.status, "published"))).orderBy(publicContent.sortOrder, desc(publicContent.publishedAt));
+    }),
+
+    list: officeProcedure.query(async () => {
+      return await db.select({
+        id: publicContent.id,
+        slug: publicContent.slug,
+        contentType: publicContent.contentType,
+        title: publicContent.title,
+        subtitle: publicContent.subtitle,
+        body: publicContent.body,
+        imageUrl: publicContent.imageUrl,
+        ctaLabel: publicContent.ctaLabel,
+        ctaHref: publicContent.ctaHref,
+        status: publicContent.status,
+        isPublic: publicContent.isPublic,
+        sortOrder: publicContent.sortOrder,
+        createdBy: publicContent.createdBy,
+        reviewedBy: publicContent.reviewedBy,
+        publishedBy: publicContent.publishedBy,
+        createdAt: publicContent.createdAt,
+        updatedAt: publicContent.updatedAt,
+        reviewedAt: publicContent.reviewedAt,
+        publishedAt: publicContent.publishedAt,
+        creatorName: users.name,
+      }).from(publicContent).leftJoin(users, eq(publicContent.createdBy, users.id)).orderBy(desc(publicContent.updatedAt));
+    }),
+
+    save: officeProcedure.input(z.object({
+      id: z.number().optional(),
+      slug: z.string().trim().min(2).max(160),
+      contentType: z.string().trim().min(2).max(32).default("announcement"),
+      title: z.string().trim().min(2).max(256),
+      subtitle: z.string().trim().max(512).optional(),
+      body: z.string().trim().optional(),
+      imageUrl: z.string().trim().url().optional().or(z.literal("")),
+      ctaLabel: z.string().trim().max(128).optional(),
+      ctaHref: z.string().trim().max(512).optional(),
+      sortOrder: z.number().int().default(0),
+    })).mutation(async ({ input, ctx }) => {
+      const allowedRoles = ["admin", "owner", "manager"];
+      if (!allowedRoles.includes(ctx.user.role)) throw new Error("Content management hairuhusiwi kwa role hii");
+      const values = {
+        slug: input.slug,
+        contentType: input.contentType,
+        title: input.title,
+        subtitle: input.subtitle || null,
+        body: input.body || null,
+        imageUrl: input.imageUrl || null,
+        ctaLabel: input.ctaLabel || null,
+        ctaHref: input.ctaHref || null,
+        sortOrder: input.sortOrder,
+        updatedAt: new Date(),
+      };
+      if (input.id) {
+        const before = await db.query.publicContent.findFirst({ where: eq(publicContent.id, input.id) });
+        if (!before) throw new Error("Public content haipatikani");
+        const [updated] = await db.update(publicContent).set({ ...values, status: "draft", isPublic: false, reviewedBy: null, publishedBy: null, reviewedAt: null, publishedAt: null }).where(eq(publicContent.id, input.id)).returning();
+        await recordAuditLog({ userId: ctx.user.id, action: "update", tableName: "public_content", recordId: updated.id, oldValue: before, newValue: updated });
+        return updated;
+      }
+      const [created] = await db.insert(publicContent).values({ ...values, createdBy: ctx.user.id, status: "draft", isPublic: false }).returning();
+      await recordAuditLog({ userId: ctx.user.id, action: "create", tableName: "public_content", recordId: created.id, newValue: created });
+      return created;
+    }),
+
+    changeStatus: officeProcedure.input(z.object({ id: z.number(), status: z.enum(["draft", "review", "approved", "published", "archived"]) })).mutation(async ({ input, ctx }) => {
+      const content = await db.query.publicContent.findFirst({ where: eq(publicContent.id, input.id) });
+      if (!content) throw new Error("Public content haipatikani");
+      if (["review", "approved", "published"].includes(input.status) && !["admin", "owner", "manager"].includes(ctx.user.role)) throw new Error("Content review hairuhusiwi kwa role hii");
+      if (input.status === "published" && !["admin", "owner"].includes(ctx.user.role)) throw new Error("Publish inaruhusiwa kwa Admin au Owner pekee");
+      if (input.status === "published" && content.status !== "approved") throw new Error("Content lazima iidhinishwe kabla ya ku-publish");
+      const [updated] = await db.update(publicContent).set({
+        status: input.status,
+        isPublic: input.status === "published",
+        reviewedBy: input.status === "approved" ? ctx.user.id : content.reviewedBy,
+        publishedBy: input.status === "published" ? ctx.user.id : input.status === "archived" ? null : content.publishedBy,
+        reviewedAt: input.status === "approved" ? new Date() : content.reviewedAt,
+        publishedAt: input.status === "published" ? new Date() : input.status === "archived" ? null : content.publishedAt,
+        updatedAt: new Date(),
+      }).where(eq(publicContent.id, input.id)).returning();
+      await recordAuditLog({ userId: ctx.user.id, action: "status_change", tableName: "public_content", recordId: updated.id, oldValue: { status: content.status, isPublic: content.isPublic }, newValue: { status: updated.status, isPublic: updated.isPublic } });
+      return updated;
+    }),
+  }),
+
   // ===== PRODUCTS =====
   products: router({
     list: publicProcedure.query(async () => {

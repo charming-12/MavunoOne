@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, ShoppingCart, History, Package, ArrowLeft, ArrowDownToLine, ArrowUpFromLine, Users, Cog, Truck, Receipt, Settings, FileBarChart, Bell, Wrench, Camera, Zap, DollarSign, BarChart3, Settings2, Rocket, ShieldAlert, Menu, X, UserRound } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, History, Package, ArrowLeft, ArrowDownToLine, ArrowUpFromLine, Users, Cog, Truck, Receipt, Settings, FileBarChart, Bell, Wrench, Camera, Zap, DollarSign, BarChart3, Settings2, Rocket, ShieldAlert, Globe2, Menu, X, UserRound } from "lucide-react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { clearStoredUser, readStoredUser, type AppUserRole } from "@/lib/auth";
 
@@ -14,6 +14,7 @@ const sidebarItems: SidebarItem[] = [
   { href: "/office/pos", label: "POS / Mauzo", icon: ShoppingCart, group: "Sales", roles: ["admin", "owner", "manager", "cashier"] },
   { href: "/office/sales", label: "Sales History", icon: History, group: "Sales", roles: ["admin", "owner", "manager", "cashier"] },
   { href: "/office/products", label: "Products", icon: Package, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
+  { href: "/office/content", label: "Public Content", icon: Globe2, group: "Public publishing", roles: ["admin", "owner", "manager"] },
   { href: "/office/stock-in", label: "Stock In", icon: ArrowDownToLine, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
   { href: "/office/stock-out", label: "Stock Out", icon: ArrowUpFromLine, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
   { href: "/office/inventory-analytics", label: "Inventory Analytics", icon: FileBarChart, group: "Inventory", roles: ["admin", "owner", "manager", "storekeeper"] },
