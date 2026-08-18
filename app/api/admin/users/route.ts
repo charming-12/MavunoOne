@@ -3,20 +3,20 @@ import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auditLogs, passwordResetTokens, users } from "@/drizzle/schema";
-import { requirePrivilegedUser } from "@/lib/api-auth";
+import { requireAdminUser } from "@/lib/api-auth";
 
 const roles = ["boss", "owner", "manager", "cashier", "storekeeper", "machine_operator", "customer", "admin"] as const;
 type Role = (typeof roles)[number];
 
 export async function GET(request: NextRequest) {
-  const actor = requirePrivilegedUser(request);
+  const actor = requireAdminUser(request);
   if (!actor) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   const records = await db.query.users.findMany({ orderBy: (table, { desc }) => desc(table.createdAt), limit: 500 });
   return NextResponse.json({ users: records.map((user) => ({ id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, createdAt: user.createdAt })) });
 }
 
 export async function POST(request: NextRequest) {
-  const actor = requirePrivilegedUser(request);
+  const actor = requireAdminUser(request);
   if (!actor || !["admin", "owner"].includes(actor.role)) return NextResponse.json({ message: "Only Admin or Owner can provision staff accounts" }, { status: 403 });
   try {
     const body = await request.json() as { name?: string; email?: string; phone?: string; role?: string };

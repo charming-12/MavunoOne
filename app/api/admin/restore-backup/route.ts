@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { restoreLatestSampleDataBackup } from "@/lib/backup";
-import { requirePrivilegedUser } from "@/lib/api-auth";
+import { requireAdminUser } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
-  const user = requirePrivilegedUser(request);
+  const user = requireAdminUser(request);
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
   }

@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { configurations } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { getAuthenticatedUser } from "@/lib/api-auth";
-import { isPrivilegedRole } from "@/lib/session";
+import { requireAdminUser } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
-  const user = getAuthenticatedUser(request);
-  if (!user || !isPrivilegedRole(user.role)) {
+  if (!requireAdminUser(request)) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
   try {
