@@ -31,6 +31,7 @@ const sidebarItems: SidebarItem[] = [
   { href: "/office/customers", label: "Wateja", icon: Users, group: "Operations", roles: ["admin", "owner", "manager", "cashier"] },
   { href: "/office/debt", label: "Deni la Wateja", icon: DollarSign, group: "Operations", roles: ["admin", "owner", "manager"] },
   { href: "/office/farmers", label: "Wakulima", icon: Users, group: "Operations", roles: ["admin", "owner", "manager"] },
+  { href: "/office/farmer-approvals", label: "Farmer Payment Requests", icon: DollarSign, group: "Finance", roles: ["admin", "owner", "manager"] },
   { href: "/office/employees", label: "Wafanyakazi", icon: Users, group: "Operations", roles: ["admin", "owner"] },
   { href: "/office/machines", label: "Mashine", icon: Zap, group: "Operations", roles: ["admin", "owner", "manager", "machine_operator"] },
   { href: "/office/vehicles", label: "Magari", icon: Truck, group: "Operations", roles: ["admin", "owner", "manager", "boss"] },
