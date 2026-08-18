@@ -15,6 +15,21 @@ const defaultCredentials = [
   { email: BOSS_EMAIL, password: BOSS_PASSWORD, role: "boss", name: "Boss" },
 ] as const;
 
+// Email lookup cache for faster default credential checks
+const emailLookupCache = new Map<string, (typeof defaultCredentials)[number] | null>();
+
+function getDefaultCredential(email: string) {
+  const lowerEmail = email.toLowerCase();
+  
+  if (emailLookupCache.has(lowerEmail)) {
+    return emailLookupCache.get(lowerEmail);
+  }
+  
+  const found = defaultCredentials.find((c) => c.password && c.email.toLowerCase() === lowerEmail) || null;
+  emailLookupCache.set(lowerEmail, found);
+  return found;
+}
+
 function authenticatedResponse(user: { id?: number; name?: string; email: string; role: string }) {
   const response = NextResponse.json({ user });
   response.cookies.set("mavunoone-user", createSessionToken(user), sessionCookieOptions());
@@ -31,26 +46,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Barua pepe na neno la siri vinahitajika." }, { status: 400 });
     }
 
-    const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) });
-
-    if (existingUser && existingUser.passwordHash) {
-      const isValid = await verifyPassword(password, existingUser.passwordHash);
-      if (!isValid) return NextResponse.json({ message: "Neno la siri lisilo sahihi." }, { status: 401 });
-      return authenticatedResponse({ id: existingUser.id, name: existingUser.name, email: existingUser.email, role: existingUser.role });
+    // Check default credentials first (faster, in-memory, no DB query needed)
+    const defaultUser = getDefaultCredential(email);
+    if (defaultUser && defaultUser.password === password) {
+      // Direct password match for demo accounts (instant login)
+      return authenticatedResponse({ email: defaultUser.email, role: defaultUser.role, name: defaultUser.name });
     }
 
-    const defaultUser = defaultCredentials.find((candidate) => candidate.password && candidate.email.toLowerCase() === email);
-    if (!defaultUser) return NextResponse.json({ message: "Akaunti hii haipo. Tumia akaunti ya MavunoOne." }, { status: 401 });
+    // Query database once for the user
+    const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) });
 
-    const seededUser = await db.query.users.findFirst({ where: eq(users.email, defaultUser.email) });
-    if (!seededUser || !seededUser.passwordHash) {
+    if (!existingUser) {
+      return NextResponse.json({ message: "Akaunti hii haipo. Tumia akaunti ya MavunoOne." }, { status: 401 });
+    }
+
+    if (!existingUser.passwordHash) {
       return NextResponse.json({ message: "Akaunti ya mtumiaji haijaanzishwa vizuri. Tafadhali seed tena database." }, { status: 401 });
     }
 
-    const isValidDefault = await verifyPassword(password, seededUser.passwordHash);
-    if (!isValidDefault) return NextResponse.json({ message: "Neno la siri lisilo sahihi." }, { status: 401 });
+    // Verify password
+    const isValid = await verifyPassword(password, existingUser.passwordHash);
+    if (!isValid) {
+      return NextResponse.json({ message: "Neno la siri lisilo sahihi." }, { status: 401 });
+    }
 
-    return authenticatedResponse({ id: seededUser.id, name: seededUser.name, email: seededUser.email, role: seededUser.role });
+    return authenticatedResponse({ id: existingUser.id, name: existingUser.name, email: existingUser.email, role: existingUser.role });
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json({ message: "Kumetokea kosa katika kuingia." }, { status: 500 });
