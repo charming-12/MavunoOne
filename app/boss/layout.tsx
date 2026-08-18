@@ -13,6 +13,7 @@ import {
   Menu,
   Settings,
   ShoppingCart,
+  ArrowLeft,
   Truck,
   UsersRound,
   X,
@@ -76,7 +77,7 @@ export default function BossLayout({ children }: { children: React.ReactNode }) 
           <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#f7f9f8]/90 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <button aria-label="Fungua menu" onClick={() => setMobileOpen(true)} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-700 shadow-sm lg:hidden"><Menu size={20} /></button>
-              <div className="hidden items-center gap-2 text-sm font-medium text-slate-500 lg:flex"><span className="text-emerald-700">MavunoOne</span><span>/</span><span>Boss dashboard</span></div>
+              <div className="flex items-center gap-3"><div className="hidden items-center gap-2 text-sm font-medium text-slate-500 lg:flex"><span className="text-emerald-700">MavunoOne</span><span>/</span><span>{pathname === "/boss" ? "Boss dashboard" : "Boss workspace"}</span></div>{pathname !== "/boss" && <Link href="/boss" className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"><ArrowLeft size={15} />Dashboard</Link>}</div>
               <div className="ml-auto flex items-center gap-2 sm:gap-4"><button aria-label="Taarifa" className="relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm hover:text-emerald-700"><Bell size={18} /><span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white">3</span></button><button aria-label="Mipangilio" className="hidden rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm hover:text-emerald-700 sm:block"><Settings size={18} /></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0d6b49] text-sm font-bold text-white">MK</span><span className="hidden text-sm font-semibold text-slate-700 md:block">Mzee Kiasi</span></div></div>
             </div>
           </header>

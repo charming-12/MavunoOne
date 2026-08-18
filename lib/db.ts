@@ -2,11 +2,11 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@/drizzle/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set");
-}
+// Keep module evaluation build-safe. Runtime database routes still require a real
+// DATABASE_URL configured in Render; the local placeholder is never a valid app credential.
+const databaseUrl = process.env.DATABASE_URL ?? "postgres://build_placeholder:build_placeholder@127.0.0.1:5432/build_placeholder";
 
-const client = postgres(process.env.DATABASE_URL, {
+const client = postgres(databaseUrl, {
   ssl:
     process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("neon.tech")
       ? { rejectUnauthorized: false }

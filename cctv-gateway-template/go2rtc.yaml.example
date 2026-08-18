@@ -1,0 +1,22 @@
+# Copy this file to go2rtc.yaml after replacing every placeholder.
+# Keep this file local to the office Windows desktop. Do not commit real credentials.
+
+api:
+  listen: ":1984"
+
+streams:
+  # Replace NVR_IP, NVR_USER and NVR_PASSWORD after confirming the device.
+  # Hikvision-style channel examples: 101, 201, 301... main stream.
+  # For lighter dashboard traffic use 102, 202, 302... sub-stream.
+  camera_1: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/101
+  # camera_2: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/201
+  # camera_3: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/301
+  # camera_4: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/401
+  # camera_5: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/501
+  # camera_6: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/601
+  # camera_7: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/701
+  # camera_8: rtsp://NVR_USER:NVR_PASSWORD@NVR_IP:554/Streaming/Channels/801
+
+# If the cameras are direct IP cameras rather than an NVR, replace each source
+# with that camera's own IP and RTSP path, for example:
+# warehouse: rtsp://CAMERA_USER:CAMERA_PASSWORD@CAMERA_IP:554/STREAM_PATH
