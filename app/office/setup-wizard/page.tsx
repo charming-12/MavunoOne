@@ -18,7 +18,7 @@ export default function SetupWizardPage() {
     scale: { enabled: false, model: "URID" },
     payment: { enabled: false, provider: "mpesa", merchantNumber: "", apiBaseUrl: "" , apiKey: "" },
     cctv: { enabled: false, brand: "hikvision", protocol: "rtsp", gatewayUrl: "", streamName: "camera_1", host: "", port: "554", username: "", password: "", streamPath: "" },
-    gps: { enabled: false, provider: "teltonika", protocol: "http_webhook", serverUrl: "", deviceId: "", vehiclePlateNumber: "", username: "", password: "" },
+    gps: { enabled: false, mode: "existing_platform", provider: "teltonika", protocol: "http_webhook", serverUrl: "", webhookToken: "", deviceId: "", vehiclePlateNumber: "", username: "", password: "" },
     notifications: { enabled: false, resendApiKey: "" },
   });
 
@@ -65,7 +65,7 @@ export default function SetupWizardPage() {
       const secretProfiles = [
         { key: "PAYMENT_PROVIDER_SECRETS", value: { apiKey: config.payment.apiKey } },
         { key: "CCTV_CONNECTION_SECRETS", value: { username: config.cctv.username, password: config.cctv.password } },
-        { key: "GPS_CONNECTION_SECRETS", value: { username: config.gps.username, password: config.gps.password } },
+        { key: "GPS_CONNECTION_SECRETS", value: { username: config.gps.username, password: config.gps.password, webhookToken: config.gps.webhookToken } },
         { key: "NOTIFICATION_SECRETS", value: { resendApiKey: config.notifications.resendApiKey } },
       ];
 
@@ -285,17 +285,21 @@ export default function SetupWizardPage() {
                 </div>
                 <div className="rounded-xl border border-sky-800 bg-[#041915] p-5">
                   <h3 className="font-bold text-white">GPS Tracker</h3>
-                  <p className="mt-1 text-xs text-emerald-200">Chagua tracker yako; ukikosa chagua Other na uweke endpoint.</p>
+                  <p className="mt-1 text-xs text-emerald-200">Chagua mojawapo ya njia mbili kulingana na kama GPS ina platform tayari au itatuma data moja kwa moja.</p>
                   <label className="mt-4 flex items-center gap-2 text-sm text-emerald-100"><input type="checkbox" checked={config.gps.enabled} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, enabled: e.target.checked } })} className="h-4 w-4 accent-amber-400" />Washa GPS</label>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <label className="sm:col-span-2"><span className="mb-2 block text-xs font-bold uppercase tracking-wide text-emerald-200">Njia ya kuunganisha GPS</span><select value={config.gps.mode} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, mode: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="existing_platform">Existing Platform / App</option><option value="direct_webhook">Direct Webhook kwenda MavunoOne</option></select></label>
+                    {config.gps.mode === "existing_platform" ? <div className="rounded-lg border border-sky-700/60 bg-sky-500/10 p-3 text-xs text-sky-100 sm:col-span-2">Tumia mode hii kama provider tayari ana app/server. Weka platform URL, provider, credentials, IMEI na plate number. Hakuna coding ya ziada kwa setup ya kawaida.</div> : <div className="rounded-lg border border-amber-700/60 bg-amber-500/10 p-3 text-xs text-amber-100 sm:col-span-2"><p className="font-bold">Direct Webhook</p><p className="mt-1">MavunoOne itapokea GPS data moja kwa moja. Installer ataweka webhook URL na token hizi kwenye tracker au gateway.</p><p className="mt-2 break-all font-mono text-amber-200">Webhook URL: {typeof window !== "undefined" ? `${window.location.origin}/api/integrations/gps/webhook` : "/api/integrations/gps/webhook"}</p></div>}
                     <select value={config.gps.provider} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, provider: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="teltonika">Teltonika</option><option value="concox">Concox</option><option value="gt06">GT06 / TK103</option><option value="traccar">Traccar</option><option value="coban">Coban</option><option value="other">Other</option></select>
                     <select value={config.gps.protocol} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, protocol: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="http_webhook">HTTP webhook</option><option value="traccar_api">Traccar API</option><option value="tcp">TCP gateway</option><option value="other">Other</option></select>
-                    <input value={config.gps.serverUrl} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, serverUrl: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Tracker server URL / webhook" />
+                    <input value={config.gps.serverUrl} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, serverUrl: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder={config.gps.mode === "direct_webhook" ? "Gateway/server URL (optional)" : "Existing platform URL / API endpoint"} />
+                    {config.gps.mode === "direct_webhook" && <input type="password" value={config.gps.webhookToken} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, webhookToken: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Webhook token ya siri (optional lakini inapendekezwa)" />}
                     <input value={config.gps.deviceId} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, deviceId: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Device ID / IMEI" />
                     <input value={config.gps.vehiclePlateNumber} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, vehiclePlateNumber: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Vehicle plate: T 123 ABC" />
-                    <input value={config.gps.username} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, username: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Username (optional)" />
-                    <input type="password" value={config.gps.password} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, password: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600 sm:col-span-2" placeholder="Password (optional)" />
+                    <input value={config.gps.username} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, username: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Platform username (optional)" />
+                    <input type="password" value={config.gps.password} onChange={(e) => setConfig({ ...config, gps: { ...config.gps, password: e.target.value } })} className="rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Platform password (optional)" />
                   </div>
+                  <div className="mt-4 flex items-start gap-3 rounded-lg border border-emerald-800 bg-emerald-950/50 p-3 text-xs text-emerald-100"><div className={`mt-0.5 h-2.5 w-2.5 rounded-full ${config.gps.enabled && config.gps.deviceId ? "bg-amber-300" : "bg-slate-500"}`} /><div><p className="font-bold">{!config.gps.enabled ? "GPS imezimwa" : config.gps.deviceId ? "Ready for first location" : "Waiting for device ID / IMEI"}</p><p className="mt-1 text-emerald-200">Baada ya tracker kutuma data, dashboard itaonyesha last location, speed na muda wa update.</p></div></div>
                 </div>
               </div>
 
