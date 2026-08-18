@@ -606,6 +606,20 @@ export const appRouter = router({
       const totalExpenses = daily.reduce((sum, day) => sum + day.expenses, 0);
       return { daily, totalSales, totalExpenses, totalProfit: totalSales - totalExpenses };
     }),
+    forecast: protectedProcedure.query(async () => {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - 29);
+      const [recentSales, recentExpenses] = await Promise.all([
+        db.query.sales.findMany({ where: gte(sales.createdAt, start) }),
+        db.query.expenses.findMany({ where: gte(expenses.date, start) }),
+      ]);
+      const avgDailySales = recentSales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0) / 30;
+      const avgDailyExpenses = recentExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0) / 30;
+      const projectedRevenue30 = avgDailySales * 30;
+      const projectedExpenses30 = avgDailyExpenses * 30;
+      return { historicalDays: 30, salesTransactions: recentSales.length, projectedRevenue30, projectedExpenses30, projectedProfit30: projectedRevenue30 - projectedExpenses30, avgDailySales, avgDailyExpenses, confidence: recentSales.length >= 10 ? "medium" : recentSales.length > 0 ? "low" : "insufficient", disclaimer: "Forecast ni estimate ya trend ya database iliyopo; si guarantee ya soko." };
+    }),
   }),
 
   // ===== CUSTOMERS =====

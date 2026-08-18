@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Download, Calendar } from "lucide-react";
+import { Download, Calendar, TrendingUp } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 interface SalesReport {
   date: string;
@@ -27,6 +28,7 @@ interface AnalyticsData {
 }
 
 export default function AdvancedAnalyticsPage() {
+  const forecastQuery = trpc.analytics.forecast.useQuery();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [dateRange, setDateRange] = useState({ from: "2024-01-01", to: "2024-01-31" });
   const [exportFormat, setExportFormat] = useState<"csv" | "json" | "pdf">("csv");
@@ -97,6 +99,8 @@ export default function AdvancedAnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      <section className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-900 to-emerald-700 p-5 text-white shadow-lg"><div className="flex items-start gap-3"><TrendingUp className="mt-1 text-amber-300" size={22} /><div><h2 className="text-lg font-black">Makadirio ya siku 30 zijazo</h2><p className="mt-1 text-sm text-emerald-100">Inatumia sales na expenses halisi za siku 30 zilizopita; si mock data wala guarantee ya soko.</p></div></div>{forecastQuery.isLoading ? <p className="mt-4 text-sm text-emerald-100">Inahesabu trend...</p> : forecastQuery.data?.confidence === "insufficient" ? <p className="mt-4 rounded-xl bg-white/10 p-3 text-sm text-amber-100">Data haitoshi kwa forecast ya kuaminika. Endelea kurekodi mauzo na gharama.</p> : <div className="mt-5 grid gap-3 sm:grid-cols-4"><div className="rounded-xl bg-white/10 p-3"><p className="text-xs text-emerald-100">Revenue forecast</p><p className="mt-1 text-lg font-black">TZS {Math.round(forecastQuery.data?.projectedRevenue30 ?? 0).toLocaleString()}</p></div><div className="rounded-xl bg-white/10 p-3"><p className="text-xs text-emerald-100">Cost forecast</p><p className="mt-1 text-lg font-black">TZS {Math.round(forecastQuery.data?.projectedExpenses30 ?? 0).toLocaleString()}</p></div><div className="rounded-xl bg-white/10 p-3"><p className="text-xs text-emerald-100">Projected profit</p><p className="mt-1 text-lg font-black text-amber-300">TZS {Math.round(forecastQuery.data?.projectedProfit30 ?? 0).toLocaleString()}</p></div><div className="rounded-xl bg-white/10 p-3"><p className="text-xs text-emerald-100">Confidence</p><p className="mt-1 text-lg font-black capitalize">{forecastQuery.data?.confidence}</p></div></div>}</section>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
