@@ -106,6 +106,46 @@ export const appRouter = router({
         ),
       });
     }),
+
+    stockMovementSummary: protectedProcedure.query(async () => {
+      const [productRows, inRows, outRows] = await Promise.all([
+        db.query.products.findMany({ where: eq(products.isActive, true), orderBy: desc(products.name), limit: 500 }),
+        db.query.stockIn.findMany({ limit: 5000 }),
+        db.query.stockOut.findMany({ limit: 5000 }),
+      ]);
+      const incoming = new Map<number, { units: number; kg: number }>();
+      const outgoing = new Map<number, { units: number; kg: number }>();
+      for (const row of inRows) {
+        const kg = Number(row.baseQuantity || row.quantity || 0);
+        const units = Number(row.quantity || 0);
+        const current = incoming.get(row.productId) || { units: 0, kg: 0 };
+        incoming.set(row.productId, { units: current.units + units, kg: current.kg + kg });
+      }
+      for (const row of outRows) {
+        const kg = Number(row.baseQuantity || row.quantity || 0);
+        const units = Number(row.quantity || 0);
+        const current = outgoing.get(row.productId) || { units: 0, kg: 0 };
+        outgoing.set(row.productId, { units: current.units + units, kg: current.kg + kg });
+      }
+      return productRows.map((product) => {
+        const packageSizeKg = Number(product.packageSizeKg || 1);
+        const stockKg = Number(product.currentStock || 0);
+        const inMovement = incoming.get(product.id) || { units: 0, kg: 0 };
+        const outMovement = outgoing.get(product.id) || { units: 0, kg: 0 };
+        return {
+          productId: product.id,
+          name: product.name,
+          unit: product.unit,
+          packageSizeKg,
+          stockKg,
+          balanceUnits: stockKg / packageSizeKg,
+          stockInUnits: inMovement.units,
+          stockInKg: inMovement.kg,
+          stockOutUnits: outMovement.units,
+          stockOutKg: outMovement.kg,
+        };
+      });
+    }),
   }),
 
   // ===== SALES =====
