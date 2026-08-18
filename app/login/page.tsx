@@ -105,7 +105,7 @@ export default function LoginPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                placeholder="admin@mavunoone.com"
+                placeholder="Ingiza email ya taasisi"
                 className="w-full px-4 py-3 border border-emerald-900/30 rounded-lg bg-[#051511] text-white placeholder-emerald-600 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
               />
             </div>

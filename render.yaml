@@ -32,5 +32,7 @@ services:
         sync: false
       - key: MAVUNO_BOSS_PASSWORD
         sync: false
+      - key: MAVUNO_BOOTSTRAP_SECRET
+        sync: false
       - key: NEXT_PUBLIC_APP_URL
         sync: false
