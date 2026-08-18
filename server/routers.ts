@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { 
   products, sales, saleItems, stockIn, stockOut, machineJobs,
   vehicles, deliveries, expenses, dailyClosures, notifications,
-  customers, categories, users, auditLogs, farmers, farmerPayments
+  customers, categories, users, auditLogs, farmers, farmerPayments, maintenanceCosts
 } from "@/drizzle/schema";
 import { desc, eq, and, gt, gte, lte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
@@ -31,6 +31,8 @@ export const appRouter = router({
     create: officeProcedure
       .input(z.object({
         name: z.string().min(1),
+        barcode: z.string().trim().min(3).optional(),
+        productType: z.string().default("finished_goods"),
         categoryId: z.number().optional(),
         unit: z.string().default("kg"),
         costPrice: z.number(),
@@ -42,6 +44,8 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.insert(products).values({
           ...input,
+          barcode: input.barcode || undefined,
+          productType: input.productType,
           costPrice: decimalString(input.costPrice),
           sellPrice: decimalString(input.sellPrice),
           wholesalePrice: input.wholesalePrice !== undefined ? decimalString(input.wholesalePrice) : undefined,
@@ -49,6 +53,16 @@ export const appRouter = router({
           currentStock: decimalString(input.currentStock),
         }).returning();
       }),
+
+    byBarcode: protectedProcedure.input(z.object({ barcode: z.string().min(3) })).query(async ({ input }) => {
+      return await db.query.products.findFirst({ where: and(eq(products.barcode, input.barcode.trim()), eq(products.isActive, true)) });
+    }),
+    updatePricing: financeProcedure.input(z.object({ id: z.number(), costPrice: z.number().nonnegative(), sellPrice: z.number().nonnegative(), wholesalePrice: z.number().nonnegative().optional() })).mutation(async ({ input, ctx }) => {
+      const [updated] = await db.update(products).set({ costPrice: decimalString(input.costPrice), sellPrice: decimalString(input.sellPrice), wholesalePrice: input.wholesalePrice === undefined ? undefined : decimalString(input.wholesalePrice), updatedAt: new Date() }).where(eq(products.id, input.id)).returning();
+      if (!updated) throw new Error("Product haipatikani");
+      await recordAuditLog({ userId: ctx.user?.id, action: "update", tableName: "products", recordId: updated.id, newValue: { costPrice: input.costPrice, sellPrice: input.sellPrice, wholesalePrice: input.wholesalePrice } });
+      return updated;
+    }),
     
     updateStock: officeProcedure
       .input(z.object({ id: z.number(), amount: z.number() }))
@@ -497,6 +511,16 @@ export const appRouter = router({
       const paidAmount = Math.min(input.paidAmount, totalAmount);
       const [record] = await db.insert(farmerPayments).values({ farmerId: input.farmerId, productName: input.productName, quantityKg: decimalString(input.quantityKg), pricePerKg: decimalString(input.pricePerKg), totalAmount: decimalString(totalAmount), paidAmount: decimalString(paidAmount), balance: decimalString(totalAmount - paidAmount), paymentMethod: input.paymentMethod, paymentReference: input.paymentReference, paymentStatus: paidAmount >= totalAmount ? "paid" : paidAmount > 0 ? "partial" : "unpaid", createdBy: ctx.user?.id }).returning();
       await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "farmer_payments", recordId: record.id, newValue: record });
+      return record;
+    }),
+  }),
+
+  // ===== MACHINE MAINTENANCE =====
+  maintenance: router({
+    list: protectedProcedure.query(async () => db.query.maintenanceCosts.findMany({ orderBy: desc(maintenanceCosts.serviceDate), limit: 200 })),
+    create: financeProcedure.input(z.object({ machineName: z.string().min(2), maintenanceType: z.string().min(2), amount: z.number().positive(), serviceDate: z.string().optional(), nextDueDate: z.string().optional(), vendorName: z.string().optional(), notes: z.string().optional() })).mutation(async ({ input, ctx }) => {
+      const [record] = await db.insert(maintenanceCosts).values({ machineName: input.machineName, maintenanceType: input.maintenanceType, amount: decimalString(input.amount), serviceDate: input.serviceDate ? new Date(input.serviceDate) : new Date(), nextDueDate: input.nextDueDate ? new Date(input.nextDueDate) : undefined, vendorName: input.vendorName, notes: input.notes, createdBy: ctx.user?.id }).returning();
+      await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "maintenance_costs", recordId: record.id, newValue: record });
       return record;
     }),
   }),

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard, ShoppingCart, History, Package, ArrowLeft, ArrowDownToLine,
-  ArrowUpFromLine, Users, Cog, Truck, Receipt, Settings, FileBarChart, Bell,
+  ArrowUpFromLine, Users, Cog, Truck, Receipt, Settings, FileBarChart, Bell, Wrench,
   Camera, Zap, DollarSign, BarChart3, Settings2, Rocket, Menu, X, UserRound,
 } from "lucide-react";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -36,6 +36,7 @@ const sidebarItems: SidebarItem[] = [
   { href: "/office/cameras", label: "Kamera", icon: Camera, group: "Security", roles: ["admin", "owner", "manager", "boss"] },
   { href: "/office/deliveries", label: "Uwasilishaji", icon: Truck, group: "Operations", roles: ["admin", "owner", "manager", "boss"] },
   { href: "/office/expenses", label: "Gharama", icon: Receipt, group: "Finance", roles: ["admin", "owner", "manager"] },
+  { href: "/office/maintenance", label: "Maintenance", icon: Wrench, group: "Finance", roles: ["admin", "owner", "manager"] },
   { href: "/office/closures", label: "Kufunga Siku", icon: Cog, group: "Finance", roles: ["admin", "owner", "manager", "cashier"] },
   { href: "/office/reports", label: "Ripoti", icon: FileBarChart, group: "Reports", roles: ["admin", "owner", "manager", "boss"] },
   { href: "/office/advanced-analytics", label: "Uchambuzi Mkali", icon: BarChart3, group: "Reports", roles: ["admin", "owner", "manager", "boss"] },

@@ -31,6 +31,8 @@ export const categories = pgTable("categories", {
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
+  barcode: varchar("barcode", { length: 64 }).unique(),
+  productType: varchar("productType", { length: 32 }).default("finished_goods").notNull(),
   categoryId: integer("categoryId"),
   unit: varchar("unit", { length: 32 }).default("kg").notNull(),
   costPrice: decimal("costPrice", { precision: 12, scale: 2 }).default("0").notNull(),
@@ -270,6 +272,20 @@ export const farmerPayments = pgTable("farmer_payments", {
   paymentMethod: varchar("paymentMethod", { length: 32 }).default("cash").notNull(),
   paymentStatus: varchar("paymentStatus", { length: 32 }).default("unpaid").notNull(),
   paymentReference: varchar("paymentReference", { length: 128 }),
+  createdBy: integer("createdBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ===== 23. MACHINE MAINTENANCE =====
+export const maintenanceCosts = pgTable("maintenance_costs", {
+  id: serial("id").primaryKey(),
+  machineName: varchar("machineName", { length: 128 }).notNull(),
+  maintenanceType: varchar("maintenanceType", { length: 64 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  serviceDate: timestamp("serviceDate").defaultNow().notNull(),
+  nextDueDate: timestamp("nextDueDate"),
+  vendorName: varchar("vendorName", { length: 256 }),
+  notes: text("notes"),
   createdBy: integer("createdBy"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
