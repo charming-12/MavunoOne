@@ -338,3 +338,19 @@ export async function sendPaymentReceivedSms(
     senderID: "MAVUNO-PAY",
   });
 }
+
+export function buildMachineServiceSms({ customerName, jobType, inputKg, outputSummary, fee }: { customerName: string; jobType: string; inputKg: number; outputSummary: string; fee: number }) {
+  return shortenMessage(`Habari ${customerName}! Kazi yako ya ${jobType} imekamilika. Input ${inputKg}kg; output ${outputSummary}. Ada TZS ${formatCurrency(fee)}. Asante - MavunoOne.`);
+}
+
+export async function sendMachineServiceSms(phone: string, customerName: string, jobType: string, inputKg: number, outputSummary: string, fee: number): Promise<SmsResponse> {
+  return sendSms({ phone, message: buildMachineServiceSms({ customerName, jobType, inputKg, outputSummary, fee }), senderID: "MAVUNO-MILL" });
+}
+
+export function buildFarmerPaymentSms({ farmerName, productName, amount, balance }: { farmerName: string; productName: string; amount: number; balance: number }) {
+  return shortenMessage(`Habari ${farmerName}! MavunoOne imepokea/imesajili malipo TZS ${formatCurrency(amount)} kwa ${productName}. Salio lililobaki TZS ${formatCurrency(balance)}. Asante.`);
+}
+
+export async function sendFarmerPaymentSms(phone: string, farmerName: string, productName: string, amount: number, balance: number): Promise<SmsResponse> {
+  return sendSms({ phone, message: buildFarmerPaymentSms({ farmerName, productName, amount, balance }), senderID: "MAVUNO-FARM" });
+}

@@ -361,6 +361,16 @@ export const appRouter = router({
           return job;
         });
         await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "machine_jobs", recordId: saved.id, newValue: saved });
+        try {
+          if (input.customerId) {
+            const customer = await db.query.customers.findFirst({ where: eq(customers.id, input.customerId) });
+            if (customer?.phone) {
+              const { sendMachineServiceSms } = await import("@/server/utils/sms");
+              const outputs = [input.outputProduct1 ? `${input.outputProduct1} ${input.outputKg1}kg` : "", input.outputProduct2 ? `${input.outputProduct2} ${input.outputKg2}kg` : ""].filter(Boolean).join(", ");
+              await sendMachineServiceSms(customer.phone, customer.name, input.jobType, input.inputKg, outputs || "hakuna output", input.serviceFee);
+            }
+          }
+        } catch (smsError) { console.error("[SMS] Machine service notification failed:", smsError); }
         return saved;
       }),
 
@@ -511,6 +521,12 @@ export const appRouter = router({
       const paidAmount = Math.min(input.paidAmount, totalAmount);
       const [record] = await db.insert(farmerPayments).values({ farmerId: input.farmerId, productName: input.productName, quantityKg: decimalString(input.quantityKg), pricePerKg: decimalString(input.pricePerKg), totalAmount: decimalString(totalAmount), paidAmount: decimalString(paidAmount), balance: decimalString(totalAmount - paidAmount), paymentMethod: input.paymentMethod, paymentReference: input.paymentReference, paymentStatus: paidAmount >= totalAmount ? "paid" : paidAmount > 0 ? "partial" : "unpaid", createdBy: ctx.user?.id }).returning();
       await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "farmer_payments", recordId: record.id, newValue: record });
+      try {
+        if (farmer.phone && paidAmount > 0) {
+          const { sendFarmerPaymentSms } = await import("@/server/utils/sms");
+          await sendFarmerPaymentSms(farmer.phone, farmer.name, input.productName, paidAmount, totalAmount - paidAmount);
+        }
+      } catch (smsError) { console.error("[SMS] Farmer payment notification failed:", smsError); }
       return record;
     }),
   }),
