@@ -125,29 +125,29 @@ export default function LandingPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#07150f] via-[#07150f]/45 to-[#07150f]/10" />
 
-                <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#07150f]/70 p-5 backdrop-blur-md">
-                  <div className="flex items-center justify-between">
+                <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#07150f]/80 p-5 backdrop-blur-md">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Business Overview</p>
-                      <p className="mt-2 text-2xl font-black text-white">MavunoOne Growth</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Operational control</p>
+                      <p className="mt-2 text-2xl font-black text-white">Built for real growth</p>
                     </div>
                     <div className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-                      +18.4%
+                      Live system
                     </div>
                   </div>
 
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     <div className="rounded-xl bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Sales</p>
-                      <p className="mt-2 text-lg font-black text-white">TZS 9.2M</p>
-                    </div>
-                    <div className="rounded-xl bg-white/5 p-3">
                       <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Stock</p>
-                      <p className="mt-2 text-lg font-black text-white">1,420</p>
+                      <p className="mt-2 text-sm font-bold text-white">Traceable</p>
                     </div>
                     <div className="rounded-xl bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Deliveries</p>
-                      <p className="mt-2 text-lg font-black text-white">89</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Farmers</p>
+                      <p className="mt-2 text-sm font-bold text-white">Connected</p>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Delivery</p>
+                      <p className="mt-2 text-sm font-bold text-white">Coordinated</p>
                     </div>
                   </div>
                 </div>
