@@ -1,72 +1,37 @@
 "use client";
 
-import { Plus, Zap } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { Factory, Plus, RefreshCw, Zap } from "lucide-react";
+
+const money = (value: number) => `TZS ${Math.round(value).toLocaleString("en-TZ")}`;
+const num = (value: unknown) => Number(value ?? 0);
+
+type JobForm = { jobType: string; inputProduct: string; inputKg: string; outputProduct1: string; outputKg1: string; outputProduct2: string; outputKg2: string; serviceFee: string; paymentMethod: string; notes: string };
+const emptyForm: JobForm = { jobType: "milling", inputProduct: "", inputKg: "", outputProduct1: "", outputKg1: "", outputProduct2: "", outputKg2: "", serviceFee: "", paymentMethod: "cash", notes: "" };
 
 export default function MachinesPage() {
-  const machineJobs = [
-    // MAHINDI MILLING JOBS
-    { id: 1, customer: "John Mkwambi", product: "Mahindi → Unga", inputKg: 50, outputKg: 45, efficiency: 90, status: "Completed", date: "2026-08-15 14:30" },
-    { id: 2, customer: "Amina Hassan", product: "Mahindi → Pumba", inputKg: 30, outputKg: 27, efficiency: 90, status: "In Progress", date: "2026-08-15 12:15" },
-    { id: 3, customer: "Emmanuel Kamari", product: "Mahindi → Uduvi", inputKg: 25, outputKg: 20, efficiency: 80, status: "Completed", date: "2026-08-14 16:45" },
-    { id: 4, customer: "Mary Pamba", product: "Mahindi → Kahdarikaa", inputKg: 40, outputKg: 38, efficiency: 95, status: "Completed", date: "2026-08-14 11:20" },
-    // ALIZETI OIL PRODUCTION
-    { id: 5, customer: "Hassan Rashid", product: "Alizeti → Mafuta", inputKg: 100, outputKg: 25, efficiency: 25, status: "Completed", date: "2026-08-13 10:00" },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mashine</h1>
-          <p className="text-gray-600 mt-2">Dhamana ya jobs ya kusindika</p>
-        </div>
-        <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
-          <Plus size={20} />
-          Kazi Mpya
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Mteja</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Bidhaa</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ingizo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Matokeo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ufanisi</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tarehe</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Hali</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {machineJobs.map(job => (
-              <tr key={job.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{job.customer}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.product}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.inputKg} kg</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.outputKg} kg</td>
-                <td className="px-6 py-4 text-sm">
-                  <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded font-medium">
-                    <Zap size={16} />
-                    {job.efficiency}%
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.date}</td>
-                <td className="px-6 py-4 text-sm">
-                  <span className={`px-2 py-1 rounded text-sm ${
-                    job.status === "Completed"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-blue-100 text-blue-800"
-                  }`}>
-                    {job.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const utils = trpc.useUtils();
+  const productsQuery = trpc.products.list.useQuery();
+  const jobsQuery = trpc.machineJobs.list.useQuery();
+  const createJob = trpc.machineJobs.create.useMutation({ onSuccess: () => { utils.machineJobs.list.invalidate(); utils.products.list.invalidate(); utils.products.lowStock.invalidate(); setForm(emptyForm); setOpen(false); setMessage("Kazi imehifadhiwa. Input imepungua na output imeongezwa kwenye stock."); } });
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [form, setForm] = useState<JobForm>(emptyForm);
+  const products = useMemo(() => productsQuery.data ?? [], [productsQuery.data]);
+  const jobs = jobsQuery.data ?? [];
+  const productNames = useMemo(() => products.map((product) => product.name), [products]);
+  const totalInput = jobs.reduce((sum, job) => sum + num(job.inputKg), 0);
+  const totalOutput = jobs.reduce((sum, job) => sum + num(job.outputKg1) + num(job.outputKg2), 0);
+  const update = (key: keyof JobForm, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const submit = (event: FormEvent) => { event.preventDefault(); setMessage(""); createJob.mutate({ jobType: form.jobType, inputProduct: form.inputProduct, inputKg: Number(form.inputKg), outputProduct1: form.outputProduct1 || undefined, outputKg1: Number(form.outputKg1 || 0), outputProduct2: form.outputProduct2 || undefined, outputKg2: Number(form.outputKg2 || 0), serviceFee: Number(form.serviceFee || 0), paymentMethod: form.paymentMethod, notes: form.notes || undefined }); };
+  return <div className="space-y-6">
+    <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Production control</p><h1 className="mt-2 flex items-center gap-3 text-3xl font-bold tracking-tight text-slate-950"><Factory className="text-emerald-600" /> Kusaga na Kukoboa</h1><p className="mt-2 text-sm text-slate-500">Rekodi kazi za kila siku za milling, shelling, oil pressing na animal feeds. Kila kazi inaathiri stock halisi.</p></div><div className="flex gap-2"><button onClick={() => { jobsQuery.refetch(); productsQuery.refetch(); }} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"><RefreshCw size={16} /> Refresh</button><button onClick={() => setOpen((value) => !value)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><Plus size={17} /> Kazi mpya</button></div></header>
+    {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
+    {createJob.error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{createJob.error.message}</div>}
+    <div className="grid gap-4 md:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Kazi zilizorekodiwa</p><p className="mt-2 text-2xl font-bold text-slate-950">{jobs.length}</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Input processed</p><p className="mt-2 text-2xl font-bold text-slate-950">{totalInput.toLocaleString()} kg</p></div><div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm"><p className="text-sm text-emerald-700">Output produced</p><p className="mt-2 text-2xl font-bold text-emerald-950">{totalOutput.toLocaleString()} kg</p></div></div>
+    {open && <form onSubmit={submit} className="grid gap-4 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm md:grid-cols-3"><div><label className="label">Aina ya kazi</label><select value={form.jobType} onChange={(e) => update("jobType", e.target.value)} className="input"><option value="milling">Kusaga mahindi</option><option value="shelling">Kukoboa mahindi</option><option value="oil_pressing">Kukamua mafuta ya alizeti</option><option value="animal_feed">Kutengeneza uduvi/mashudu</option><option value="other">Huduma nyingine</option></select></div><div><label className="label">Input product</label><select required value={form.inputProduct} onChange={(e) => update("inputProduct", e.target.value)} className="input"><option value="">Chagua product ya inventory</option>{productNames.map((name) => <option key={name} value={name}>{name}</option>)}</select></div><div><label className="label">Input (kg)</label><input required type="number" min="0.01" step="0.01" value={form.inputKg} onChange={(e) => update("inputKg", e.target.value)} className="input" placeholder="100" /></div><div><label className="label">Output 1</label><select value={form.outputProduct1} onChange={(e) => update("outputProduct1", e.target.value)} className="input"><option value="">Hakuna / service only</option>{productNames.map((name) => <option key={name} value={name}>{name}</option>)}</select></div><div><label className="label">Output 1 (kg)</label><input type="number" min="0" step="0.01" value={form.outputKg1} onChange={(e) => update("outputKg1", e.target.value)} className="input" placeholder="90" /></div><div><label className="label">Output 2</label><select value={form.outputProduct2} onChange={(e) => update("outputProduct2", e.target.value)} className="input"><option value="">Hakuna</option>{productNames.map((name) => <option key={name} value={name}>{name}</option>)}</select></div><div><label className="label">Output 2 (kg)</label><input type="number" min="0" step="0.01" value={form.outputKg2} onChange={(e) => update("outputKg2", e.target.value)} className="input" placeholder="5" /></div><div><label className="label">Service fee (TZS)</label><input type="number" min="0" value={form.serviceFee} onChange={(e) => update("serviceFee", e.target.value)} className="input" placeholder="0" /></div><div><label className="label">Njia ya malipo</label><select value={form.paymentMethod} onChange={(e) => update("paymentMethod", e.target.value)} className="input"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="tigopesa">Tigo Pesa</option><option value="credit">Deni</option></select></div><div className="md:col-span-2"><label className="label">Notes</label><input value={form.notes} onChange={(e) => update("notes", e.target.value)} className="input" placeholder="Batch, operator notes, customer details..." /></div><div className="flex items-end"><button disabled={createJob.isPending || products.length === 0} className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">{createJob.isPending ? "Inahifadhi..." : "Hifadhi production job"}</button></div></form>}
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-5 py-4"><h2 className="text-lg font-bold text-slate-950">Production ledger</h2><p className="mt-1 text-sm text-slate-500">Kila entry hapa ni record ya database; siyo sample data.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-4">Kazi</th><th className="px-5 py-4">Input</th><th className="px-5 py-4">Outputs</th><th className="px-5 py-4">Efficiency</th><th className="px-5 py-4">Fee</th><th className="px-5 py-4">Tarehe</th></tr></thead><tbody className="divide-y divide-slate-100">{jobsQuery.isLoading ? <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">Inapakia production ledger...</td></tr> : jobs.map((job) => <tr key={job.id} className="hover:bg-slate-50"><td className="px-5 py-4"><p className="font-bold capitalize text-slate-950">{job.jobType.replaceAll("_", " ")}</p><p className="text-xs text-slate-500">#{job.id} · {job.status}</p></td><td className="px-5 py-4 text-sm font-semibold text-slate-700">{job.inputProduct}<br /><span className="text-xs text-slate-500">{num(job.inputKg).toLocaleString()} kg</span></td><td className="px-5 py-4 text-sm text-slate-700">{job.outputProduct1 ? `${job.outputProduct1} (${num(job.outputKg1).toLocaleString()} kg)` : "—"}{job.outputProduct2 ? <><br />{job.outputProduct2} ({num(job.outputKg2).toLocaleString()} kg)</> : null}</td><td className="px-5 py-4"><span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700"><Zap size={13} /> {num(job.efficiency).toFixed(1)}%</span></td><td className="px-5 py-4 text-sm font-semibold text-slate-700">{money(num(job.serviceFee))}</td><td className="px-5 py-4 text-sm text-slate-500">{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(job.createdAt))}</td></tr>)}{!jobsQuery.isLoading && jobs.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">Hakuna production jobs zilizorekodiwa.</td></tr>}</tbody></table></div></section>
+    <style jsx>{`.label{display:block;margin-bottom:.35rem;font-size:.75rem;font-weight:700;color:#475569}.input{width:100%;border:1px solid #dbe4e0;border-radius:.75rem;background:#fff;padding:.65rem .8rem;font-size:.875rem;color:#0f172a;outline:none}.input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.12)}`}</style>
+  </div>;
 }

@@ -309,23 +309,45 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const totalOutput = (input.outputKg1 || 0) + (input.outputKg2 || 0);
         const efficiency = (totalOutput / input.inputKg) * 100;
-
-        return await db.insert(machineJobs).values({
-          customerId: input.customerId,
-          jobType: input.jobType,
-          inputProduct: input.inputProduct,
-          inputKg: decimalString(input.inputKg),
-          outputProduct1: input.outputProduct1,
-          outputKg1: decimalString(input.outputKg1),
-          outputProduct2: input.outputProduct2,
-          outputKg2: decimalString(input.outputKg2),
-          serviceFee: decimalString(input.serviceFee),
-          paymentMethod: input.paymentMethod,
-          notes: input.notes,
-          operatorId: ctx.user?.id,
-          efficiency: decimalString(efficiency),
-          status: "completed",
-        }).returning();
+        if (input.inputKg <= 0 || !Number.isFinite(efficiency)) throw new Error("Kiasi cha input lazima kiwe zaidi ya sifuri");
+        const saved = await db.transaction(async (tx) => {
+          const inputProduct = await tx.query.products.findFirst({ where: and(eq(products.name, input.inputProduct), eq(products.isActive, true)) });
+          if (!inputProduct) throw new Error(`Input product haipo kwenye inventory: ${input.inputProduct}`);
+          if (Number(inputProduct.currentStock) < input.inputKg) throw new Error(`Stock haitoshi kwa ${input.inputProduct}. Iliyopo: ${inputProduct.currentStock}`);
+          const outputNames = [input.outputProduct1, input.outputProduct2].filter((name): name is string => Boolean(name));
+          for (const outputName of outputNames) {
+            const outputProduct = await tx.query.products.findFirst({ where: and(eq(products.name, outputName), eq(products.isActive, true)) });
+            if (!outputProduct) throw new Error(`Output product haipo kwenye inventory: ${outputName}`);
+          }
+          const [job] = await tx.insert(machineJobs).values({
+            customerId: input.customerId,
+            jobType: input.jobType,
+            inputProduct: input.inputProduct,
+            inputKg: decimalString(input.inputKg),
+            outputProduct1: input.outputProduct1,
+            outputKg1: decimalString(input.outputKg1),
+            outputProduct2: input.outputProduct2,
+            outputKg2: decimalString(input.outputKg2),
+            serviceFee: decimalString(input.serviceFee),
+            paymentMethod: input.paymentMethod,
+            notes: input.notes,
+            operatorId: ctx.user?.id,
+            efficiency: decimalString(efficiency),
+            status: "completed",
+          }).returning();
+          await tx.update(products).set({ currentStock: sql`${products.currentStock} - ${input.inputKg}` }).where(eq(products.id, inputProduct.id));
+          await tx.insert(stockOut).values({ productId: inputProduct.id, quantity: decimalString(input.inputKg), reason: `machine_${input.jobType}`, notes: `Machine job #${job.id}` });
+          for (const [productName, quantity] of [[input.outputProduct1, input.outputKg1], [input.outputProduct2, input.outputKg2]] as Array<[string | undefined, number]>) {
+            if (!productName || quantity <= 0) continue;
+            const outputProduct = await tx.query.products.findFirst({ where: and(eq(products.name, productName), eq(products.isActive, true)) });
+            if (!outputProduct) throw new Error(`Output product haipo kwenye inventory: ${productName}`);
+            await tx.update(products).set({ currentStock: sql`${products.currentStock} + ${quantity}` }).where(eq(products.id, outputProduct.id));
+            await tx.insert(stockIn).values({ productId: outputProduct.id, quantity: decimalString(quantity), supplierName: "MavunoOne Production", costPerUnit: "0", totalCost: "0", notes: `Output ya machine job #${job.id}` });
+          }
+          return job;
+        });
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "machine_jobs", recordId: saved.id, newValue: saved });
+        return saved;
       }),
 
     list: protectedProcedure.query(async () => {
