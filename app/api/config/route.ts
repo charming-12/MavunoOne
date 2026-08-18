@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { configurations } from "@/drizzle/schema";
-import { requirePrivilegedUser } from "@/lib/api-auth";
+import { requireAdminUser } from "@/lib/api-auth";
 import { encryptConfigValue, isEncryptedConfigValue } from "@/lib/config-crypto";
 
 function unauthorized() {
@@ -10,7 +10,7 @@ function unauthorized() {
 }
 
 export async function GET(request: NextRequest) {
-  if (!requirePrivilegedUser(request)) return unauthorized();
+  if (!requireAdminUser(request)) return unauthorized();
   try {
     const configs = await db.query.configurations.findMany();
     const safeConfigs = configs.map((config) => config.isEncrypted || isEncryptedConfigValue(config.value)
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requirePrivilegedUser(request)) return unauthorized();
+  if (!requireAdminUser(request)) return unauthorized();
   try {
     const body = await request.json();
     const { key, value, description, isEncrypted } = body;
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!requirePrivilegedUser(request)) return unauthorized();
+  if (!requireAdminUser(request)) return unauthorized();
   try {
     const key = new URL(request.url).searchParams.get("key");
     if (!key) return NextResponse.json({ message: "Key is required" }, { status: 400 });

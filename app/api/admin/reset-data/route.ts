@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLatestSampleDataBackup, resetSampleData } from "@/lib/backup";
-import { requirePrivilegedUser } from "@/lib/api-auth";
+import { requireAdminUser } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  const user = requirePrivilegedUser(request);
+  const user = requireAdminUser(request);
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
   }
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const user = requirePrivilegedUser(request);
+  const user = requireAdminUser(request);
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
   }
