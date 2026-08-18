@@ -15,17 +15,22 @@ const productCards = [
   {
     title: "Mafuta ya Alizeti",
     description: "Picha halisi ya mafuta ya alizeti, mbegu zake, na ufuatiliaji wa stock ya bidhaa.",
-    image: "/products/sunflower-oil-sizes.jpg",
+    image: "/images/homepage/sunflower-oil-containers.webp",
   },
   {
     title: "Mahindi na Unga wa Mahindi",
     description: "Tenganisha nafaka ya mahindi na unga wa mahindi kwa bei, unit, na stock sahihi.",
-    image: "/products/maize-cobs-commons.jpg",
+    image: "/images/homepage/maize-flour-real.webp",
   },
   {
     title: "Animal Feeds na By-products",
     description: "Dhibiti uduv, mashudu, pumba, chokka na bidhaa nyingine za mifugo kwa picha husika.",
-    image: "/products/animal-feeds.jpg",
+    image: "/images/homepage/animal-feeds-source.webp",
+  },
+  {
+    title: "Ua na Mbegu za Alizeti",
+    description: "Onyesha chanzo cha alizeti kwa picha halisi ya mashamba na mbegu zake.",
+    image: "/images/homepage/sunflower-field-real.webp",
   },
 ];
 
@@ -127,7 +132,7 @@ export default function LandingPage() {
 
               <div className="relative h-[540px] overflow-hidden rounded-[30px] border border-white/10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
                 <Image
-                  src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80"
+                  src="/images/homepage/agri-logistics-hero-source.webp"
                   alt="Agriculture and logistics operations"
                   fill
                   className="object-cover"
