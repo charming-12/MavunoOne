@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUserFromCookieEdge, isStaffEdgeRole } from "@/lib/session-edge";
+import { getSessionPayloadEdge, isStaffEdgeRole, refreshSessionTokenEdge } from "@/lib/session-edge";
 
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Frame-Options": "SAMEORIGIN",
@@ -10,7 +10,9 @@ const SECURITY_HEADERS: Record<string, string> = {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const user = await getSessionUserFromCookieEdge(request.cookies.get("mavunoone-user")?.value);
+  const sessionCookie = request.cookies.get("mavunoone-user")?.value;
+  const sessionPayload = await getSessionPayloadEdge(sessionCookie);
+  const user = sessionPayload ? { id: sessionPayload.id, name: sessionPayload.name, email: sessionPayload.email, role: sessionPayload.role } : null;
 
   let response: NextResponse;
   if (pathname.startsWith("/boss")) {
@@ -27,6 +29,16 @@ export async function middleware(request: NextRequest) {
     response = NextResponse.next();
   }
 
+  if (sessionPayload && user) {
+    const refreshedToken = await refreshSessionTokenEdge(sessionPayload);
+    response.cookies.set("mavunoone-user", refreshedToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 8,
+    });
+  }
   Object.entries(SECURITY_HEADERS).forEach(([key, value]) => response.headers.set(key, value));
   const csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https:; font-src 'self' data:;";
   response.headers.set("Content-Security-Policy", csp);

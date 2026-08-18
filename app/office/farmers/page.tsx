@@ -21,7 +21,7 @@ export default function FarmersPage() {
   const [farmer, setFarmer] = useState<FarmerForm>({ name: "", phone: "", location: "", farmSize: "" });
   const [purchase, setPurchase] = useState<PurchaseForm>({ farmerId: "", productName: "", quantityKg: "", pricePerKg: "", paidAmount: "", paymentMethod: "cash", paymentReference: "" });
 
-  const farmers = farmersQuery.data ?? [];
+  const farmers = useMemo(() => farmersQuery.data ?? [], [farmersQuery.data]);
   const visibleFarmers = useMemo(() => farmers.filter((item) => `${item.farmerNumber} ${item.name} ${item.phone ?? ""} ${item.location ?? ""}`.toLowerCase().includes(search.toLowerCase())), [farmers, search]);
   const totals = farmers.reduce((acc, item) => ({ supplied: acc.supplied + num(item.totalSupplied), paid: acc.paid + num(item.totalPaid), balance: acc.balance + num(item.balance) }), { supplied: 0, paid: 0, balance: 0 });
 
