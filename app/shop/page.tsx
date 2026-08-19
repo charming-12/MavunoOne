@@ -10,15 +10,15 @@ type CartItem = { id: number; name: string; price: number; quantity: number; uni
 const CART_KEY = "mavunoone-shop-cart";
 const visualStyles = ["from-emerald-700 to-teal-500", "from-amber-600 to-yellow-400", "from-sky-700 to-cyan-400", "from-slate-800 to-slate-500"];
 const productImages: Array<{ keywords: string[]; src: string; alt: string }> = [
+  // Keep animal-feed terms first so products such as Soya Cake are never classified as maize or sunflower products.
+  { keywords: ["animal feed", "animal feeds", "feed", "uduv", "chakula cha mifugo", "mifugo", "soya", "soy", "soybean", "soyabean", "soya cake", "mashudu", "pumba", "bran", "cake", "by-product", "byproduct", "chokka", "choka", "udaga"], src: "/products/animal-feeds.jpg", alt: "Animal feeds, soya na mashudu kwa mifugo" },
   { keywords: ["mafuta", "oil"], src: "/products/sunflower-oil-sizes.jpg", alt: "Mafuta ya alizeti kwenye chupa na gallon za sizes tofauti" },
-  { keywords: ["animal", "feed", "uduv", "chakula cha mifugo", "mifugo", "soya", "soy", "soybean"], src: "/products/animal-feeds.jpg", alt: "Animal feeds na soya kwa mifugo" },
-  { keywords: ["mashudu", "pumba", "bran", "cake", "by-product", "byproduct", "chokka", "choka", "udaga"], src: "/products/byproducts.jpg", alt: "Mashudu, pumba na by-products" },
   { keywords: ["unga", "flour", "meal"], src: "/products/maize-flour.jpg", alt: "Unga wa mahindi" },
-  { keywords: ["mahindi", "maize", "corn", "grain"], src: "/products/maize-cobs-commons.jpg", alt: "Mahindi ya nafaka na magunzi" },
+  { keywords: ["mahindi", "mahindi ya nafaka", "maize", "corn", "grain"], src: "/products/maize-cobs-commons.jpg", alt: "Mahindi ya nafaka na magunzi" },
   { keywords: ["alizeti", "sunflower", "seed"], src: "/products/sunflower-flower-commons.jpg", alt: "Ua la alizeti" },
 ];
 const imageForProduct = (name: string) => {
-  const normalized = name.toLowerCase();
+  const normalized = name.toLowerCase().replace(/[–—]/g, "-");
   return productImages.find((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
 };
 
