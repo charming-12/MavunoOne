@@ -13,7 +13,7 @@ export default function ShopAccountPage() {
         <p className="mt-6 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Customer account</p>
         <h1 className="mt-2 text-2xl font-black text-slate-950">Akaunti ya mteja inalindwa</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Taarifa za oda, madeni, credit limit na malipo zitaonekana tu baada ya akaunti ya mteja kuthibitishwa na kuunganishwa na namba yake ya simu. Hatuonyeshi taarifa za mfano au za mteja mwingine kwa mtu wa umma.
+          Akaunti ya mteja itasaidia kufuatilia oda na malipo yako baada ya kuthibitishwa kwa namba ya simu.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link href="/shop" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800">
@@ -23,7 +23,6 @@ export default function ShopAccountPage() {
             Endelea na oda <ArrowLeft className="rotate-180" size={17} />
           </Link>
         </div>
-        <p className="mt-6 text-xs text-slate-500">Kwa msaada wa account, wasiliana na MavunoOne kupitia namba ya kampuni iliyo kwenye Shop.</p>
       </section>
     </main>
   );

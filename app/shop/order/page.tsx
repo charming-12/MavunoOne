@@ -82,12 +82,12 @@ export default function OrderPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="card text-center max-w-md">
           <CheckCircle className="mx-auto text-green-600 mb-4" size={64} />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Oda Ilibonyeza!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Oda yako imepokelewa</h1>
           <p className="text-gray-600 mb-4">
             Jina la Oda: <strong>{orderNumber || "Linasubiri"}</strong>
           </p>
           <p className="text-gray-600 mb-6">
-            Tutakupigia simu ndani ya saa 2 kubaini maelezo ya delivery.
+            Timu ya MavunoOne itawasiliana nawe kuthibitisha malipo na muda wa delivery.
           </p>
           <Link href="/shop">
             <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
@@ -110,7 +110,7 @@ export default function OrderPage() {
                 <ArrowLeft size={24} />
               </button>
             </Link>
-            <h1 className="text-2xl font-bold">Jaza Oda</h1>
+            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-100">MavunoOne Shop</p><h1 className="text-2xl font-bold">Kamilisha oda yako</h1></div>
           </div>
         </div>
       </header>
@@ -203,7 +203,7 @@ export default function OrderPage() {
           {/* Step 2: Delivery Address */}
           {step >= 2 && (
             <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Anwani ya Lugha</h2>
+              <h2 className="text-lg font-semibold mb-4">Anwani ya delivery</h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -216,7 +216,7 @@ export default function OrderPage() {
                     onChange={handleInputChange}
                     required
                     className="form-input"
-                    placeholder="Mtaa, Wilaya, Tafsili"
+                    placeholder="Mtaa, kijiji, wilaya au eneo la delivery"
                   />
                 </div>
 
@@ -232,6 +232,7 @@ export default function OrderPage() {
                     className="form-input"
                   >
                     <option value="">-- Chagua --</option>
+                    <option value="tabora">Tabora</option>
                     <option value="dar">Dar es Salaam</option>
                     <option value="morogoro">Morogoro</option>
                     <option value="iringa">Iringa</option>
@@ -281,7 +282,7 @@ export default function OrderPage() {
           )}
 
           {/* Order Summary */}
-          <div className="card border-l-4 border-green-600">
+          <div className="card border-l-4 border-green-600 shadow-lg">
             <div className="flex justify-between mb-2">
               <span>Jumla Bidhaa</span>
               <span className="font-bold">TZS {cartTotal.toLocaleString()}</span>
