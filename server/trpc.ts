@@ -2,7 +2,7 @@ import { initTRPC } from "@trpc/server";
 import { getSessionUserFromHeader } from "@/lib/session";
 
 export type AppContext = {
-  user?: { id?: number; email: string; role: string; name?: string };
+  user?: { id?: number; email: string; role: string; name?: string; jobTitle?: string | null };
 };
 
 export const createContext = async (req?: Request): Promise<AppContext> => ({
@@ -24,7 +24,8 @@ const financeRoles = new Set(["admin", "owner", "cashier"]);
 export const financeProcedure = t.procedure.use(async (opts) => {
   const user = opts.ctx.user;
   if (!user) throw new Error("Unauthorized");
-  if (!financeRoles.has(user.role)) throw new Error("Finance/customer action is not allowed for this role");
+  const isFinanceManager = user.role === "manager" && user.jobTitle === "finance";
+  if (!financeRoles.has(user.role) && !isFinanceManager) throw new Error("Finance/customer action is not allowed for this role");
   return opts.next({ ctx: { user } });
 });
 export const officeProcedure = t.procedure.use(async (opts) => {

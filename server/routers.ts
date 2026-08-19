@@ -186,8 +186,9 @@ export const appRouter = router({
       return await db.query.products.findFirst({ where: and(eq(products.barcode, input.barcode.trim()), eq(products.isActive, true)) });
     }),
     updatePricing: financeProcedure.input(z.object({ id: z.number(), costPrice: z.number().nonnegative(), sellPrice: z.number().nonnegative(), wholesalePrice: z.number().nonnegative().optional() })).mutation(async ({ input, ctx }) => {
-      if (!ctx.user || !["admin", "manager"].includes(ctx.user.role)) {
-        throw new Error("Kubadilisha bei kunaruhusiwa kwa Admin au Manager pekee");
+      const isFinanceManager = ctx.user?.role === "manager" && ctx.user.jobTitle === "finance";
+      if (!ctx.user || (!(ctx.user.role === "admin" || ctx.user.role === "owner") && !isFinanceManager)) {
+        throw new Error("Kubadilisha bei kunaruhusiwa kwa Admin au Finance Manager pekee");
       }
       const before = await db.query.products.findFirst({ where: eq(products.id, input.id) });
       const [updated] = await db.update(products).set({ costPrice: decimalString(input.costPrice), sellPrice: decimalString(input.sellPrice), wholesalePrice: input.wholesalePrice === undefined ? undefined : decimalString(input.wholesalePrice), updatedAt: new Date() }).where(eq(products.id, input.id)).returning();
@@ -513,7 +514,7 @@ export const appRouter = router({
 
     stockOut: router({
       list: officeProcedure.query(async ({ ctx }) => {
-        if (!["admin", "owner", "manager", "storekeeper"].includes(ctx.user.role)) throw new Error("Stock out haikuruhusiwi kwa role hii");
+        if (!["admin", "owner", "storekeeper"].includes(ctx.user.role) && !(ctx.user.role === "manager" && ctx.user.jobTitle !== "finance")) throw new Error("Stock out haikuruhusiwi kwa role hii");
         return await db.query.stockOut.findMany({ orderBy: desc(stockOut.date), limit: 200 });
       }),
 
@@ -525,7 +526,7 @@ export const appRouter = router({
           notes: z.string().optional(),
         }))
                 .mutation(async ({ input, ctx }) => {
-          if (!["admin", "owner", "manager", "storekeeper"].includes(ctx.user.role)) throw new Error("Stock out haikuruhusiwi kwa role hii");
+          if (!["admin", "owner", "storekeeper"].includes(ctx.user.role) && !(ctx.user.role === "manager" && ctx.user.jobTitle !== "finance")) throw new Error("Stock out haikuruhusiwi kwa role hii");
           const product = await db.query.products.findFirst({ where: eq(products.id, input.productId) });
           if (!product) throw new Error("Product haipatikani");
           const baseQuantity = input.quantity * Number(product.packageSizeKg || 1);

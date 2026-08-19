@@ -24,7 +24,7 @@ function getDefaultCredential(email: string) {
   return found;
 }
 
-function authenticatedResponse(user: { id?: number; name?: string; email: string; role: string }) {
+function authenticatedResponse(user: { id?: number; name?: string; email: string; role: string; jobTitle?: string | null }) {
   const response = NextResponse.json({ user });
   response.cookies.set("mavunoone-user", createSessionToken(user), sessionCookieOptions());
   return response;
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       recordRateLimitFailure(loginKey, RATE_LIMITS.LOGIN);
       return NextResponse.json({ message: "Neno la siri lisilo sahihi." }, { status: 401 });
     }
-    return authenticatedResponse({ id: existingUser.id, name: existingUser.name, email: existingUser.email, role: existingUser.role });
+    return authenticatedResponse({ id: existingUser.id, name: existingUser.name, email: existingUser.email, role: existingUser.role, jobTitle: existingUser.jobTitle });
   } catch (error) {
     console.error("Login error:", error);
     if (error instanceof Error && error.message === "AUTH_DATABASE_TIMEOUT") {
