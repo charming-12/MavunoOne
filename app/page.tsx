@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, PackageCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -31,16 +31,6 @@ const productCards = [
     title: "Ua na Mbegu za Alizeti",
     description: "Alizeti na mbegu zake kutoka kwenye mnyororo halisi wa kilimo.",
     image: "/images/homepage/sunflower-field-real.webp",
-  },
-];
-
-const platformCards = [
-  {
-    title: "MavunoOne Shop",
-    icon: <PackageCheck className="h-7 w-7" />,
-    accent: "bg-cyan-500/10 text-cyan-200 border-cyan-400/30",
-    text: "Tazama bidhaa halisi, bei na upatikanaji, kisha tuma oda kwa timu ya MavunoOne.",
-    link: "/shop",
   },
 ];
 
@@ -206,25 +196,36 @@ export default function LandingPage() {
           {publicContent.length > 0 && <section className="px-6 py-10 md:px-12 md:py-14"><div className="mx-auto max-w-7xl"><div className="mb-7"><p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Latest from MavunoOne</p><h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Habari na ofa zilizothibitishwa</h2></div><div className="grid gap-5 md:grid-cols-2">{publicContent.map((item) => <article key={item.id} className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">{item.imageUrl && <div className="relative h-48 overflow-hidden"><Image src={item.imageUrl} alt={item.title} fill className="object-cover" /></div>}<div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{item.contentType.replace("_", " ")}</p><h3 className="mt-2 text-2xl font-black text-white">{item.title}</h3>{item.subtitle && <p className="mt-2 font-semibold text-emerald-100">{item.subtitle}</p>}{item.body && <p className="mt-3 text-sm leading-7 text-emerald-100/75">{item.body}</p>}{item.ctaLabel && item.ctaHref && <Link href={item.ctaHref} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-amber-300">{item.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>}</div></article>)}</div></div></section>}
 
           <section className="px-6 py-14 md:px-12 md:py-20">
-            <div className="mx-auto max-w-7xl">
-              <div className="mb-10 text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">MavunoOne Shop</p>
-                <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Anza kununua kwa urahisi</h2>
-              </div>
-
-              <div className="mx-auto max-w-2xl">
-                {platformCards.map((card) => (
-                  <Link key={card.title} href={card.link} className="group block rounded-[28px] border border-white/10 bg-white/5 p-6 transition hover:border-emerald-400/40 hover:bg-white/10">
-                    <div className={`mb-5 inline-flex rounded-2xl border p-3 ${card.accent}`}>
-                      {card.icon}
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">{card.title}</h3>
-                    <p className="mt-4 text-sm leading-7 text-emerald-100">{card.text}</p>
-                    <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-300">
-                      Fungua Shop <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                    </div>
+            <div className="mx-auto max-w-7xl rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.22)] md:p-10">
+              <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">MavunoOne Shop</p>
+                  <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Anza kununua kwa urahisi</h2>
+                  <p className="mt-5 max-w-md text-base leading-8 text-emerald-100 md:text-lg">
+                    Pata bidhaa za kilimo unazohitaji kutoka Tabora, Tanzania. Chagua bidhaa, tuma oda na timu yetu itakusaidia na delivery.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold text-emerald-100">
+                    <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2">Tabora, Tanzania</span>
+                    <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2">Oda online</span>
+                  </div>
+                  <Link href="/shop" className="mt-8 inline-flex items-center gap-3 rounded-xl bg-amber-400 px-6 py-3.5 text-base font-black text-emerald-950 shadow-[0_15px_35px_rgba(251,191,36,0.2)] transition hover:bg-amber-300">
+                    Fungua Shop <ArrowRight className="h-5 w-5" />
                   </Link>
-                ))}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {productCards.slice(0, 3).map((card) => (
+                    <Link key={card.title} href="/shop" className="group overflow-hidden rounded-2xl border border-white/10 bg-[#07150f]/70 transition hover:-translate-y-1 hover:border-amber-300/50">
+                      <div className="relative h-44 overflow-hidden">
+                        <Image src={card.image} alt={card.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-105" />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="text-base font-black text-white">{card.title}</h3>
+                        <p className="mt-2 text-xs leading-5 text-emerald-200">Tazama bidhaa</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
