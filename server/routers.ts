@@ -1131,9 +1131,12 @@ export const appRouter = router({
         }).returning();
       }),
 
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: publicProcedure.query(async ({ ctx }) => {
+      const role = ctx.user?.role;
+      const canRead = ["boss", "admin", "owner", "manager", "cashier", "storekeeper", "machine_operator"].includes(role ?? "");
+      if (!canRead) return [];
       return await db.query.notifications.findMany({
-        where: ctx.user.id
+        where: ctx.user?.id
           ? or(isNull(notifications.userId), eq(notifications.userId, ctx.user.id))
           : isNull(notifications.userId),
         orderBy: desc(notifications.createdAt),
