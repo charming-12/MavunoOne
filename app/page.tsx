@@ -6,9 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 
 const stats = [
-  { label: "Mauzo ya kila siku", value: "24/7" },
-  { label: "Hifadhi ya bidhaa", value: "Live" },
-  { label: "Timu + wateja", value: "Unified" },
+  { label: "Bidhaa halisi", value: "Agiza" },
+  { label: "Oda rahisi", value: "Online" },
+  { label: "Huduma ya karibu", value: "Tabora" },
 ];
 
 const productCards = [
@@ -98,7 +98,7 @@ export default function LandingPage() {
                 </h1>
 
                 <p className="mt-6 max-w-xl text-base leading-8 text-emerald-50 md:text-lg">
-                  MavunoOne helps agro-businesses track sales, stock, deliveries, farmers, and payments in one connected system designed for real-world growth.
+                  Pata mafuta ya alizeti, mahindi, unga, animal feeds na bidhaa nyingine za kilimo kutoka Tabora. Chagua bidhaa, tuma oda, kisha timu yetu ikusaidie kwa delivery.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -143,26 +143,26 @@ export default function LandingPage() {
                 <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#07150f]/80 p-5 backdrop-blur-md">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Operational control</p>
-                      <p className="mt-2 text-2xl font-black text-white">Built for real growth</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">MavunoOne Shop</p>
+                      <p className="mt-2 text-2xl font-black text-white">Bidhaa halisi kutoka Tabora</p>
                     </div>
                     <div className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-                      Live system
+                      Tabora, Tanzania
                     </div>
                   </div>
 
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     <div className="rounded-xl bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Stock</p>
-                      <p className="mt-2 text-sm font-bold text-white">Traceable</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Bidhaa</p>
+                      <p className="mt-2 text-sm font-bold text-white">Halisi</p>
                     </div>
                     <div className="rounded-xl bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Farmers</p>
-                      <p className="mt-2 text-sm font-bold text-white">Connected</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Oda</p>
+                      <p className="mt-2 text-sm font-bold text-white">Rahisi</p>
                     </div>
                     <div className="rounded-xl bg-white/5 p-3">
                       <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Delivery</p>
-                      <p className="mt-2 text-sm font-bold text-white">Coordinated</p>
+                      <p className="mt-2 text-sm font-bold text-white">Iliyopangwa</p>
                     </div>
                   </div>
                 </div>
@@ -208,8 +208,8 @@ export default function LandingPage() {
           <section className="px-6 py-14 md:px-12 md:py-20">
             <div className="mx-auto max-w-7xl">
               <div className="mb-10 text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Kwa wateja wa MavunoOne</p>
-                <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Anza kununua kwa usalama</h2>
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">MavunoOne Shop</p>
+                <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Anza kununua kwa urahisi</h2>
               </div>
 
               <div className="mx-auto max-w-2xl">
