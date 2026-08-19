@@ -68,7 +68,7 @@ export const appRouter = router({
       ctaHref: z.string().trim().max(512).optional(),
       sortOrder: z.number().int().default(0),
     })).mutation(async ({ input, ctx }) => {
-      const allowedRoles = ["admin", "owner", "manager"];
+      const allowedRoles = ["admin", "owner"];
       if (!allowedRoles.includes(ctx.user.role)) throw new Error("Content management hairuhusiwi kwa role hii");
       const values = {
         slug: input.slug,
@@ -97,7 +97,7 @@ export const appRouter = router({
     changeStatus: officeProcedure.input(z.object({ id: z.number(), status: z.enum(["draft", "review", "approved", "published", "archived"]) })).mutation(async ({ input, ctx }) => {
       const content = await db.query.publicContent.findFirst({ where: eq(publicContent.id, input.id) });
       if (!content) throw new Error("Public content haipatikani");
-      if (["review", "approved", "published"].includes(input.status) && !["admin", "owner", "manager"].includes(ctx.user.role)) throw new Error("Content review hairuhusiwi kwa role hii");
+      if (["review", "approved", "published"].includes(input.status) && !["admin", "owner"].includes(ctx.user.role)) throw new Error("Content review hairuhusiwi kwa role hii");
       if (input.status === "published" && !["admin", "owner"].includes(ctx.user.role)) throw new Error("Publish inaruhusiwa kwa Admin au Owner pekee");
       if (input.status === "published" && content.status !== "approved") throw new Error("Content lazima iidhinishwe kabla ya ku-publish");
       const [updated] = await db.update(publicContent).set({
@@ -746,7 +746,7 @@ export const appRouter = router({
         return savedExpense;
       }),
 
-    list: protectedProcedure
+    list: financeProcedure
       .input(z.object({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
@@ -776,7 +776,7 @@ export const appRouter = router({
         return { ...farmer, totalSupplied, totalAmount, totalPaid, balance: totalAmount - totalPaid };
       });
     }),
-    payments: protectedProcedure.query(async () => db.query.farmerPayments.findMany({ orderBy: desc(farmerPayments.createdAt), limit: 500 })),
+    payments: financeProcedure.query(async () => db.query.farmerPayments.findMany({ orderBy: desc(farmerPayments.createdAt), limit: 500 })),
     create: financeProcedure.input(z.object({ name: z.string().min(2), phone: z.string().optional(), location: z.string().optional(), farmSize: z.number().nonnegative().optional() })).mutation(async ({ input, ctx }) => {
       const farmerNumber = `F-${Date.now().toString().slice(-8)}`;
       const [farmer] = await db.insert(farmers).values({ farmerNumber, name: input.name, phone: input.phone, location: input.location, farmSize: input.farmSize ? decimalString(input.farmSize) : null }).returning();
@@ -802,7 +802,7 @@ export const appRouter = router({
 
   // ===== MACHINE MAINTENANCE =====
   maintenance: router({
-    list: protectedProcedure.query(async () => db.query.maintenanceCosts.findMany({ orderBy: desc(maintenanceCosts.serviceDate), limit: 200 })),
+    list: financeProcedure.query(async () => db.query.maintenanceCosts.findMany({ orderBy: desc(maintenanceCosts.serviceDate), limit: 200 })),
     create: financeProcedure.input(z.object({ machineName: z.string().min(2), maintenanceType: z.string().min(2), amount: z.number().positive(), serviceDate: z.string().optional(), nextDueDate: z.string().optional(), vendorName: z.string().optional(), notes: z.string().optional() })).mutation(async ({ input, ctx }) => {
       const [record] = await db.insert(maintenanceCosts).values({ machineName: input.machineName, maintenanceType: input.maintenanceType, amount: decimalString(input.amount), serviceDate: input.serviceDate ? new Date(input.serviceDate) : new Date(), nextDueDate: input.nextDueDate ? new Date(input.nextDueDate) : undefined, vendorName: input.vendorName, notes: input.notes, createdBy: ctx.user?.id }).returning();
       await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "maintenance_costs", recordId: record.id, newValue: record });
@@ -812,7 +812,7 @@ export const appRouter = router({
 
   // ===== DAILY CLOSURES =====
   dailyClosures: router({
-    create: officeProcedure
+    create: financeProcedure
       .input(z.object({
         openingBalance: z.number(),
         closingBalance: z.number(),
