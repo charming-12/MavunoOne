@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { and, eq, inArray } from "drizzle-orm";
 import { customers, products, saleItems, sales } from "@/drizzle/schema";
 import { db } from "@/lib/db";
 import { recordAuditLog } from "@/lib/audit";
+import { checkRateLimit, formatResetTime, getClientId, RATE_LIMITS } from "@/lib/rate-limit";
 
 const orderSchema = z.object({
   fullName: z.string().trim().min(2).max(256),
@@ -16,6 +18,8 @@ const orderSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const rate = checkRateLimit(`shop-order:${getClientId(request)}`, RATE_LIMITS.PUBLIC);
+  if (!rate.allowed) return NextResponse.json({ message: `Oda nyingi zimetumwa. Jaribu tena baada ya ${formatResetTime(rate.resetTime)}.` }, { status: 429 });
   try {
     const input = orderSchema.parse(await request.json());
     const productIds = [...new Set(input.items.map((item) => item.productId))];
@@ -40,7 +44,7 @@ export async function POST(request: NextRequest) {
     const subtotal = pricedItems.reduce((sum, entry) => sum + entry.total, 0);
     const tax = subtotal * 0.18;
     const totalAmount = subtotal + tax;
-    const invoiceNumber = `SHOP-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
+    const invoiceNumber = `SHOP-${Date.now()}-${randomInt(100, 1000)}`;
 
     const result = await db.transaction(async (tx) => {
       const existingCustomer = await tx.query.customers.findFirst({ where: eq(customers.phone, input.phone) });
@@ -95,7 +99,8 @@ export async function POST(request: NextRequest) {
       message: "Oda limepokelewa. Timu ya MavunoOne itawasiliana nawe kuthibitisha stock, delivery na malipo.",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Oda haikuweza kuhifadhiwa.";
-    return NextResponse.json({ message }, { status: 400 });
+    if (error instanceof z.ZodError) return NextResponse.json({ message: "Taarifa za oda hazijakamilika au zina format isiyokubalika." }, { status: 400 });
+    console.error("Public shop order failed:", error);
+    return NextResponse.json({ message: "Oda haikuweza kuhifadhiwa kwa sasa. Jaribu tena baadaye." }, { status: 500 });
   }
 }
