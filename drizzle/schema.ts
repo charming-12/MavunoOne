@@ -15,6 +15,7 @@ export const users = pgTable("users", {
   jobTitle: varchar("jobTitle", { length: 128 }),
   passwordHash: varchar("passwordHash", { length: 255 }),
   role: roleEnum("role").default("customer").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
   passwordResetToken: varchar("passwordResetToken", { length: 255 }),
   passwordResetExpires: timestamp("passwordResetExpires"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

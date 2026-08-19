@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
       recordRateLimitFailure(loginKey, RATE_LIMITS.LOGIN);
       return NextResponse.json({ message: "Akaunti hii haipo. Tumia akaunti ya MavunoOne." }, { status: 401 });
     }
+    if (!existingUser.isActive) {
+      recordRateLimitFailure(loginKey, RATE_LIMITS.LOGIN);
+      return NextResponse.json({ message: "Akaunti hii imezimwa. Wasiliana na Admin kama unahitaji msaada." }, { status: 403 });
+    }
     if (!existingUser.passwordHash) {
       recordRateLimitFailure(loginKey, RATE_LIMITS.LOGIN);
       return NextResponse.json({ message: "Akaunti ya mtumiaji haijaanzishwa vizuri. Tumia invitation link kuweka password." }, { status: 401 });

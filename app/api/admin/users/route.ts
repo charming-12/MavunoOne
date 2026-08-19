@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auditLogs, passwordResetTokens, users } from "@/drizzle/schema";
 import { requireAdminUser } from "@/lib/api-auth";
@@ -9,13 +9,40 @@ import { isValidEmail, normalizeEmail, normalizePhone, normalizeText } from "@/l
 
 const provisionableRoles = ["manager", "cashier", "storekeeper", "machine_operator"] as const;
 type Role = (typeof provisionableRoles)[number];
+const protectedRoles = new Set(["boss", "admin", "owner"]);
 const seededMockEmails = new Set(["manager@mavunoone.co.tz", "cashier@mavunoone.co.tz", "store@mavunoone.co.tz", "operator@mavunoone.co.tz", "customer1@example.com", "customer2@example.com"]);
 
 export async function GET(request: NextRequest) {
   const actor = requireAdminUser(request);
   if (!actor) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   const records = await db.query.users.findMany({ orderBy: (table, { desc }) => desc(table.createdAt), limit: 500 });
-  return NextResponse.json({ users: records.map((user) => ({ id: user.id, name: user.name, email: user.email, phone: user.phone, jobTitle: user.jobTitle, role: user.role, createdAt: user.createdAt })) });
+  return NextResponse.json({ users: records.map((user) => ({ id: user.id, name: user.name, email: user.email, phone: user.phone, jobTitle: user.jobTitle, role: user.role, isActive: user.isActive, createdAt: user.createdAt })) });
+}
+
+export async function DELETE(request: NextRequest) {
+  const actor = requireAdminUser(request);
+  if (!actor || !["admin", "owner"].includes(actor.role)) return NextResponse.json({ message: "Only Admin or Owner can remove staff access" }, { status: 403 });
+  try {
+    const body = await request.json() as { ids?: unknown };
+    const ids = Array.isArray(body.ids) ? [...new Set(body.ids.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0))] : [];
+    if (ids.length === 0 || ids.length > 500) return NextResponse.json({ message: "Chagua account moja au zaidi kwa usahihi." }, { status: 400 });
+    const selected = await db.query.users.findMany({ where: inArray(users.id, ids) });
+    const protectedUsers = selected.filter((user) => protectedRoles.has(user.role) || user.id === actor.id);
+    if (protectedUsers.length > 0) return NextResponse.json({ message: "Boss, Admin wa msingi, Owner na account yako mwenyewe hawawezi kuondolewa.", protected: protectedUsers.map((user) => ({ id: user.id, name: user.name, role: user.role })) }, { status: 403 });
+    const removable = selected.filter((user) => !protectedRoles.has(user.role) && user.id !== actor.id && user.isActive);
+    if (removable.length === 0) return NextResponse.json({ message: "Hakuna account active inayoweza kuondolewa kwenye chaguo hilo.", removedCount: 0 });
+    await db.transaction(async (tx) => {
+      for (const user of removable) {
+        await tx.update(users).set({ isActive: false, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, user.id));
+        await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
+        await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "deactivate", tableName: "users", recordId: user.id, oldValueJson: JSON.stringify({ name: user.name, email: user.email, role: user.role, isActive: true }), newValueJson: JSON.stringify({ isActive: false, reason: "admin_account_removal" }) });
+      }
+    });
+    return NextResponse.json({ message: `${removable.length} account(s) zimeondolewa kwenye access. Business records zimehifadhiwa kwa audit.`, removedCount: removable.length });
+  } catch (error) {
+    console.error("Staff removal failed:", error);
+    return NextResponse.json({ message: "Staff account(s) could not be removed" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -25,11 +52,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { action?: string; name?: string; email?: string; phone?: string; jobTitle?: string; role?: string };
     if (body.action === "remove-seeded-mock-accounts") {
       const candidates = await db.query.users.findMany();
-      const removable = candidates.filter((user) => seededMockEmails.has(user.email.toLowerCase()) && !["boss", "admin", "owner"].includes(user.role));
+      const removable = candidates.filter((user) => seededMockEmails.has(user.email.toLowerCase()) && !protectedRoles.has(user.role) && user.id !== actor.id && user.isActive);
       await db.transaction(async (tx) => {
         for (const user of removable) {
+          await tx.update(users).set({ isActive: false, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, user.id));
           await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
-          await tx.delete(users).where(eq(users.id, user.id));
+          await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "deactivate", tableName: "users", recordId: user.id, oldValueJson: JSON.stringify({ email: user.email, role: user.role, isActive: true }), newValueJson: JSON.stringify({ isActive: false, reason: "seeded_mock_cleanup" }) });
         }
       });
       return NextResponse.json({ message: `${removable.length} seeded mock account(s) removed. Boss and Admin accounts were preserved.`, removedCount: removable.length });
@@ -47,7 +75,7 @@ export async function POST(request: NextRequest) {
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const [created] = await db.transaction(async (tx) => {
-      const [newUser] = await tx.insert(users).values({ name, email, phone: phone || null, jobTitle, role, passwordHash: null }).returning({ id: users.id, name: users.name, email: users.email, phone: users.phone, jobTitle: users.jobTitle, role: users.role, createdAt: users.createdAt });
+      const [newUser] = await tx.insert(users).values({ name, email, phone: phone || null, jobTitle, role, passwordHash: null, isActive: true }).returning({ id: users.id, name: users.name, email: users.email, phone: users.phone, jobTitle: users.jobTitle, role: users.role, createdAt: users.createdAt });
       await tx.insert(passwordResetTokens).values({ userId: newUser.id, token: tokenHash, expiresAt });
       await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "create", tableName: "users", recordId: newUser.id, newValueJson: JSON.stringify({ name, email, jobTitle, role, invitation: true }) });
       return [newUser];
