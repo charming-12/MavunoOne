@@ -186,6 +186,9 @@ export const appRouter = router({
       return await db.query.products.findFirst({ where: and(eq(products.barcode, input.barcode.trim()), eq(products.isActive, true)) });
     }),
     updatePricing: financeProcedure.input(z.object({ id: z.number(), costPrice: z.number().nonnegative(), sellPrice: z.number().nonnegative(), wholesalePrice: z.number().nonnegative().optional() })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user || !["admin", "manager"].includes(ctx.user.role)) {
+        throw new Error("Kubadilisha bei kunaruhusiwa kwa Admin au Manager pekee");
+      }
       const before = await db.query.products.findFirst({ where: eq(products.id, input.id) });
       const [updated] = await db.update(products).set({ costPrice: decimalString(input.costPrice), sellPrice: decimalString(input.sellPrice), wholesalePrice: input.wholesalePrice === undefined ? undefined : decimalString(input.wholesalePrice), updatedAt: new Date() }).where(eq(products.id, input.id)).returning();
       if (!updated) throw new Error("Product haipatikani");
