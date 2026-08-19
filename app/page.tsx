@@ -83,11 +83,11 @@ export default function LandingPage() {
             <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
               <div>
                 <div className="mb-6 inline-flex items-center rounded-full border border-amber-300/30 bg-amber-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-amber-200">
-                  Built for African commerce
+                  Imeandaliwa kwa biashara za Afrika
                 </div>
 
                 <h1 className="max-w-xl text-4xl font-black tracking-tight text-white md:text-6xl md:leading-[1.05]">
-                  Grow your agribusiness with clarity, speed, and control.
+                  Kuza biashara yako ya kilimo kwa urahisi, kasi na udhibiti.
                 </h1>
 
                 <p className="mt-6 max-w-xl text-base leading-8 text-emerald-50 md:text-lg">
@@ -109,7 +109,7 @@ export default function LandingPage() {
                     rel="noreferrer"
                     className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-white/10"
                   >
-                    LIPA
+                    Maelekezo ya Malipo
                   </a>
                 </div>
 
@@ -167,8 +167,8 @@ export default function LandingPage() {
             <div className="mx-auto max-w-7xl">
               <div className="mb-8 flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Core solutions</p>
-                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Built for the full agri-commerce cycle</h2>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Huduma na bidhaa zetu kuu</p>
+                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Mfumo wa mnyororo mzima wa biashara ya kilimo</h2>
                 </div>
               </div>
 
@@ -196,7 +196,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {publicContent.length > 0 && <section className="px-6 py-10 md:px-12 md:py-14"><div className="mx-auto max-w-7xl"><div className="mb-7"><p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Updates from Ipuli Milling</p><h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Habari na ofa zilizothibitishwa</h2></div><div className="grid gap-5 md:grid-cols-2">{publicContent.map((item) => <article key={item.id} className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">{item.imageUrl && <div className="relative h-48 overflow-hidden"><Image src={item.imageUrl} alt={item.title} fill className="object-cover" /></div>}<div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{item.contentType.replace("_", " ")}</p><h3 className="mt-2 text-2xl font-black text-white">{item.title}</h3>{item.subtitle && <p className="mt-2 font-semibold text-emerald-100">{item.subtitle}</p>}{item.body && <p className="mt-3 text-sm leading-7 text-emerald-100/75">{item.body}</p>}{item.ctaLabel && item.ctaHref && <Link href={item.ctaHref} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-amber-300">{item.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>}</div></article>)}</div></div></section>}
+          {publicContent.length > 0 && <section className="px-6 py-10 md:px-12 md:py-14"><div className="mx-auto max-w-7xl"><div className="mb-7"><p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Taarifa kutoka Ipuli Milling</p><h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Habari na ofa za hivi karibuni</h2></div><div className="grid gap-5 md:grid-cols-2">{publicContent.map((item) => <article key={item.id} className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">{item.imageUrl && <div className="relative h-48 overflow-hidden"><Image src={item.imageUrl} alt={item.title} fill className="object-cover" /></div>}<div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{item.contentType.replace("_", " ")}</p><h3 className="mt-2 text-2xl font-black text-white">{item.title}</h3>{item.subtitle && <p className="mt-2 font-semibold text-emerald-100">{item.subtitle}</p>}{item.body && <p className="mt-3 text-sm leading-7 text-emerald-100/75">{item.body}</p>}{item.ctaLabel && item.ctaHref && <Link href={item.ctaHref} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-amber-300">{item.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>}</div></article>)}</div></div></section>}
 
           <section className="px-6 py-14 md:px-12 md:py-20">
             <div className="mx-auto max-w-7xl rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.22)] md:p-10">
@@ -237,16 +237,16 @@ export default function LandingPage() {
             <div className="mx-auto max-w-6xl rounded-[32px] border border-emerald-400/20 bg-[linear-gradient(135deg,_rgba(16,185,129,0.12),_rgba(9,9,11,0.4))] p-8 md:p-12">
               <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Why teams choose us</p>
-                  <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">One system for farm operations, sales, and delivery.</h2>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Kwa nini uchague Ipuli Milling</p>
+                  <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Mfumo mmoja kwa shughuli za kilimo, mauzo na usafirishaji.</h2>
                   <p className="mt-5 max-w-xl text-base leading-8 text-emerald-50 md:text-lg">
-                    From daily stock movement to customer follow-up and dispatch coordination, everything stays connected so operations remain efficient and profitable.
+                    Kuanzia movement ya stock ya kila siku hadi ufuatiliaji wa wateja na uratibu wa usafirishaji, kila kitu kinaunganishwa ili biashara ifanye kazi kwa ufanisi na faida.
                   </p>
                 </div>
 
                 <div className="rounded-[28px] border border-white/10 bg-[#07150f]/70 p-6 shadow-[0_25px_60px_rgba(0,0,0,0.25)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-200">Get started</p>
-                  <h3 className="mt-3 text-3xl font-black text-white">Start with a quick call</h3>
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-200">Anza hapa</p>
+                  <h3 className="mt-3 text-3xl font-black text-white">Anza kwa mazungumzo mafupi</h3>
 
                   <div className="mt-6 space-y-3">
                     <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
