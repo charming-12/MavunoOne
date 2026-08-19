@@ -6,6 +6,8 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "geolocation=(self), camera=(self), microphone=()",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Resource-Policy": "same-site",
 };
 
 export async function middleware(request: NextRequest) {
@@ -40,6 +42,7 @@ export async function middleware(request: NextRequest) {
     });
   }
   Object.entries(SECURITY_HEADERS).forEach(([key, value]) => response.headers.set(key, value));
+  if (process.env.NODE_ENV === "production") response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   const csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https:; font-src 'self' data:;";
   response.headers.set("Content-Security-Policy", csp);
   return response;

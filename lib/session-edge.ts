@@ -12,7 +12,7 @@ const ABSOLUTE_TIMEOUT_SECONDS = 60 * 60 * 8;
 const IDLE_TIMEOUT_SECONDS = 30 * 60;
 
 function getSecret() {
-  return process.env.MAVUNO_SESSION_SECRET ?? process.env.NEXTAUTH_SECRET ?? "mavunoone-development-only-secret";
+  return process.env.MAVUNO_SESSION_SECRET ?? process.env.NEXTAUTH_SECRET ?? null;
 }
 
 function base64UrlToBytes(value: string) {
@@ -33,7 +33,9 @@ function textToBase64Url(value: string) {
 }
 
 async function sign(value: string) {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(getSecret()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const secret = getSecret();
+  if (!secret) throw new Error("MAVUNO_SESSION_SECRET or NEXTAUTH_SECRET is not configured");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
   let binary = "";
   new Uint8Array(signature).forEach((byte) => { binary += String.fromCharCode(byte); });
@@ -41,7 +43,9 @@ async function sign(value: string) {
 }
 
 async function verifySignature(payload: string, signature: string) {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(getSecret()), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+  const secret = getSecret();
+  if (!secret) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
   return crypto.subtle.verify("HMAC", key, base64UrlToBytes(signature), new TextEncoder().encode(payload));
 }
 

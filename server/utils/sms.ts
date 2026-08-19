@@ -3,11 +3,11 @@
  * Handles safe, concise SMS notifications for MavunoOne.
  */
 
-const NEXTSMS_USERNAME = process.env.NEXTSMS_USERNAME || "josiahmarco93.e9b";
+const NEXTSMS_USERNAME = process.env.NEXTSMS_USERNAME;
 const NEXTSMS_PASSWORD = process.env.NEXTSMS_PASSWORD;
 const NEXTSMS_TOKEN = process.env.NEXTSMS_TOKEN || process.env.NEXTSMS_API_TOKEN;
 const NEXTSMS_API_URL = process.env.NEXTSMS_API_URL || "https://api.nextsms.com/sms/send";
-const DEFAULT_SENDER_ID = process.env.NEXTSMS_SENDER_ID || "MAVUNO";
+const DEFAULT_SENDER_ID = process.env.NEXTSMS_SENDER_ID;
 
 export interface SendSmsParams {
   phone: string;
@@ -81,8 +81,12 @@ export async function sendSms(params: SendSmsParams): Promise<SmsResponse> {
       };
     }
 
+    if (!NEXTSMS_USERNAME || (!NEXTSMS_TOKEN && !NEXTSMS_PASSWORD) || !(params.senderID || DEFAULT_SENDER_ID)) {
+      return { success: false, error: "SMS provider is not fully configured" };
+    }
+
     const normalizedPhone = normalizePhoneNumber(params.phone);
-    const senderID = params.senderID || DEFAULT_SENDER_ID;
+    const senderID = params.senderID || DEFAULT_SENDER_ID!;
     const messageText = shortenMessage(params.message);
 
     const headers: Record<string, string> = {
