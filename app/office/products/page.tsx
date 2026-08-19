@@ -8,8 +8,10 @@ const money = (value: unknown) => `TZS ${Math.round(Number(value ?? 0)).toLocale
 const typeLabel: Record<string, string> = { raw_material: "Raw material", finished_goods: "Finished goods", animal_feed: "Animal feeds", packaging: "Packaging", byproduct: "By-product", service: "Service" };
 type ProductType = "raw_material" | "finished_goods" | "animal_feed" | "byproduct" | "packaging" | "service";
 const approvedProductImages = [
+  { label: "Chokaa / Feed ingredient", value: "/products/chokaa-feed-grade.png" },
   { label: "Animal feeds / Soya / Uduv", value: "/products/animal-feeds.jpg" },
-  { label: "By-products / Mashudu / Pumba", value: "/products/byproducts.jpg" },
+  { label: "Mashudu ya Alizeti", value: "/products/sunflower-meal-commons.jpg" },
+  { label: "Pumba ya Mahindi", value: "/products/maize-byproduct-livestock-feed.jpg" },
   { label: "Mahindi ya punje", value: "/products/maize-grain.jpg" },
   { label: "Unga wa mahindi", value: "/products/maize-flour.jpg" },
   { label: "Alizeti", value: "/products/sunflower-flower.jpg" },
