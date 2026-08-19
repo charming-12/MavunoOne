@@ -138,7 +138,7 @@ export async function seedDatabase() {
           isActive: true,
         },
         {
-          name: "Alizeti Green",
+          name: "Alizeti",
           categoryId: categories[1].id,
           unit: "kg",
           costPrice: "3000",
