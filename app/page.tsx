@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+const WHATSAPP_NUMBER = "255712345678";
+const whatsappHref = (message: string) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
 const stats = [
   { label: "Bidhaa halisi", value: "Agiza" },
   { label: "Oda rahisi", value: "Online" },
@@ -59,7 +62,7 @@ export default function LandingPage() {
 
             <div className="hidden items-center gap-3 md:flex">
               <a
-                href="https://wa.me/255712345678?text=Habari%20ninaomba%20kusaidika%20kuhusu%20MavunoOne."
+                href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba maelezo kuhusu bidhaa na huduma zenu.")}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-full border border-amber-300/30 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
@@ -93,7 +96,7 @@ export default function LandingPage() {
 
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                   <a
-                    href="https://wa.me/255712345678?text=Habari%20ninaomba%20kufungua%20mfumo%20wa%20MavunoOne."
+                    href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba msaada wa kuagiza bidhaa.")}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-6 py-3.5 text-base font-black text-emerald-950 shadow-[0_20px_50px_rgba(251,191,36,0.32)] transition hover:bg-amber-300"
@@ -101,7 +104,7 @@ export default function LandingPage() {
                     Tuma WhatsApp
                   </a>
                   <a
-                    href="https://wa.me/255712345678?text=Habari%20ninaomba%20lipa%20kwa%20M-Pesa%20kufungua%20mfumo%20wa%20MavunoOne."
+                    href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba maelekezo ya malipo kupitia M-Pesa au Tigo Pesa kwa oda yangu.")}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-white/10"
@@ -257,7 +260,7 @@ export default function LandingPage() {
                   </div>
 
                   <a
-                    href="https://wa.me/255712345678?text=Habari%20ninaomba%20kufungua%20mfumo%20wa%20MavunoOne%20kwa%20biashara%20yangu."
+                    href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba maelezo ya bidhaa, bei na namna ya kuagiza.")}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-5 py-3.5 text-base font-black text-emerald-950 transition hover:bg-yellow-300"
