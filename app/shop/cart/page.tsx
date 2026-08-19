@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { ArrowLeft, Minus, Plus, ShoppingCart, ShieldCheck, Trash2 } from "lucide-react";
 
 type CartItem = { id: number; name: string; price: number; quantity: number; image?: string; inStock?: boolean };
 type PaymentInstructions = { enabled: boolean; mpesa: { name: string | null; number: string | null } | null; tigopesa: { name: string | null; number: string | null } | null };
 const emptyPayments: PaymentInstructions = { enabled: false, mpesa: null, tigopesa: null };
 const CART_KEY = "mavunoone-shop-cart";
+
+const money = (value: number) => `TZS ${Math.round(value).toLocaleString("en-TZ")}`;
 
 export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -31,16 +34,95 @@ export default function CartPage() {
 
   useEffect(() => {
     fetch("/api/payment/instructions", { cache: "no-store" })
-      .then((response) => response.ok ? response.json() : emptyPayments)
+      .then((response) => (response.ok ? response.json() : emptyPayments))
       .then((data) => setPaymentInstructions(data as PaymentInstructions))
       .catch(() => setPaymentInstructions(emptyPayments));
   }, []);
 
+  const updateQuantity = (id: number, quantity: number) => {
+    setCart((current) => current.flatMap((item) => item.id !== id ? [item] : quantity <= 0 ? [] : [{ ...item, quantity }]));
+  };
   const handleRemove = (id: number) => setCart((current) => current.filter((item) => item.id !== id));
-  const handleQuantityChange = (id: number, quantity: number) => setCart((current) => current.flatMap((item) => item.id !== id ? [item] : quantity <= 0 ? [] : [{ ...item, quantity }]));
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.18;
   const total = subtotal + tax;
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  return <div className="min-h-screen bg-slate-50"><header className="bg-gradient-to-r from-emerald-800 to-emerald-700 text-white shadow-lg"><div className="mx-auto max-w-4xl px-4 py-6"><div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-4"><Link href="/shop" className="rounded-lg p-2 hover:bg-emerald-600" aria-label="Rudi Shop"><ArrowLeft size={24} /></Link><h1 className="text-2xl font-black">Kikapu Chako</h1></div><Link href="/" className="rounded-lg border border-white/20 px-3 py-2 text-sm font-bold text-emerald-50 hover:bg-white/10">Home</Link></div></div></header><main className="mx-auto max-w-4xl px-4 py-8">{!ready ? <div className="rounded-2xl bg-white p-12 text-center text-slate-500">Inapakia kikapu...</div> : cart.length === 0 ? <div className="rounded-2xl bg-white py-12 text-center shadow-sm"><p className="text-lg text-slate-600">Kikapu chako hakina bidhaa.</p><Link href="/shop" className="mt-4 inline-block rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white">Rudi kwenye Shop</Link></div> : <div className="grid gap-6 md:grid-cols-3"><div className="space-y-4 md:col-span-2">{cart.map((item) => <div key={item.id} className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-sm"><div className="min-w-0 flex-1"><h3 className="font-bold text-slate-900">{item.name}</h3><p className="font-semibold text-emerald-700">TZS {item.price.toLocaleString()}</p></div><div className="flex items-center gap-3"><input type="number" min="1" value={item.quantity} onChange={(event) => handleQuantityChange(item.id, Number(event.target.value))} className="w-16 rounded-lg border border-slate-200 px-2 py-2 text-center" /><p className="w-24 text-right font-black text-slate-900">TZS {(item.price * item.quantity).toLocaleString()}</p><button type="button" onClick={() => handleRemove(item.id)} className="p-2 text-red-600"><Trash2 size={20} /></button></div></div>)}</div><div className="h-fit rounded-2xl bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-black text-slate-900">Muhtasari</h2><div className="space-y-3 border-b border-slate-200 pb-4 text-sm"><div className="flex justify-between"><span>Bidhaa</span><strong>{cart.reduce((sum, item) => sum + item.quantity, 0)}</strong></div><div className="flex justify-between text-slate-500"><span>Kodi (18%)</span><span>TZS {tax.toLocaleString()}</span></div></div><div className="flex justify-between py-4 text-xl font-black"><span>Jumla</span><span className="text-emerald-700">TZS {total.toLocaleString()}</span></div>{paymentInstructions.enabled && (paymentInstructions.mpesa || paymentInstructions.tigopesa) && <div className="border-t border-slate-200 pt-4"><p className="text-sm font-black text-slate-900">Njia za malipo</p><p className="mt-1 text-xs text-slate-500">Maelekezo kamili yataonekana unapokamilisha oda.</p><div className="mt-3 space-y-2">{paymentInstructions.mpesa && <div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-900"><span className="font-black">M-Pesa:</span> {paymentInstructions.mpesa.number}{paymentInstructions.mpesa.name ? ` · ${paymentInstructions.mpesa.name}` : ""}</div>}{paymentInstructions.tigopesa && <div className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-900"><span className="font-black">Tigo Pesa:</span> {paymentInstructions.tigopesa.number}{paymentInstructions.tigopesa.name ? ` · ${paymentInstructions.tigopesa.name}` : ""}</div>}</div></div>}<Link href="/shop/order" className="block w-full rounded-xl bg-emerald-600 py-3 text-center font-bold text-white hover:bg-emerald-700">Endelea na Oda</Link><Link href="/shop" className="mt-2 block w-full rounded-xl border-2 border-slate-200 py-2 text-center font-bold text-slate-700">Endelea Kununua</Link></div></div>}</main></div>;
+  return (
+    <div className="min-h-[calc(100vh-92px)] bg-slate-50 text-slate-900">
+      <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
+          <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition hover:text-emerald-700">
+            <ArrowLeft size={17} /> Rudi kwenye Shop
+          </Link>
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+            <ShoppingCart size={18} className="text-emerald-600" /> Kikapu
+            {itemCount > 0 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">{itemCount}</span>}
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-6xl px-4 py-8 pb-28 sm:px-6 lg:py-12">
+        {!ready ? (
+          <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <div className="mx-auto mb-4 h-10 w-10 animate-pulse rounded-full bg-emerald-100" />
+            <p className="text-sm font-semibold text-slate-500">Inapakia kikapu chako...</p>
+          </div>
+        ) : cart.length === 0 ? (
+          <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm sm:px-12">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+              <ShoppingCart size={34} strokeWidth={1.7} />
+            </div>
+            <p className="mt-7 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Kikapu chako</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Bado hujaongeza bidhaa</h1>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-500">Chagua bidhaa kutoka Shop ili uanze oda yako. Utaona bei na availability ya bidhaa kabla ya kuendelea.</p>
+            <Link href="/shop" className="mt-8 inline-flex rounded-xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800">Angalia bidhaa</Link>
+          </section>
+        ) : (
+          <>
+            <div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Oda yako</p>
+                <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Kagua kikapu chako</h1>
+                <p className="mt-2 text-sm text-slate-500">Thibitisha bidhaa na quantity kabla ya kuendelea na oda.</p>
+              </div>
+              <Link href="/shop" className="text-sm font-bold text-emerald-700 hover:text-emerald-900">+ Ongeza bidhaa nyingine</Link>
+            </div>
+
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+              <section className="space-y-3">
+                {cart.map((item) => (
+                  <article key={item.id} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    {item.image ? <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl"><Image src={item.image} alt="" fill unoptimized sizes="80px" className="object-cover" /></div> : <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><ShoppingCart size={24} /></div>}
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate font-black text-slate-950">{item.name}</h2>
+                      <p className="mt-1 text-sm font-bold text-emerald-700">{money(item.price)} <span className="font-medium text-slate-400">/ unit</span></p>
+                      <button type="button" onClick={() => handleRemove(item.id)} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-slate-400 transition hover:text-red-600"><Trash2 size={14} /> Ondoa</button>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end justify-between gap-3">
+                      <p className="font-black text-slate-950">{money(item.price * item.quantity)}</p>
+                      <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50">
+                        <button type="button" aria-label="Punguza quantity" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-2 text-slate-500 hover:text-emerald-700"><Minus size={15} /></button>
+                        <span className="min-w-8 text-center text-sm font-black">{item.quantity}</span>
+                        <button type="button" aria-label="Ongeza quantity" onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-2 text-slate-500 hover:text-emerald-700"><Plus size={15} /></button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </section>
+
+              <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Muhtasari wa oda</p>
+                <div className="mt-5 space-y-3 border-b border-slate-200 pb-5 text-sm"><div className="flex justify-between"><span className="text-slate-500">Bidhaa</span><strong>{itemCount}</strong></div><div className="flex justify-between"><span className="text-slate-500">Subtotal</span><strong>{money(subtotal)}</strong></div><div className="flex justify-between text-slate-500"><span>Kodi (18%)</span><span>{money(tax)}</span></div></div>
+                <div className="flex justify-between py-5 text-xl font-black"><span>Jumla</span><span className="text-emerald-700">{money(total)}</span></div>
+                {paymentInstructions.enabled && (paymentInstructions.mpesa || paymentInstructions.tigopesa) && <div className="mb-5 rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase tracking-wide text-slate-700">Njia za malipo</p><div className="mt-3 space-y-2 text-xs">{paymentInstructions.mpesa && <div className="rounded-xl bg-emerald-50 px-3 py-2 font-semibold text-emerald-900"><span className="font-black">M-Pesa:</span> {paymentInstructions.mpesa.number}</div>}{paymentInstructions.tigopesa && <div className="rounded-xl bg-sky-50 px-3 py-2 font-semibold text-sky-900"><span className="font-black">Tigo Pesa:</span> {paymentInstructions.tigopesa.number}</div>}</div></div>}
+                <Link href="/shop/order" className="block w-full rounded-xl bg-emerald-700 py-3.5 text-center text-sm font-black text-white transition hover:bg-emerald-800">Endelea na oda</Link>
+                <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-slate-500"><ShieldCheck size={15} className="text-emerald-600" /> Taarifa zako zitatumika kwa oda yako tu.</div>
+              </aside>
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
 }
