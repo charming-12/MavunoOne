@@ -33,6 +33,7 @@ export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
   barcode: varchar("barcode", { length: 64 }).unique(),
+  imageUrl: text("imageUrl"),
   productType: varchar("productType", { length: 32 }).default("finished_goods").notNull(),
   categoryId: integer("categoryId"),
   unit: varchar("unit", { length: 32 }).default("kg").notNull(),

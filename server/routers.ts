@@ -133,6 +133,7 @@ export const appRouter = router({
           unit: products.unit,
           packageSizeKg: products.packageSizeKg,
           sellPrice: products.sellPrice,
+          imageUrl: products.imageUrl,
           available: sql<boolean>`${products.currentStock} > 0`,
         })
         .from(products)
@@ -145,6 +146,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().trim().min(1).max(160),
         barcode: z.string().trim().min(3).max(64).optional(),
+        imageUrl: z.string().trim().url().max(1000).optional(),
         productType: z.enum(["raw_material", "finished_goods", "animal_feed", "byproduct", "packaging", "service"]).default("finished_goods"),
         categoryId: z.number().optional(),
         unit: z.string().trim().min(1).max(32).default("kg"),
