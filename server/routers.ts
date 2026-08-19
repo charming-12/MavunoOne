@@ -116,29 +116,49 @@ export const appRouter = router({
 
   // ===== PRODUCTS =====
   products: router({
-    list: publicProcedure.query(async () => {
+    list: officeProcedure.query(async () => {
       return await db.query.products.findMany({
         where: eq(products.isActive, true),
         orderBy: desc(products.name),
         limit: 500,
       });
     }),
+
+    publicList: publicProcedure.query(async () => {
+      return await db
+        .select({
+          id: products.id,
+          name: products.name,
+          productType: products.productType,
+          unit: products.unit,
+          packageSizeKg: products.packageSizeKg,
+          sellPrice: products.sellPrice,
+          available: sql<boolean>`${products.currentStock} > 0`,
+        })
+        .from(products)
+        .where(eq(products.isActive, true))
+        .orderBy(desc(products.name))
+        .limit(500);
+    }),
     
     create: officeProcedure
       .input(z.object({
-        name: z.string().min(1),
-        barcode: z.string().trim().min(3).optional(),
-        productType: z.string().default("finished_goods"),
+        name: z.string().trim().min(1).max(160),
+        barcode: z.string().trim().min(3).max(64).optional(),
+        productType: z.enum(["raw_material", "finished_goods", "animal_feed", "byproduct", "packaging", "service"]).default("finished_goods"),
         categoryId: z.number().optional(),
-        unit: z.string().default("kg"),
-        packageSizeKg: z.number().positive().default(1),
-        costPrice: z.number(),
-        sellPrice: z.number(),
-        wholesalePrice: z.number().optional(),
-        lowStockThreshold: z.number().default(10),
-        currentStock: z.number().default(0),
+        unit: z.string().trim().min(1).max(32).default("kg"),
+        packageSizeKg: z.number().positive().max(100000).default(1),
+        costPrice: z.number().nonnegative(),
+        sellPrice: z.number().nonnegative(),
+        wholesalePrice: z.number().nonnegative().optional(),
+        lowStockThreshold: z.number().nonnegative().default(10),
+        currentStock: z.number().nonnegative().default(0),
       }))
       .mutation(async ({ input, ctx }) => {
+        if (!["admin", "manager"].includes(ctx.user?.role ?? "")) {
+          throw new Error("Product catalog hairuhusiwi kwa role hii");
+        }
         const [created] = await db.insert(products).values({
           ...input,
           barcode: input.barcode || undefined,
