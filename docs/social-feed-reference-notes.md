@@ -48,3 +48,12 @@ Prefer Wikimedia Commons assets where the file page clearly states the Creative 
 Direct file URLs used for local copies:
 - https://upload.wikimedia.org/wikipedia/commons/e/ec/Sunflower_meal_IMG_6213.jpg
 - https://upload.wikimedia.org/wikipedia/commons/e/e7/Corn_By-Product_Used_for_Livestock_Feed.jpg
+
+## Mixed Animal Feed candidate
+
+### Wikimedia Commons: Stock feed.jpg
+URL: https://commons.wikimedia.org/wiki/File:Stock_feed.jpg
+
+The image shows buckets containing millet and a mixture of maize and sunflower seeds, which is a credible visual for a `Mixed Animal Feed` or `Mchanganyiko wa Chakula cha Mifugo` product. It is licensed **CC BY-SA 4.0**. Attribution and share-alike requirements apply.
+
+This image should be used only for a product explicitly named `Mixed Animal Feed`/`Mchanganyiko wa Chakula cha Mifugo`; it must not become the fallback for Soya, Uduvi, Pumba, Mashudu or Chokaa.

@@ -14,10 +14,11 @@ const productImages: Array<{ keywords: string[]; src: string; alt: string }> = [
   // Chokaa is its own feed-ingredient product and must never inherit the generic animal-feed image.
   { keywords: ["chokaa", "choka"], src: "/products/chokaa-feed-grade.png", alt: "Chokaa ya unga kwa matumizi ya animal feed" },
   // Use product-specific, neutral assets before the generic feed fallback.
+  { keywords: ["mchanganyiko wa chakula", "mixed animal feed", "mixed feed", "complete feed", "complete animal feed", "chakula kilichochanganywa"], src: "/products/mixed-animal-feed-commons.jpg", alt: "Mchanganyiko wa chakula cha mifugo" },
   { keywords: ["mashudu", "sunflower cake", "sunflower meal", "sunflower oilcake", "oilcake"], src: "/products/sunflower-meal-commons.jpg", alt: "Mashudu ya alizeti kwa animal feed" },
   { keywords: ["pumba", "maize bran", "corn bran", "bran", "corn by-product", "by-product", "byproduct", "udaga"], src: "/products/maize-byproduct-livestock-feed.jpg", alt: "Pumba ya mahindi kwa animal feed" },
   // Keep animal-feed terms after ingredient-specific terms so each ingredient keeps its own image.
-  { keywords: ["animal feed", "animal feeds", "animal food", "feeds", "feed", "uduv", "chakula cha mifugo", "chakula cha wanyama", "chakula cha kuku", "chakula cha ng'ombe", "mifugo", "soya", "soy", "soybean", "soyabean", "soya cake", "cake"], src: "/products/animal-feeds.jpg", alt: "Animal feeds kwa mifugo" },
+  { keywords: ["animal feed", "animal feeds", "animal food", "feeds", "feed", "uduv", "uduvi", "dagaa", "fishmeal", "fish meal", "chakula cha mifugo", "chakula cha wanyama", "chakula cha kuku", "chakula cha ng'ombe", "mifugo", "soya", "soy", "soybean", "soyabean", "soya cake", "cake"], src: "/products/animal-feeds.jpg", alt: "Animal feeds kwa mifugo" },
   { keywords: ["mafuta", "oil"], src: "/products/sunflower-oil-sizes.jpg", alt: "Mafuta ya alizeti kwenye chupa na gallon za sizes tofauti" },
   { keywords: ["unga", "flour", "meal"], src: "/products/maize-flour.jpg", alt: "Unga wa mahindi" },
   { keywords: ["mahindi", "mahindi ya nafaka", "maize", "corn", "grain"], src: "/products/maize-cobs-commons.jpg", alt: "Mahindi ya nafaka na magunzi" },

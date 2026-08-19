@@ -9,6 +9,7 @@ const typeLabel: Record<string, string> = { raw_material: "Raw material", finish
 type ProductType = "raw_material" | "finished_goods" | "animal_feed" | "byproduct" | "packaging" | "service";
 const approvedProductImages = [
   { label: "Chokaa / Feed ingredient", value: "/products/chokaa-feed-grade.png" },
+  { label: "Mixed Animal Feed / Mchanganyiko", value: "/products/mixed-animal-feed-commons.jpg" },
   { label: "Animal feeds / Soya / Uduv", value: "/products/animal-feeds.jpg" },
   { label: "Mashudu ya Alizeti", value: "/products/sunflower-meal-commons.jpg" },
   { label: "Pumba ya Mahindi", value: "/products/maize-byproduct-livestock-feed.jpg" },
