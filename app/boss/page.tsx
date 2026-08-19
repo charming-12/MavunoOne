@@ -25,12 +25,15 @@ import {
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   Cell,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
+  Legend,
   XAxis,
   YAxis,
 } from "recharts";
@@ -200,7 +203,10 @@ export default function BossDashboard() {
   };
 
   const recentSales = salesQuery.data?.slice(0, 4) ?? [];
-  const salesTrend = (analyticsQuery.data?.daily ?? []).map((day) => ({ month: day.date.slice(5), sales: day.sales / 1_000_000, target: 0 }));
+  const salesTrend = (analyticsQuery.data?.daily ?? []).map((day) => ({ month: day.date.slice(5), sales: day.sales / 1_000_000 }));
+  const topProducts = analyticsQuery.data?.topProducts ?? [];
+  const paymentMix = analyticsQuery.data?.paymentMix ?? [];
+  const movementTrend = analyticsQuery.data?.movement ?? [];
   const stockProducts = (productsQuery.data ?? []).filter((product) => Number(product.currentStock ?? 0) > 0).sort((a, b) => Number(b.currentStock ?? 0) - Number(a.currentStock ?? 0)).slice(0, 4);
   const stockTotal = stockProducts.reduce((sum, product) => sum + Number(product.currentStock ?? 0), 0);
   const stockBreakdown = stockProducts.map((product, index) => { const baseKg = Number(product.currentStock ?? 0); const packageSizeKg = Number(product.packageSizeKg ?? 1); return { name: product.name, display: `${(baseKg / packageSizeKg).toLocaleString()} ${product.unit}`, baseKg, value: stockTotal ? Math.round((baseKg / stockTotal) * 100) : 0, color: ["#16a66a", "#183a5c", "#e6a51b", "#aeb8b5"][index] }; });
@@ -263,6 +269,16 @@ export default function BossDashboard() {
           <div className="mt-5 flex flex-col justify-between gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Operating costs zote</p><p className="mt-1 text-sm text-slate-500">Stock-in + farmer payments + maintenance + expenses</p></div><p className="text-2xl font-black text-slate-950">{formatMoney(pnlOperatingCosts)}</p><div className={`rounded-xl px-4 py-2 text-lg font-black ${pnlProfit >= 0 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>Net {formatMoney(pnlProfit)}</div></div>
         </section>
 
+        <section className="mt-6 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)]">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6">
+            <div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><BarChart3 size={19} className="text-emerald-700" /><h3 className="text-lg font-bold text-slate-950">Bidhaa zinazouza zaidi</h3></div><p className="mt-1 text-sm text-slate-500">Revenue halisi ya siku 7 zilizopita</p></div><Link href="/boss/sales" className="text-xs font-bold text-emerald-700">Sales detail</Link></div>
+            <div className="mt-5 h-[230px]">{topProducts.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={topProducts} layout="vertical" margin={{ top: 4, right: 18, left: 8, bottom: 4 }}><CartesianGrid stroke="#e8efec" horizontal={false} /><XAxis type="number" axisLine={false} tickLine={false} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}K`} /><YAxis type="category" dataKey="name" width={92} axisLine={false} tickLine={false} tick={{ fill: "#475569", fontSize: 11 }} /><Tooltip formatter={(value) => [formatMoney(Number(value)), "Revenue"]} contentStyle={{ borderRadius: 12, border: "1px solid #e3ebe7" }} /><Bar dataKey="revenue" fill="#16a66a" radius={[0, 6, 6, 0]} barSize={18} /></BarChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">Hakuna product sales data bado.</div>}</div>
+          </div>
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6"><div className="flex items-center gap-2"><Wallet size={19} className="text-amber-700" /><h3 className="text-lg font-bold text-slate-950">Payment mix</h3></div><p className="mt-1 text-sm text-slate-500">Njia za malipo zilizotumika</p><div className="mt-4 h-[190px]">{paymentMix.length ? <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={paymentMix} dataKey="amount" nameKey="method" innerRadius={55} outerRadius={78} paddingAngle={3} stroke="none">{paymentMix.map((entry, index) => <Cell key={entry.method} fill={["#16a66a", "#e6a51b", "#183a5c", "#a855f7"][index % 4]} />)}</Pie><Tooltip formatter={(value) => [formatMoney(Number(value)), "Malipo"]} /><Legend verticalAlign="bottom" height={28} wrapperStyle={{ fontSize: 11 }} /></PieChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">Hakuna payment data bado.</div>}</div></div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6"><div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Boxes size={19} className="text-sky-700" /><h3 className="text-lg font-bold text-slate-950">Stock in / stock out</h3></div><p className="mt-1 text-sm text-slate-500">Movement ya bidhaa kwa siku 7 zilizopita, kwa kilo base</p></div><Link href="/boss/stock" className="text-xs font-bold text-emerald-700">Fungua stock</Link></div><div className="mt-5 h-[230px]">{movementTrend.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={movementTrend} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}><CartesianGrid stroke="#e8efec" vertical={false} strokeDasharray="3 3" /><XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 10 }} /><Tooltip formatter={(value, name) => [`${Number(value).toLocaleString()} kg`, name === "stockInKg" ? "Stock in" : "Stock out"]} /><Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: 11 }} /><Bar dataKey="stockInKg" name="Stock in" fill="#0ea5e9" radius={[5, 5, 0, 0]} /><Bar dataKey="stockOutKg" name="Stock out" fill="#f59e0b" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">Hakuna stock movement data bado.</div>}</div></section>
+
         <div className="mt-6 grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
           <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(16,45,38,0.05)] sm:p-6">
             <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -273,7 +289,7 @@ export default function BossDashboard() {
                 </div>
                 <p className="mt-1 text-sm text-slate-500">Mauzo dhidi ya lengo kwa miezi sita iliyopita</p>
               </div>
-              <span className="w-fit rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">Siku 7 zilizopita</span>
+              <span className="w-fit rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">Siku 7 · mauzo halisi</span>
             </div>
             <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -287,15 +303,14 @@ export default function BossDashboard() {
                   <CartesianGrid stroke="#e8efec" vertical={false} strokeDasharray="3 3" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#71807b", fontSize: 12 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: "#71807b", fontSize: 11 }} tickFormatter={(value) => `${value}M`} />
-                  <Tooltip formatter={(value, name) => [`TZS ${Number(value).toFixed(1)}M`, name === "sales" ? "Mauzo" : "Lengo"]} contentStyle={{ borderRadius: 12, border: "1px solid #e3ebe7", boxShadow: "0 10px 30px rgba(16,45,38,.10)" }} />
-                  <Area type="monotone" dataKey="target" stroke="#183a5c" strokeWidth={2} strokeDasharray="6 5" fill="transparent" />
+                  <Tooltip formatter={(value) => [`TZS ${Number(value).toFixed(1)}M`, "Mauzo"]} contentStyle={{ borderRadius: 12, border: "1px solid #e3ebe7", boxShadow: "0 10px 30px rgba(16,45,38,.10)" }} />
                   <Area type="monotone" dataKey="sales" stroke="#16a66a" strokeWidth={3} fill="url(#salesFill)" activeDot={{ r: 5, fill: "#16a66a", stroke: "#fff", strokeWidth: 2 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-2 flex items-center gap-5 text-xs font-medium text-slate-500">
               <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-emerald-600" /> Mauzo</span>
-                  <span className="text-slate-400">Siku 7 zilizopita</span>
+                  <span className="text-slate-400">Hakuna target ya kubuni</span>
             </div>
           </section>
 

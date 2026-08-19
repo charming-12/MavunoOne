@@ -875,6 +875,11 @@ export const appRouter = router({
         db.query.farmerPayments.findMany({ where: gte(farmerPayments.createdAt, start) }),
         db.query.maintenanceCosts.findMany({ where: gte(maintenanceCosts.serviceDate, start) }),
       ]);
+      const saleIds = recentSales.map((sale) => sale.id);
+      const [recentItems, catalogProducts] = await Promise.all([
+        saleIds.length ? db.query.saleItems.findMany({ where: inArray(saleItems.saleId, saleIds) }) : Promise.resolve([]),
+        db.query.products.findMany({ where: eq(products.isActive, true), limit: 500 }),
+      ]);
       const daily = Array.from({ length: 7 }, (_, index) => {
         const date = new Date(start);
         date.setDate(start.getDate() + index);
@@ -893,7 +898,16 @@ export const appRouter = router({
       const totalFarmerCost = daily.reduce((sum, day) => sum + day.farmerCost, 0);
       const totalMaintenanceCost = daily.reduce((sum, day) => sum + day.maintenanceCost, 0);
       const totalOperatingCosts = daily.reduce((sum, day) => sum + day.operatingCosts, 0);
-      return { daily, totalSales, totalExpenses, totalStockCost, totalFarmerCost, totalMaintenanceCost, totalOperatingCosts, totalProfit: totalSales - totalOperatingCosts };
+      const productById = new Map(catalogProducts.map((product) => [product.id, product]));
+      const productTotals = new Map<number, { quantity: number; revenue: number }>();
+      for (const item of recentItems) {
+        const current = productTotals.get(item.productId) || { quantity: 0, revenue: 0 };
+        productTotals.set(item.productId, { quantity: current.quantity + Number(item.quantity || 0), revenue: current.revenue + Number(item.total || 0) });
+      }
+      const topProducts = Array.from(productTotals.entries()).map(([productId, totals]) => ({ productId, name: productById.get(productId)?.name || "Bidhaa isiyojulikana", unit: productById.get(productId)?.unit || "unit", quantity: totals.quantity, revenue: totals.revenue })).sort((a, b) => b.revenue - a.revenue).slice(0, 6);
+      const paymentMix = Array.from(recentSales.reduce((mix, sale) => mix.set(sale.paymentMethod || "cash", (mix.get(sale.paymentMethod || "cash") || 0) + Number(sale.totalAmount || 0)), new Map<string, number>())).map(([method, amount]) => ({ method, amount })).sort((a, b) => b.amount - a.amount);
+      const movement = daily.map((day) => ({ date: day.date, stockInKg: recentStockIn.filter((entry) => entry.date.toISOString().slice(0, 10) === day.date).reduce((sum, entry) => sum + Number(entry.baseQuantity || entry.quantity || 0), 0), stockOutKg: recentSales.filter((sale) => sale.createdAt.toISOString().slice(0, 10) === day.date).length ? recentItems.filter((item) => { const sale = recentSales.find((candidate) => candidate.id === item.saleId); return sale?.createdAt.toISOString().slice(0, 10) === day.date; }).reduce((sum, item) => { const product = productById.get(item.productId); return sum + Number(item.baseQuantity || 0) || sum + Number(item.quantity || 0) * Number(product?.packageSizeKg || 1); }, 0) : 0 }));
+      return { daily, totalSales, totalExpenses, totalStockCost, totalFarmerCost, totalMaintenanceCost, totalOperatingCosts, totalProfit: totalSales - totalOperatingCosts, topProducts, paymentMix, movement };
     }),
     forecast: protectedProcedure.query(async () => {
       const start = new Date();
