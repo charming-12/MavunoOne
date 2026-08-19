@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearStoredUser, getRoleRedirectPath, isRoleAllowed, readStoredUser } from "@/lib/auth";
+import { clearStoredUser, isRoleAllowed, writeStoredUser } from "@/lib/auth";
 
 export function AuthGuard({
   children,
@@ -14,35 +14,36 @@ export function AuthGuard({
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
+  const allowedRolesKey = allowedRoles.join("|");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const currentUser = readStoredUser();
-
-      if (!currentUser) {
-        clearStoredUser();
-        router.replace("/login");
-        setReady(false);
-        return;
-      }
-
-      if (!isRoleAllowed(currentUser.role, allowedRoles)) {
-        const redirectPath = getRoleRedirectPath(currentUser.role);
-        if (pathname !== redirectPath) {
-          router.replace(redirectPath);
+    let cancelled = false;
+    const verifyLiveSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session", { method: "GET", cache: "no-store", credentials: "include" });
+        if (!response.ok) throw new Error("SESSION_EXPIRED");
+        const payload = await response.json() as { user?: { id?: number; name?: string; email: string; role: string } };
+        const currentUser = payload.user;
+        if (!currentUser || !isRoleAllowed(currentUser.role, allowedRolesKey.split("|"))) {
+          throw new Error("ROLE_NOT_ALLOWED");
         }
+        if (!cancelled) {
+          writeStoredUser(currentUser as Parameters<typeof writeStoredUser>[0]);
+          setReady(true);
+        }
+      } catch {
+        if (cancelled) return;
+        clearStoredUser();
         setReady(false);
-        return;
+        router.replace("/login");
       }
-
-      setReady(true);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [allowedRoles, pathname, router]);
+    };
+    void verifyLiveSession();
+    return () => { cancelled = true; };
+  }, [allowedRolesKey, pathname, router]);
 
   if (!ready) {
-    return null;
+    return <div className="flex min-h-[240px] items-center justify-center bg-transparent"><p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-sm">Inathibitisha session...</p></div>;
   }
 
   return <>{children}</>;

@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { auditLogs, passwordResetTokens, users } from "@/drizzle/schema";
 import { requireAdminUser } from "@/lib/api-auth";
 import { sendStaffInvitationEmail } from "@/server/utils/email";
+import { isValidEmail, normalizeEmail, normalizePhone, normalizeText } from "@/lib/input";
 
 const provisionableRoles = ["manager", "cashier", "storekeeper", "machine_operator"] as const;
 type Role = (typeof provisionableRoles)[number];
@@ -33,11 +34,12 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json({ message: `${removable.length} seeded mock account(s) removed. Boss and Admin accounts were preserved.`, removedCount: removable.length });
     }
-    const name = String(body.name ?? "").trim();
-    const jobTitle = String(body.jobTitle ?? "").trim() || null;
-    const email = String(body.email ?? "").trim().toLowerCase();
+    const name = normalizeText(body.name, 160);
+    const jobTitle = normalizeText(body.jobTitle, 120) || null;
+    const email = normalizeEmail(body.email);
+    const phone = normalizePhone(body.phone);
     const role = body.role as Role;
-    if (!name || !email || !email.includes("@") || !provisionableRoles.includes(role)) return NextResponse.json({ message: "Name, valid email and staff role are required" }, { status: 400 });
+    if (name.length < 2 || !isValidEmail(email) || !provisionableRoles.includes(role)) return NextResponse.json({ message: "Name, valid email and staff role are required" }, { status: 400 });
     const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
     if (existing) return NextResponse.json({ message: "A user with this email already exists" }, { status: 409 });
 
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const [created] = await db.transaction(async (tx) => {
-      const [newUser] = await tx.insert(users).values({ name, email, phone: body.phone?.trim() || null, jobTitle, role, passwordHash: null }).returning({ id: users.id, name: users.name, email: users.email, phone: users.phone, jobTitle: users.jobTitle, role: users.role, createdAt: users.createdAt });
+      const [newUser] = await tx.insert(users).values({ name, email, phone: phone || null, jobTitle, role, passwordHash: null }).returning({ id: users.id, name: users.name, email: users.email, phone: users.phone, jobTitle: users.jobTitle, role: users.role, createdAt: users.createdAt });
       await tx.insert(passwordResetTokens).values({ userId: newUser.id, token: tokenHash, expiresAt });
       await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "create", tableName: "users", recordId: newUser.id, newValueJson: JSON.stringify({ name, email, jobTitle, role, invitation: true }) });
       return [newUser];
