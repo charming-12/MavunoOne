@@ -311,13 +311,23 @@ export const appRouter = router({
         saleIds.length ? db.query.saleItems.findMany({ where: inArray(saleItems.saleId, saleIds) }) : Promise.resolve([]),
         customerIds.length ? db.query.customers.findMany({ where: inArray(customers.id, customerIds) }) : Promise.resolve([]),
       ]);
+      const productIds = itemRows.map((item) => item.productId);
+      const productRows = productIds.length ? await db.query.products.findMany({ where: inArray(products.id, productIds) }) : [];
       const itemCounts = new Map<number, number>();
       for (const item of itemRows) itemCounts.set(item.saleId, (itemCounts.get(item.saleId) ?? 0) + 1);
       const customerNames = new Map(customerRows.map((customer) => [customer.id, customer.name]));
+      const productNames = new Map(productRows.map((product) => [product.id, product.name]));
       return saleRows.map((sale) => ({
         ...sale,
         itemCount: itemCounts.get(sale.id) ?? 0,
         customerName: sale.customerId ? customerNames.get(sale.customerId) ?? "Customer" : "Walk-in customer",
+        items: itemRows.filter((item) => item.saleId === sale.id).map((item) => ({
+          productId: item.productId,
+          productName: productNames.get(item.productId) ?? "Product",
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total,
+        })),
       }));
     }),
 
