@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Download, Calendar, TrendingUp } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -153,71 +152,12 @@ export default function AdvancedAnalyticsPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Sales Card */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
-            alt="Jumla ya Mauzo"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Jumla ya Mauzo</p>
-            <p className="text-2xl font-bold text-white">TZS {(analytics.summary.totalRevenue / 1000000).toFixed(2)}M</p>
-            <p className="text-xs text-gray-200">Jumla ya kipindi kilicho chaguliwa</p>
-          </div>
-        </div>
-
-        {/* Total Expenses Card */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
-            alt="Jumla ya Matumizi"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Jumla ya Matumizi</p>
-            <p className="text-2xl font-bold text-white">TZS {(analytics.summary.totalExpenses / 1000000).toFixed(2)}M</p>
-            <p className="text-xs text-gray-200">Gharama za uendeshaji</p>
-          </div>
-        </div>
-
-        {/* Net Profit Card */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
-            alt="Faida ya Wavu"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Faida ya Wavu</p>
-            <p className="text-2xl font-bold text-white">TZS {(analytics.summary.netProfit / 1000000).toFixed(2)}M</p>
-            <p className="text-xs text-gray-200">Ukingo wa faida: {profitMargin}%</p>
-          </div>
-        </div>
-
-        {/* Average Transaction Card */}
-        <div className="relative h-40 rounded-lg overflow-hidden group cursor-pointer hover:shadow-xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
-            alt="Wastani ya Muamala"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Wastani ya Muamala</p>
-            <p className="text-2xl font-bold text-white">TZS {analytics.summary.averageTransaction.toLocaleString()}</p>
-            <p className="text-xs text-gray-200">Kwa kila muamala</p>
-          </div>
-        </div>
+      {/* KPI Cards: data-first, without decorative stock/finance photos */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm"><p className="text-[15px] font-semibold text-emerald-800">Jumla ya Mauzo</p><p className="mt-2 text-2xl font-black text-emerald-950">TZS {(analytics.summary.totalRevenue / 1000000).toFixed(2)}M</p><p className="mt-2 text-[13px] text-emerald-900/70">Kipindi kilichochaguliwa</p></div>
+        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5 shadow-sm"><p className="text-[15px] font-semibold text-orange-800">Jumla ya Matumizi</p><p className="mt-2 text-2xl font-black text-orange-950">TZS {(analytics.summary.totalExpenses / 1000000).toFixed(2)}M</p><p className="mt-2 text-[13px] text-orange-900/70">Gharama za uendeshaji</p></div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm"><p className="text-[15px] font-semibold text-amber-800">Faida ya Wavu</p><p className="mt-2 text-2xl font-black text-amber-950">TZS {(analytics.summary.netProfit / 1000000).toFixed(2)}M</p><p className="mt-2 text-[13px] text-amber-900/70">Ukingo wa faida: {profitMargin}%</p></div>
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm"><p className="text-[15px] font-semibold text-sky-800">Wastani wa Muamala</p><p className="mt-2 text-2xl font-black text-sky-950">TZS {analytics.summary.averageTransaction.toLocaleString()}</p><p className="mt-2 text-[13px] text-sky-900/70">Kwa kila transaction</p></div>
       </div>
 
       {/* Top Products */}
