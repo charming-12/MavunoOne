@@ -89,11 +89,16 @@ export default function OrderPage() {
           <p className="text-gray-600 mb-6">
             Timu ya MavunoOne itawasiliana nawe kuthibitisha malipo na muda wa delivery.
           </p>
-          <Link href="/shop">
-            <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-              Rudi Kwenye Shop
-            </button>
-          </Link>
+          <div className="space-y-3">
+            <Link href="/shop">
+              <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                Rudi Kwenye Shop
+              </button>
+            </Link>
+            <Link href="/" className="block text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+              Rudi Home
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -104,13 +109,16 @@ export default function OrderPage() {
       {/* Header */}
       <header className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg">
         <div className="max-w-2xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
             <Link href="/shop/cart">
               <button className="p-2 hover:bg-green-500 rounded-lg transition">
                 <ArrowLeft size={24} />
               </button>
             </Link>
             <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-100">MavunoOne Shop</p><h1 className="text-2xl font-bold">Kamilisha oda yako</h1></div>
+            </div>
+            <Link href="/" className="rounded-lg border border-white/20 px-3 py-2 text-sm font-bold text-emerald-50 hover:bg-white/10">Home</Link>
           </div>
         </div>
       </header>
