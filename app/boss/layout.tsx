@@ -32,7 +32,7 @@ export default function BossLayout({ children }: { children: React.ReactNode }) 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "focus">("light");
   const [storedUser] = useState(() => readStoredUser());
-  const notificationsQuery = trpc.notifications.list.useQuery(undefined, { refetchInterval: 30000 });
+  const notificationsQuery = trpc.notifications.list.useQuery(undefined, { enabled: storedUser?.role === "boss", refetchInterval: 30000 });
   const unreadCount = useMemo(() => (notificationsQuery.data ?? []).filter((notification) => !notification.isRead).length, [notificationsQuery.data]);
   const userName = storedUser?.name || storedUser?.email || "Boss";
 
