@@ -80,7 +80,9 @@ export async function seedDatabase() {
       .insert(schema.products)
       .values([
         {
-          name: "Mahindi ya kawaida",
+          name: "Mahindi",
+          imageUrl: "/products/maize-cobs-commons.jpg",
+          productType: "raw_material",
           categoryId: categories[0].id,
           unit: "kg",
           costPrice: "800",
@@ -92,6 +94,8 @@ export async function seedDatabase() {
         },
         {
           name: "Unga wa Mahindi",
+          imageUrl: "/products/maize-flour.jpg",
+          productType: "finished_goods",
           categoryId: categories[0].id,
           unit: "kg",
           costPrice: "1200",
@@ -103,6 +107,8 @@ export async function seedDatabase() {
         },
         {
           name: "Alizeti",
+          imageUrl: "/products/sunflower-flower-commons.jpg",
+          productType: "raw_material",
           categoryId: categories[1].id,
           unit: "kg",
           costPrice: "3000",
@@ -113,9 +119,11 @@ export async function seedDatabase() {
           isActive: true,
         },
         {
-          name: "Mafuta Alizeti",
-          categoryId: categories[5].id,
-          unit: "liter",
+          name: "Mafuta ya Alizeti",
+          imageUrl: "/products/sunflower-oil-sizes.jpg",
+          productType: "finished_goods",
+          categoryId: categories[6].id,
+          unit: "litre",
           costPrice: "8000",
           sellPrice: "12000",
           wholesalePrice: "10000",
@@ -124,7 +132,9 @@ export async function seedDatabase() {
           isActive: true,
         },
         {
-          name: "Uduvi Safi",
+          name: "Uduvi / Fishmeal",
+          imageUrl: "/products/uduv-fishmeal-neutral.jpg",
+          productType: "animal_feed",
           categoryId: categories[2].id,
           unit: "kg",
           costPrice: "4000",
@@ -135,7 +145,9 @@ export async function seedDatabase() {
           isActive: true,
         },
         {
-          name: "Chokaa ya Kuzuia Pest",
+          name: "Chokaa ya Animal Feed",
+          imageUrl: "/products/chokaa-feed-grade.jpg",
+          productType: "animal_feed",
           categoryId: categories[3].id,
           unit: "kg",
           costPrice: "500",
@@ -146,7 +158,9 @@ export async function seedDatabase() {
           isActive: true,
         },
         {
-          name: "Chakula cha Wanyama",
+          name: "Mixed Animal Feed",
+          imageUrl: "/products/mixed-animal-feed-commons.jpg",
+          productType: "animal_feed",
           categoryId: categories[4].id,
           unit: "kg",
           costPrice: "600",

@@ -57,3 +57,8 @@ URL: https://commons.wikimedia.org/wiki/File:Stock_feed.jpg
 The image shows buckets containing millet and a mixture of maize and sunflower seeds, which is a credible visual for a `Mixed Animal Feed` or `Mchanganyiko wa Chakula cha Mifugo` product. It is licensed **CC BY-SA 4.0**. Attribution and share-alike requirements apply.
 
 This image should be used only for a product explicitly named `Mixed Animal Feed`/`Mchanganyiko wa Chakula cha Mifugo`; it must not become the fallback for Soya, Uduvi, Pumba, Mashudu or Chokaa.
+
+
+## 2026-08-19 catalog imagery additions
+
+The catalog audit selected neutral product-specific assets for the missing product mappings: `public/products/soya-cake-neutral.jpeg` from the image-search result titled “Oil Cakes – Protein-Rich Soya Products | Soya Food”; `public/products/uduv-fishmeal-neutral.jpg` from the image-search result titled “Fish meal | Feedipedia”; and `public/products/chokaa-feed-grade.jpg`, copied from the existing neutral `udaga-choka.jpg` asset. These are product references only and must not be presented as branded packaging from another company.

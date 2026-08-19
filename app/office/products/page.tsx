@@ -8,15 +8,17 @@ const money = (value: unknown) => `TZS ${Math.round(Number(value ?? 0)).toLocale
 const typeLabel: Record<string, string> = { raw_material: "Raw material", finished_goods: "Finished goods", animal_feed: "Animal feeds", packaging: "Packaging", byproduct: "By-product", service: "Service" };
 type ProductType = "raw_material" | "finished_goods" | "animal_feed" | "byproduct" | "packaging" | "service";
 const approvedProductImages = [
-  { label: "Chokaa / Feed ingredient", value: "/products/chokaa-feed-grade.png" },
+  { label: "Chokaa ya Animal Feed", value: "/products/chokaa-feed-grade.jpg" },
   { label: "Mixed Animal Feed / Mchanganyiko", value: "/products/mixed-animal-feed-commons.jpg" },
-  { label: "Animal feeds / Soya / Uduv", value: "/products/animal-feeds.jpg" },
+  { label: "Soya Cake", value: "/products/soya-cake-neutral.jpeg" },
+  { label: "Uduvi / Fishmeal", value: "/products/uduv-fishmeal-neutral.jpg" },
+  { label: "Animal feeds (generic)", value: "/products/animal-feeds.jpg" },
   { label: "Mashudu ya Alizeti", value: "/products/sunflower-meal-commons.jpg" },
   { label: "Pumba ya Mahindi", value: "/products/maize-byproduct-livestock-feed.jpg" },
   { label: "Mahindi ya punje", value: "/products/maize-grain.jpg" },
   { label: "Unga wa mahindi", value: "/products/maize-flour.jpg" },
-  { label: "Alizeti", value: "/products/sunflower-flower.jpg" },
-  { label: "Mafuta ya alizeti", value: "/products/sunflower-oil.jpg" },
+  { label: "Alizeti", value: "/products/sunflower-flower-commons.jpg" },
+  { label: "Mafuta ya alizeti", value: "/products/sunflower-oil-sizes.jpg" },
 ];
 
 export default function ProductsPage() {
