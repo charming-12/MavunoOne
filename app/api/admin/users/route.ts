@@ -4,9 +4,11 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auditLogs, passwordResetTokens, users } from "@/drizzle/schema";
 import { requireAdminUser } from "@/lib/api-auth";
+import { sendStaffInvitationEmail } from "@/server/utils/email";
 
-const roles = ["boss", "owner", "manager", "cashier", "storekeeper", "machine_operator", "customer", "admin"] as const;
-type Role = (typeof roles)[number];
+const provisionableRoles = ["manager", "cashier", "storekeeper", "machine_operator"] as const;
+type Role = (typeof provisionableRoles)[number];
+const seededMockEmails = new Set(["manager@mavunoone.co.tz", "cashier@mavunoone.co.tz", "store@mavunoone.co.tz", "operator@mavunoone.co.tz", "customer1@example.com", "customer2@example.com"]);
 
 export async function GET(request: NextRequest) {
   const actor = requireAdminUser(request);
@@ -19,13 +21,23 @@ export async function POST(request: NextRequest) {
   const actor = requireAdminUser(request);
   if (!actor || !["admin", "owner"].includes(actor.role)) return NextResponse.json({ message: "Only Admin or Owner can provision staff accounts" }, { status: 403 });
   try {
-    const body = await request.json() as { name?: string; email?: string; phone?: string; jobTitle?: string; role?: string };
+    const body = await request.json() as { action?: string; name?: string; email?: string; phone?: string; jobTitle?: string; role?: string };
+    if (body.action === "remove-seeded-mock-accounts") {
+      const candidates = await db.query.users.findMany();
+      const removable = candidates.filter((user) => seededMockEmails.has(user.email.toLowerCase()) && !["boss", "admin", "owner"].includes(user.role));
+      await db.transaction(async (tx) => {
+        for (const user of removable) {
+          await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
+          await tx.delete(users).where(eq(users.id, user.id));
+        }
+      });
+      return NextResponse.json({ message: `${removable.length} seeded mock account(s) removed. Boss and Admin accounts were preserved.`, removedCount: removable.length });
+    }
     const name = String(body.name ?? "").trim();
     const jobTitle = String(body.jobTitle ?? "").trim() || null;
     const email = String(body.email ?? "").trim().toLowerCase();
     const role = body.role as Role;
-    if (!name || !email || !email.includes("@") || !roles.includes(role)) return NextResponse.json({ message: "Name, valid email and approved role are required" }, { status: 400 });
-    if (role === "admin" && actor.role !== "owner") return NextResponse.json({ message: "Only Owner can create another Admin" }, { status: 403 });
+    if (!name || !email || !email.includes("@") || !provisionableRoles.includes(role)) return NextResponse.json({ message: "Name, valid email and staff role are required" }, { status: 400 });
     const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
     if (existing) return NextResponse.json({ message: "A user with this email already exists" }, { status: 409 });
 
@@ -39,7 +51,10 @@ export async function POST(request: NextRequest) {
       return [newUser];
     });
     const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
-    return NextResponse.json({ user: created, setupUrl: `${origin}/reset-password?token=${rawToken}`, expiresAt }, { status: 201 });
+    const setupUrl = `${origin}/reset-password?token=${rawToken}`;
+    const roleLabel = ({ admin: "Admin", boss: "Boss", manager: "Manager", cashier: "Cashier", storekeeper: "Storekeeper", machine_operator: "Machine Operator", customer: "Customer" } as Record<string, string>)[role] ?? role;
+    const emailResult = await sendStaffInvitationEmail(email, setupUrl, name, roleLabel);
+    return NextResponse.json({ user: created, setupUrl, emailSent: emailResult.sent, emailReason: emailResult.sent ? null : emailResult.reason, expiresAt }, { status: 201 });
   } catch (error) {
     console.error("Staff provisioning failed:", error);
     return NextResponse.json({ message: "Staff account could not be created" }, { status: 500 });

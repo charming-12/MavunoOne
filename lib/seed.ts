@@ -54,42 +54,6 @@ export async function seedDatabase() {
           passwordHash: bossHash,
           role: "boss",
         },
-        {
-          name: "John Manager",
-          email: "manager@mavunoone.co.tz",
-          phone: "+255700000002",
-          role: "manager",
-        },
-        {
-          name: "Jane Cashier",
-          email: "cashier@mavunoone.co.tz",
-          phone: "+255700000003",
-          role: "cashier",
-        },
-        {
-          name: "Peter Storekeeper",
-          email: "store@mavunoone.co.tz",
-          phone: "+255700000004",
-          role: "storekeeper",
-        },
-        {
-          name: "Grace Operator",
-          email: "operator@mavunoone.co.tz",
-          phone: "+255700000005",
-          role: "machine_operator",
-        },
-        {
-          name: "Ahmed Customer",
-          email: "customer1@example.com",
-          phone: "+255700000010",
-          role: "customer",
-        },
-        {
-          name: "Mariam Customer",
-          email: "customer2@example.com",
-          phone: "+255700000011",
-          role: "customer",
-        },
       ])
       .returning();
 
