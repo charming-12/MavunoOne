@@ -559,26 +559,37 @@ export const appRouter = router({
     create: officeProcedure
       .input(z.object({
         customerId: z.number().optional(),
+        operationType: z.enum(["customer_service", "internal_production"]).default("internal_production"),
         jobType: z.string(),
         inputProduct: z.string(),
         inputKg: z.number(),
+        inputUnit: z.string().default("kg"),
+        inputQuantity: z.number().positive().optional(),
+        inputUnitSize: z.number().positive().default(1),
         outputProduct1: z.string().optional(),
         outputKg1: z.number().default(0),
         outputProduct2: z.string().optional(),
         outputKg2: z.number().default(0),
         serviceFee: z.number().default(0),
+        serviceUnit: z.string().default("kg"),
+        serviceQuantity: z.number().positive().optional(),
+        serviceRate: z.number().nonnegative().default(0),
         paymentMethod: z.string().default("cash"),
         notes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const totalOutput = (input.outputKg1 || 0) + (input.outputKg2 || 0);
-        const efficiency = (totalOutput / input.inputKg) * 100;
+        const isCustomerService = input.operationType === "customer_service";
+        const totalOutput = isCustomerService ? 0 : (input.outputKg1 || 0) + (input.outputKg2 || 0);
+        const efficiency = isCustomerService ? 100 : (totalOutput / input.inputKg) * 100;
         if (input.inputKg <= 0 || !Number.isFinite(efficiency)) throw new Error("Kiasi cha input lazima kiwe zaidi ya sifuri");
+        const inputQuantity = input.inputQuantity ?? input.inputKg;
+        const serviceQuantity = input.serviceQuantity ?? inputQuantity;
+        const serviceFee = input.serviceFee || serviceQuantity * (input.serviceRate || 0);
         const saved = await db.transaction(async (tx) => {
-          const inputProduct = await tx.query.products.findFirst({ where: and(eq(products.name, input.inputProduct), eq(products.isActive, true)) });
-          if (!inputProduct) throw new Error(`Input product haipo kwenye inventory: ${input.inputProduct}`);
-          if (Number(inputProduct.currentStock) < input.inputKg) throw new Error(`Stock haitoshi kwa ${input.inputProduct}. Iliyopo: ${inputProduct.currentStock}`);
-          const outputNames = [input.outputProduct1, input.outputProduct2].filter((name): name is string => Boolean(name));
+          const inputProduct = isCustomerService ? null : await tx.query.products.findFirst({ where: and(eq(products.name, input.inputProduct), eq(products.isActive, true)) });
+          if (!isCustomerService && !inputProduct) throw new Error(`Input product haipo kwenye inventory: ${input.inputProduct}`);
+          if (!isCustomerService && Number(inputProduct?.currentStock ?? 0) < input.inputKg) throw new Error(`Stock haitoshi kwa ${input.inputProduct}. Iliyopo: ${inputProduct?.currentStock ?? 0}`);
+          const outputNames = isCustomerService ? [] : [input.outputProduct1, input.outputProduct2].filter((name): name is string => Boolean(name));
           for (const outputName of outputNames) {
             const outputProduct = await tx.query.products.findFirst({ where: and(eq(products.name, outputName), eq(products.isActive, true)) });
             if (!outputProduct) throw new Error(`Output product haipo kwenye inventory: ${outputName}`);
@@ -587,20 +598,28 @@ export const appRouter = router({
             customerId: input.customerId,
             jobType: input.jobType,
             inputProduct: input.inputProduct,
+            operationType: input.operationType,
             inputKg: decimalString(input.inputKg),
-            outputProduct1: input.outputProduct1,
+            inputUnit: input.inputUnit,
+            inputQuantity: decimalString(inputQuantity),
+            inputUnitSize: decimalString(input.inputUnitSize),
+            outputProduct1: isCustomerService ? undefined : input.outputProduct1,
             outputKg1: decimalString(input.outputKg1),
-            outputProduct2: input.outputProduct2,
-            outputKg2: decimalString(input.outputKg2),
-            serviceFee: decimalString(input.serviceFee),
+            outputProduct2: isCustomerService ? undefined : input.outputProduct2,
+            outputKg2: decimalString(isCustomerService ? 0 : input.outputKg2),
+            serviceFee: decimalString(serviceFee),
+            serviceUnit: input.serviceUnit,
+            serviceQuantity: decimalString(serviceQuantity),
+            serviceRate: decimalString(input.serviceRate),
             paymentMethod: input.paymentMethod,
             notes: input.notes,
             operatorId: ctx.user?.id,
             efficiency: decimalString(efficiency),
             status: "completed",
           }).returning();
-          await tx.update(products).set({ currentStock: sql`${products.currentStock} - ${input.inputKg}` }).where(eq(products.id, inputProduct.id));
-          await tx.insert(stockOut).values({ productId: inputProduct.id, quantity: decimalString(input.inputKg), reason: `machine_${input.jobType}`, notes: `Machine job #${job.id}` });
+          if (isCustomerService) return job;
+          await tx.update(products).set({ currentStock: sql`${products.currentStock} - ${input.inputKg}` }).where(eq(products.id, inputProduct!.id));
+          await tx.insert(stockOut).values({ productId: inputProduct!.id, quantity: decimalString(input.inputKg), baseQuantity: decimalString(input.inputKg), reason: `machine_${input.jobType}`, notes: `Machine job #${job.id}` });
           for (const [productName, quantity] of [[input.outputProduct1, input.outputKg1], [input.outputProduct2, input.outputKg2]] as Array<[string | undefined, number]>) {
             if (!productName || quantity <= 0) continue;
             const outputProduct = await tx.query.products.findFirst({ where: and(eq(products.name, productName), eq(products.isActive, true)) });
@@ -617,7 +636,7 @@ export const appRouter = router({
             if (customer?.phone) {
               const { sendMachineServiceSms } = await import("@/server/utils/sms");
               const outputs = [input.outputProduct1 ? `${input.outputProduct1} ${input.outputKg1}kg` : "", input.outputProduct2 ? `${input.outputProduct2} ${input.outputKg2}kg` : ""].filter(Boolean).join(", ");
-              await sendMachineServiceSms(customer.phone, customer.name, input.jobType, input.inputKg, outputs || "hakuna output", input.serviceFee);
+              await sendMachineServiceSms(customer.phone, customer.name, input.jobType, input.inputKg, outputs || "huduma imekamilika", serviceFee);
             }
           }
         } catch (smsError) { console.error("[SMS] Machine service notification failed:", smsError); }
