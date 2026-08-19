@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, ArrowRight, Eye, EyeOff, Leaf, LockKeyhole, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, Eye, EyeOff, Leaf, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { writeStoredUser } from "@/lib/auth";
@@ -76,15 +76,15 @@ export default function LoginPage() {
               <span className="text-2xl font-black tracking-tight">Mavuno<span className="text-emerald-400">One</span></span>
             </Link>
             <div className="mt-24 max-w-xl">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">Secure operations platform</p>
-              <h1 className="mt-5 text-5xl font-black leading-[1.05] tracking-tight xl:text-6xl">Karibu kwenye kituo cha usimamizi wa MavunoOne.</h1>
-              <p className="mt-6 max-w-lg text-base leading-8 text-emerald-100/80">Taarifa za stock, mauzo, fedha, usafirishaji na wafanyakazi zinapatikana kwa watumiaji walioidhinishwa pekee.</p>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">Ipuli Milling and Animal Enterprise</p>
+              <h1 className="mt-5 text-5xl font-black leading-[1.05] tracking-tight xl:text-6xl">Karibu kwenye akaunti yako.</h1>
+              <p className="mt-6 max-w-lg text-base leading-8 text-emerald-100/80">Endelea kupata huduma za Ipuli Milling and Animal Enterprise kwa urahisi kutoka Tabora, Tanzania.</p>
             </div>
           </div>
           <div className="relative grid max-w-xl gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><ShieldCheck className="mb-3 text-emerald-300" size={21} /><p className="text-sm font-bold">Role-based access</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Boss na Office wana mipaka tofauti.</p></div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><LockKeyhole className="mb-3 text-amber-300" size={21} /><p className="text-sm font-bold">Protected session</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Session na credentials zinalindwa.</p></div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><Leaf className="mb-3 text-cyan-300" size={21} /><p className="text-sm font-bold">Live business data</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Dashboards zinasoma database halisi.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><Leaf className="mb-3 text-emerald-300" size={21} /><p className="text-sm font-bold">Bidhaa bora</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Pata bidhaa zinazokufaa kwa mahitaji yako.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><Leaf className="mb-3 text-amber-300" size={21} /><p className="text-sm font-bold">Agiza kwa urahisi</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Chagua bidhaa na tuma oda yako kwa urahisi.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><Leaf className="mb-3 text-cyan-300" size={21} /><p className="text-sm font-bold">Huduma ya karibu</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Tunapatikana Tabora, Tanzania.</p></div>
           </div>
         </section>
 
@@ -95,9 +95,9 @@ export default function LoginPage() {
               <span className="text-xl font-black">Mavuno<span className="text-emerald-400">One</span></span>
             </div>
             <div className="mb-8">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Authorized access</p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Ingia kwenye akaunti</h2>
-              <p className="mt-3 text-sm leading-6 text-emerald-100/70">Tumia credentials ulizopewa na kampuni. Mfumo utakufungulia dashboard kulingana na role yako.</p>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Akaunti yako</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Ingia ili kuendelea</h2>
+              <p className="mt-3 text-sm leading-6 text-emerald-100/70">Tumia taarifa zako za akaunti ili kuendelea na huduma zako.</p>
             </div>
 
             <div className="rounded-3xl border border-emerald-900/70 bg-[#0a1e18]/90 p-6 shadow-2xl shadow-black/20 sm:p-8">
