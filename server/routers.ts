@@ -512,11 +512,12 @@ export const appRouter = router({
     }),
 
     stockOut: router({
-      list: protectedProcedure.query(async () => {
+      list: officeProcedure.query(async ({ ctx }) => {
+        if (!["admin", "owner", "manager", "storekeeper"].includes(ctx.user.role)) throw new Error("Stock out haikuruhusiwi kwa role hii");
         return await db.query.stockOut.findMany({ orderBy: desc(stockOut.date), limit: 200 });
       }),
 
-      create: protectedProcedure
+      create: officeProcedure
         .input(z.object({
           productId: z.number(),
           quantity: z.number(),
@@ -524,6 +525,7 @@ export const appRouter = router({
           notes: z.string().optional(),
         }))
                 .mutation(async ({ input, ctx }) => {
+          if (!["admin", "owner", "manager", "storekeeper"].includes(ctx.user.role)) throw new Error("Stock out haikuruhusiwi kwa role hii");
           const product = await db.query.products.findFirst({ where: eq(products.id, input.productId) });
           if (!product) throw new Error("Product haipatikani");
           const baseQuantity = input.quantity * Number(product.packageSizeKg || 1);

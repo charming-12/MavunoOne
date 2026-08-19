@@ -1,31 +1,41 @@
 "use client";
 
-import { Plus, Loader2, PackageOpen } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, ArrowUpFromLine, Loader2, PackageOpen, Plus, Save, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+
+const reasons = ["sale", "waste", "damaged", "return", "internal_use", "transfer", "other"];
 
 export default function StockOutPage() {
   const recordsQuery = trpc.stock.stockOut.list.useQuery();
   const productsQuery = trpc.products.list.useQuery();
+  const createStockOut = trpc.stock.stockOut.create.useMutation({ onSuccess: () => { void recordsQuery.refetch(); void productsQuery.refetch(); setShowForm(false); setMessage("Stock out imerekodiwa kikamilifu."); setForm({ productId: "", quantity: "", reason: "sale", notes: "" }); } });
+  const [showForm, setShowForm] = useState(false);
+  const [message, setMessage] = useState("");
+  const [form, setForm] = useState({ productId: "", quantity: "", reason: "sale", notes: "" });
   const products = new Map((productsQuery.data ?? []).map((product) => [product.id, product]));
 
-  if (recordsQuery.isLoading || productsQuery.isLoading) {
-    return <div className="flex min-h-[320px] items-center justify-center gap-2 text-emerald-700"><Loader2 className="animate-spin" size={20} />Inapakia stock out...</div>;
-  }
-
-  if (recordsQuery.error || productsQuery.error) {
-    return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">Stock out haikuweza kupakiwa. Hakikisha umeingia na database inapatikana.</div>;
-  }
+  if (recordsQuery.isLoading || productsQuery.isLoading) return <div className="flex min-h-[320px] items-center justify-center gap-2 text-emerald-700"><Loader2 className="animate-spin" size={20} />Inapakia stock out...</div>;
+  if (recordsQuery.error || productsQuery.error) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">Stock out haikuweza kupakiwa. Hakikisha umeingia na database inapatikana.</div>;
 
   const records = recordsQuery.data ?? [];
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-red-600">Inventory control</p><h1 className="text-3xl font-black text-slate-900">Stock Out</h1><p className="mt-2 text-slate-600">Rekodi halisi za bidhaa zinazotoka, waste, damaged au return.</p></div>
-        <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-bold text-white shadow-sm hover:bg-red-700"><Plus size={20} />Stock Inatoka</button>
-      </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">Movement history</h2><span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">{records.length} records</span></div>
-        {records.length === 0 ? <div className="rounded-xl bg-slate-50 p-10 text-center text-slate-500"><PackageOpen className="mx-auto mb-3" size={32} /><p>Hakuna stock-out iliyorekodiwa bado.</p></div> : <div className="overflow-x-auto"><table className="w-full min-w-[680px]"><thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Bidhaa</th><th className="px-4 py-3">Kiasi</th><th className="px-4 py-3">Sababu</th><th className="px-4 py-3">Tarehe</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{records.map((record) => { const product = products.get(record.productId); return <tr key={record.id} className="hover:bg-slate-50"><td className="px-4 py-4 font-semibold text-slate-800">{product?.name ?? `Product #${record.productId}`}</td><td className="px-4 py-4 text-slate-600">{Number(record.quantity).toLocaleString()} {product?.unit ?? "unit"}</td><td className="px-4 py-4 text-slate-600">{record.reason}</td><td className="px-4 py-4 text-slate-600">{new Date(record.date).toLocaleDateString("sw-TZ")}</td><td className="px-4 py-4"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">Imerekodiwa</span></td></tr>; })}</tbody></table></div>}
-      </div>
-    </div>
-  );
+  const selectedProduct = form.productId ? products.get(Number(form.productId)) : undefined;
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const productId = Number(form.productId);
+    const quantity = Number(form.quantity);
+    if (!productId || !Number.isFinite(quantity) || quantity <= 0) { setMessage("Chagua bidhaa na weka kiasi kikubwa kuliko sifuri."); return; }
+    setMessage("");
+    await createStockOut.mutateAsync({ productId, quantity, reason: form.reason, notes: form.notes.trim() || undefined });
+  };
+
+  return <main className="space-y-6 pb-10">
+    <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-red-600">Inventory control</p><h1 className="mt-1 flex items-center gap-3 text-3xl font-black text-slate-900"><ArrowUpFromLine className="text-red-600" size={30} />Stock Out</h1><p className="mt-2 text-[15px] text-slate-600">Rekodi bidhaa zinazotoka kwa mauzo, waste, damaged, return au matumizi ya ndani.</p></div><button type="button" onClick={() => { setShowForm((value) => !value); setMessage(""); }} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-red-700"><Plus size={20} />{showForm ? "Funga form" : "Stock Inatoka"}</button></header>
+    {message && <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${message.includes("kikamilifu") ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>{message.includes("kikamilifu") ? <Save size={17} /> : <AlertCircle size={17} />}{message}</div>}
+    {createStockOut.error && <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"><AlertCircle size={17} />{createStockOut.error.message || "Stock out haijahifadhiwa. Hakikisha stock iliyopo inatosha."}</div>}
+
+    {showForm && <form onSubmit={submit} className="rounded-2xl border border-red-200 bg-red-50/70 p-5 shadow-sm sm:p-6"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-black text-red-950">Rekodi Stock Out</h2><p className="mt-1 text-[15px] text-red-900/70">Kiasi kitatolewa kwenye stock ya bidhaa uliyochagua.</p></div><button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-2 text-red-700 hover:bg-red-100" aria-label="Funga form"><X size={19} /></button></div><div className="grid gap-4 md:grid-cols-2"><label className="grid gap-2 text-[15px] font-bold text-slate-800">Bidhaa<select required value={form.productId} onChange={(event) => setForm({ ...form, productId: event.target.value })} className="rounded-xl border border-red-200 bg-white px-3 py-3 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"><option value="">Chagua bidhaa</option>{(productsQuery.data ?? []).map((product) => <option key={product.id} value={product.id}>{product.name} · stock {Number(product.currentStock ?? 0).toLocaleString()} {product.unit}</option>)}</select></label><label className="grid gap-2 text-[15px] font-bold text-slate-800">Kiasi ({selectedProduct?.unit || "unit"})<input required min="0.01" step="0.01" type="number" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} placeholder="Mfano: 2" className="rounded-xl border border-red-200 bg-white px-3 py-3 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100" /></label><label className="grid gap-2 text-[15px] font-bold text-slate-800">Sababu<select value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} className="rounded-xl border border-red-200 bg-white px-3 py-3 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">{reasons.map((reason) => <option key={reason} value={reason}>{reason.replaceAll("_", " ")}</option>)}</select></label><label className="grid gap-2 text-[15px] font-bold text-slate-800">Maelezo (optional)<input value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Andika maelezo ya movement" className="rounded-xl border border-red-200 bg-white px-3 py-3 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100" /></label></div><button type="submit" disabled={createStockOut.isPending} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"><Save size={18} />{createStockOut.isPending ? "Inahifadhi..." : "Hifadhi Stock Out"}</button></form>}
+
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-xl font-black text-slate-900">Movement history</h2><p className="mt-1 text-[15px] text-slate-500">Historia ya bidhaa zilizotoka kwenye inventory.</p></div><span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">{records.length} records</span></div>{records.length === 0 ? <div className="rounded-xl bg-slate-50 p-10 text-center text-slate-500"><PackageOpen className="mx-auto mb-3" size={32} /><p className="text-[15px]">Hakuna stock-out iliyorekodiwa bado.</p></div> : <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-[15px]"><thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Bidhaa</th><th className="px-4 py-3">Kiasi</th><th className="px-4 py-3">Sababu</th><th className="px-4 py-3">Tarehe</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{records.map((record) => { const product = products.get(record.productId); return <tr key={record.id} className="hover:bg-slate-50"><td className="px-4 py-4 font-semibold text-slate-800">{product?.name ?? `Product #${record.productId}`}</td><td className="px-4 py-4 text-slate-600">{Number(record.quantity).toLocaleString()} {product?.unit ?? "unit"}</td><td className="px-4 py-4 text-slate-600">{record.reason}</td><td className="px-4 py-4 text-slate-600">{new Date(record.date).toLocaleDateString("sw-TZ")}</td><td className="px-4 py-4"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">Imerekodiwa</span></td></tr>; })}</tbody></table></div>}</section>
+  </main>;
 }
