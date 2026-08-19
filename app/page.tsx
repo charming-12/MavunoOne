@@ -56,8 +56,8 @@ export default function LandingPage() {
         <header className="relative z-10 px-6 py-6 md:px-12">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div>
-              <p className="text-2xl font-black tracking-tight md:text-4xl">Ipuli Milling</p>
-              <p className="text-sm text-amber-200 md:text-base">Animal Enterprise · Tabora, Tanzania</p>
+              <p className="max-w-[460px] text-xl font-black leading-tight tracking-tight sm:text-2xl md:text-3xl">Ipuli Milling and Animal Enterprise</p>
+              <p className="mt-2 text-sm font-semibold text-amber-200 md:text-base">Tabora, Tanzania · Milling, animal feeds and agribusiness</p>
             </div>
 
             <div className="hidden items-center gap-3 md:flex">
