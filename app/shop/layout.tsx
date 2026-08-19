@@ -9,8 +9,8 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       <header className="sticky top-0 z-10 border-b border-emerald-900/30 bg-gradient-to-r from-[#07150f] to-[#0a1e18] p-5 text-white shadow-lg">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <Link href="/" className="group">
-            <h1 className="text-2xl font-black transition group-hover:text-amber-300">MavunoOne — Duka</h1>
-            <p className="mt-1 text-sm font-semibold text-emerald-300">Tabora, Tanzania · Nunua kwa urahisi</p>
+            <h1 className="text-2xl font-black transition group-hover:text-amber-300">Ipuli Milling Shop</h1>
+            <p className="mt-1 text-sm font-semibold text-emerald-300">Ipuli Milling and Animal Enterprise · Tabora, Tanzania</p>
           </Link>
           <Link href="/" className="hidden rounded-xl border border-emerald-700 px-3 py-2 text-sm font-bold text-emerald-100 transition hover:bg-emerald-900/60 sm:inline-flex">Home</Link>
         </div>

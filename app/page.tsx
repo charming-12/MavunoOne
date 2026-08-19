@@ -56,8 +56,8 @@ export default function LandingPage() {
         <header className="relative z-10 px-6 py-6 md:px-12">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div>
-              <p className="text-2xl font-black tracking-tight md:text-4xl">MavunoOne</p>
-              <p className="text-sm text-amber-200 md:text-base">African agribusiness platform</p>
+              <p className="text-2xl font-black tracking-tight md:text-4xl">Ipuli Milling</p>
+              <p className="text-sm text-amber-200 md:text-base">Animal Enterprise · Tabora, Tanzania</p>
             </div>
 
             <div className="hidden items-center gap-3 md:flex">
@@ -136,7 +136,7 @@ export default function LandingPage() {
                 <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#07150f]/80 p-5 backdrop-blur-md">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">MavunoOne Shop</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Ipuli Milling Shop</p>
                       <p className="mt-2 text-2xl font-black text-white">Bidhaa halisi kutoka Tabora</p>
                     </div>
                     <div className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
@@ -196,13 +196,13 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {publicContent.length > 0 && <section className="px-6 py-10 md:px-12 md:py-14"><div className="mx-auto max-w-7xl"><div className="mb-7"><p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Latest from MavunoOne</p><h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Habari na ofa zilizothibitishwa</h2></div><div className="grid gap-5 md:grid-cols-2">{publicContent.map((item) => <article key={item.id} className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">{item.imageUrl && <div className="relative h-48 overflow-hidden"><Image src={item.imageUrl} alt={item.title} fill className="object-cover" /></div>}<div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{item.contentType.replace("_", " ")}</p><h3 className="mt-2 text-2xl font-black text-white">{item.title}</h3>{item.subtitle && <p className="mt-2 font-semibold text-emerald-100">{item.subtitle}</p>}{item.body && <p className="mt-3 text-sm leading-7 text-emerald-100/75">{item.body}</p>}{item.ctaLabel && item.ctaHref && <Link href={item.ctaHref} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-amber-300">{item.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>}</div></article>)}</div></div></section>}
+          {publicContent.length > 0 && <section className="px-6 py-10 md:px-12 md:py-14"><div className="mx-auto max-w-7xl"><div className="mb-7"><p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Updates from Ipuli Milling</p><h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Habari na ofa zilizothibitishwa</h2></div><div className="grid gap-5 md:grid-cols-2">{publicContent.map((item) => <article key={item.id} className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">{item.imageUrl && <div className="relative h-48 overflow-hidden"><Image src={item.imageUrl} alt={item.title} fill className="object-cover" /></div>}<div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{item.contentType.replace("_", " ")}</p><h3 className="mt-2 text-2xl font-black text-white">{item.title}</h3>{item.subtitle && <p className="mt-2 font-semibold text-emerald-100">{item.subtitle}</p>}{item.body && <p className="mt-3 text-sm leading-7 text-emerald-100/75">{item.body}</p>}{item.ctaLabel && item.ctaHref && <Link href={item.ctaHref} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-amber-300">{item.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>}</div></article>)}</div></div></section>}
 
           <section className="px-6 py-14 md:px-12 md:py-20">
             <div className="mx-auto max-w-7xl rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.22)] md:p-10">
               <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">MavunoOne Shop</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/70">Ipuli Milling</p>
                   <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Anza kununua kwa urahisi</h2>
                   <p className="mt-5 max-w-md text-base leading-8 text-emerald-100 md:text-lg">
                     Pata bidhaa za kilimo unazohitaji kutoka Tabora, Tanzania. Chagua bidhaa, tuma oda na timu yetu itakusaidia na delivery.
@@ -275,7 +275,7 @@ export default function LandingPage() {
 
         <footer className="relative z-10 border-t border-white/10 px-6 py-8 md:px-12">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center text-sm text-emerald-100 md:flex-row md:text-left">
-            <p>© 2026 MavunoOne</p>
+            <p>© 2026 Ipuli Milling and Animal Enterprise</p><p className="mt-1 text-xs text-emerald-300/70">Powered by MavunoOne</p>
             <p>Mahindi • Alizeti • Mifugo • Uwasilishaji • Business Intelligence</p>
           </div>
         </footer>
