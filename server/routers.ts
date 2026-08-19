@@ -304,10 +304,21 @@ export const appRouter = router({
   // ===== SALES =====
   sales: router({
     list: protectedProcedure.query(async () => {
-      return await db.query.sales.findMany({
-        orderBy: desc(sales.createdAt),
-        limit: 100,
-      });
+      const saleRows = await db.query.sales.findMany({ orderBy: desc(sales.createdAt), limit: 100 });
+      const saleIds = saleRows.map((sale) => sale.id);
+      const customerIds = saleRows.flatMap((sale) => sale.customerId ? [sale.customerId] : []);
+      const [itemRows, customerRows] = await Promise.all([
+        saleIds.length ? db.query.saleItems.findMany({ where: inArray(saleItems.saleId, saleIds) }) : Promise.resolve([]),
+        customerIds.length ? db.query.customers.findMany({ where: inArray(customers.id, customerIds) }) : Promise.resolve([]),
+      ]);
+      const itemCounts = new Map<number, number>();
+      for (const item of itemRows) itemCounts.set(item.saleId, (itemCounts.get(item.saleId) ?? 0) + 1);
+      const customerNames = new Map(customerRows.map((customer) => [customer.id, customer.name]));
+      return saleRows.map((sale) => ({
+        ...sale,
+        itemCount: itemCounts.get(sale.id) ?? 0,
+        customerName: sale.customerId ? customerNames.get(sale.customerId) ?? "Customer" : "Walk-in customer",
+      }));
     }),
 
     create: officeProcedure
@@ -345,8 +356,9 @@ export const appRouter = router({
           customerType: input.customerType,
           totalAmount: decimalString(input.totalAmount),
           paymentMethod: input.paymentMethod,
-          paidAmount: decimalString(input.paidAmount ?? input.totalAmount),
-          balance: decimalString(input.balance),
+          paymentStatus: input.paymentMethod === "cash" ? "paid" : "pending",
+          paidAmount: decimalString(input.paymentMethod === "cash" ? (input.paidAmount ?? input.totalAmount) : 0),
+          balance: decimalString(input.paymentMethod === "cash" ? 0 : input.totalAmount),
           cashierId: ctx.user?.id,
         }).returning();
 
@@ -444,7 +456,7 @@ export const appRouter = router({
         }
 
         await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, totalAmount: input.totalAmount, paymentMethod: input.paymentMethod, itemCount: input.items.length } });
-        return { success: true, saleId: newSale.id, invoiceNumber };
+        return { success: true, saleId: newSale.id, invoiceNumber, paymentStatus: newSale.paymentStatus };
       }),
   }),
 
