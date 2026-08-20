@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
-import { requirePrivilegedUser } from "@/lib/api-auth";
+import { requireAnalyticsUser } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,7 @@ interface AnalyticsData { period: string; reports: SalesReport[]; summary: { tot
 interface ExportRequestBody { data: AnalyticsData; format: string; period: { from: string; to: string }; }
 
 export async function POST(request: NextRequest) {
-  if (!requirePrivilegedUser(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!requireAnalyticsUser(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = (await request.json()) as ExportRequestBody;
     const { data, format, period } = body;

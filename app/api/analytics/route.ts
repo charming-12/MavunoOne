@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, gte, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { customers, expenses, sales } from "@/drizzle/schema";
-import { requirePrivilegedUser } from "@/lib/api-auth";
+import { requireAnalyticsUser } from "@/lib/api-auth";
 
 function parseDate(value: string | null, fallback: Date) {
   if (!value) return fallback;
@@ -15,7 +15,7 @@ function isoDate(value: Date) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!requirePrivilegedUser(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!requireAnalyticsUser(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const searchParams = new URL(request.url).searchParams;
     const now = new Date();

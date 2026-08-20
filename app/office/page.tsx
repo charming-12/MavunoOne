@@ -1,216 +1,64 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import Image from "next/image";
-import { trpc } from "@/lib/trpc";
 import Link from "next/link";
+import { Activity, AlertTriangle, ArrowDownToLine, ArrowRight, ArrowUpFromLine, BarChart3, Boxes, ClipboardList, CreditCard, PackagePlus, RefreshCw, ShoppingCart, ShieldCheck, Truck, Users, Wallet, Zap } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { trpc } from "@/lib/trpc";
+import { readStoredUser } from "@/lib/auth";
+
+const money = (value: number) => `TZS ${Math.round(value).toLocaleString("en-TZ")}`;
+const dateLabel = (value: string) => new Intl.DateTimeFormat("sw-TZ", { weekday: "short", day: "2-digit", month: "short" }).format(new Date(value));
+
+function Metric({ label, value, detail, href, icon: Icon, tone }: { label: string; value: string; detail: string; href: string; icon: typeof Activity; tone: "emerald" | "amber" | "blue" | "violet" }) {
+  const tones = { emerald: "bg-emerald-50 text-emerald-700", amber: "bg-amber-50 text-amber-700", blue: "bg-sky-50 text-sky-700", violet: "bg-violet-50 text-violet-700" };
+  return <Link href={href} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,44,36,.05)] transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"><div className="flex items-start justify-between gap-4"><div><p className="text-[15px] font-semibold text-slate-600">{label}</p><p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p></div><span className={`rounded-xl p-3 ${tones[tone]}`}><Icon size={20} /></span></div><p className="mt-4 text-[13px] font-medium text-slate-500">{detail}</p></Link>;
+}
+
+function RoleOverview({ role, stats, lowStockCount, salesCount }: { role: "cashier" | "storekeeper" | "machine_operator"; stats: { todaySalesTotal?: number; todaySalesCount?: number; stockInKgToday?: number; stockOutKgToday?: number; inventoryValue?: number } | undefined; lowStockCount: number; salesCount: number }) {
+  const isCashier = role === "cashier";
+  const isStorekeeper = role === "storekeeper";
+  const title = isCashier ? "Cashier Dashboard" : isStorekeeper ? "Storekeeper Dashboard" : "Machine Operator Dashboard";
+  const description = isCashier ? "Fungua POS, rekodi mauzo, pokea malipo na fuatilia invoices za shift yako." : isStorekeeper ? "Simamia kupokea, kutoa, kuhesabu na kureconcile stock ya biashara." : "Fuatilia kazi za mashine, customer milling na internal production.";
+  return <main className="space-y-7 pb-10"><header className="rounded-[26px] bg-gradient-to-br from-[#0a2c24] via-[#0d5f49] to-[#16805e] px-6 py-7 text-white shadow-[0_18px_50px_rgba(13,95,73,.18)] sm:px-8 sm:py-8"><p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-100">{title}</p><h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{title}</h1><p className="mt-3 max-w-2xl text-[15px] leading-7 text-emerald-50/80">{description}</p></header><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{isCashier ? <><Metric href="/office/pos" label="POS / Mauzo" value={money(Number(stats?.todaySalesTotal ?? 0))} detail={`${stats?.todaySalesCount ?? 0} mauzo leo`} icon={ShoppingCart} tone="emerald" /><Metric href="/office/pos" label="Sales terminal" value="Fungua POS" detail="Ongeza bidhaa na kamilisha sale" icon={Wallet} tone="blue" /><Metric href="/office/sales" label="Sales History" value={`${salesCount} records`} detail="Angalia invoices zilizohifadhiwa" icon={ClipboardList} tone="violet" /><Metric href="/office/notifications" label="Alerts" value="Notifications" detail="Tazama taarifa za shift" icon={Activity} tone="amber" /></> : isStorekeeper ? <><Metric href="/office/stock-in" label="Stock In leo" value={`${Number(stats?.stockInKgToday ?? 0).toLocaleString()} kg`} detail="Pokea incoming inventory" icon={ArrowDownToLine} tone="emerald" /><Metric href="/office/stock-out" label="Stock Out leo" value={`${Number(stats?.stockOutKgToday ?? 0).toLocaleString()} kg`} detail="Record outgoing stock" icon={ArrowUpFromLine} tone="blue" /><Metric href="/office/inventory-analytics" label="Low stock" value={`${lowStockCount} bidhaa`} detail="Panga replenishment" icon={AlertTriangle} tone="amber" /><Metric href="/office/reconciliation" label="Reconciliation" value="Review stock" detail="Linganisha physical na system" icon={Boxes} tone="violet" /></> : <><Metric href="/office/machines" label="Machine jobs" value="Fungua jobs" detail="Customer milling na production" icon={Zap} tone="emerald" /><Metric href="/office/machines" label="Production" value="Fuatilia" detail="Input, output na efficiency" icon={Activity} tone="blue" /><Metric href="/office/notifications" label="Alerts" value="Notifications" detail="Taarifa za machine operations" icon={AlertTriangle} tone="amber" /><Metric href="/office/reports" label="Reports" value="Operations" detail="Angalia production reports" icon={ClipboardList} tone="violet" /></>}</section></main>;
+}
+
+function AdminOverview({ stats, lowStockCount, salesCount }: { stats: { todaySalesTotal?: number; todaySalesCount?: number; stockInKgToday?: number; stockOutKgToday?: number; inventoryValue?: number; totalCustomerDebt?: number } | undefined; lowStockCount: number; salesCount: number }) {
+  return <main className="space-y-7 pb-10"><header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#071d24] via-[#0b4b50] to-[#087f73] px-6 py-7 text-white shadow-[0_18px_50px_rgba(7,75,80,.18)] sm:px-8 sm:py-8"><div className="absolute -right-12 -top-20 h-52 w-52 rounded-full bg-cyan-200/10 blur-2xl" /><div className="relative"><div className="flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-cyan-100"><span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Administration workspace</span><span className="inline-flex items-center gap-1.5 text-cyan-100/75"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" />Live system</span></div><h1 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">Admin Control Centre</h1><p className="mt-3 max-w-2xl text-[15px] leading-7 text-cyan-50/80">Simamia users, permissions, system health na taarifa za biashara kwa usalama wa Ipuli Milling and Animal Enterprise.</p></div></header><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric href="/office/employees" label="Staff accounts" value="Manage" detail="Invitations, roles na access" icon={Users} tone="emerald" /><Metric href="/office/technical-issues" label="System health" value="Review" detail="Technical issues na alerts" icon={Activity} tone="amber" /><Metric href="/office/content" label="Public content" value="Publish" detail="Dhibiti taarifa za homepage" icon={ClipboardList} tone="blue" /><Metric href="/office/reports" label="Business snapshot" value={money(Number(stats?.todaySalesTotal ?? 0))} detail={`${stats?.todaySalesCount ?? 0} sales leo · ${salesCount} records`} icon={BarChart3} tone="violet" /></section><section className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,.9fr)]"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,44,36,.05)] sm:p-6"><div className="flex items-center gap-2"><ShieldCheck className="text-cyan-700" size={20} /><h2 className="text-lg font-black text-slate-950">Uangalizi wa mfumo</h2></div><p className="mt-2 text-[15px] leading-7 text-slate-500">Admin anaangalia usalama wa accounts, permissions, technical alerts na data access. Business records haziwezi kufutwa bila protection ya audit.</p><div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href="/office/employees" className="rounded-xl border border-slate-200 p-4 transition hover:border-cyan-300 hover:bg-cyan-50"><Users className="text-cyan-700" size={20} /><p className="mt-3 font-black text-slate-900">Staff na permissions</p><p className="mt-1 text-sm text-slate-500">Unda invitation, deactivate au manage accounts.</p></Link><Link href="/office/technical-issues" className="rounded-xl border border-slate-200 p-4 transition hover:border-cyan-300 hover:bg-cyan-50"><AlertTriangle className="text-amber-700" size={20} /><p className="mt-3 font-black text-slate-900">Technical issues</p><p className="mt-1 text-sm text-slate-500">Review errors na alerts zinazohitaji hatua.</p></Link></div></div><div className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_8px_28px_rgba(15,44,36,.12)] sm:p-6"><p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">Administration pulse</p><h2 className="mt-2 text-xl font-black">Mfumo kwa leo</h2><div className="mt-6 space-y-4"><div className="flex items-center justify-between border-b border-white/10 pb-4"><span className="text-sm text-slate-300">Low-stock alerts</span><strong className={lowStockCount ? "text-amber-300" : "text-emerald-300"}>{lowStockCount}</strong></div><div className="flex items-center justify-between border-b border-white/10 pb-4"><span className="text-sm text-slate-300">Inventory value</span><strong>{money(Number(stats?.inventoryValue ?? 0))}</strong></div><div className="flex items-center justify-between"><span className="text-sm text-slate-300">Customer debt</span><strong>{money(Number(stats?.totalCustomerDebt ?? 0))}</strong></div></div><Link href="/office/reports" className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-black text-[#062a2c] hover:bg-cyan-300">Fungua business reports <ArrowRight size={16} /></Link></div></section></main>;
+}
 
 export default function OfficeDashboard() {
-  const dashboardQuery = trpc.dashboard.stats.useQuery();
+  const currentUser = readStoredUser();
+  const isAdmin = currentUser?.role === "admin";
+  const isFinanceManager = currentUser?.role === "manager" && currentUser?.jobTitle === "finance";
+  const isOperationsManager = currentUser?.role === "manager" && !isFinanceManager;
+  const isCashier = currentUser?.role === "cashier";
+  const statsQuery = trpc.dashboard.stats.useQuery();
   const lowStockQuery = trpc.products.lowStock.useQuery();
   const salesQuery = trpc.sales.list.useQuery();
+  const analyticsQuery = trpc.analytics.summary.useQuery();
+  const stats = statsQuery.data;
+  const lowStock = lowStockQuery.data ?? [];
+  const sales = salesQuery.data ?? [];
+  const analytics = analyticsQuery.data;
+  const loading = statsQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading || analyticsQuery.isLoading;
+  const chart = (analytics?.daily ?? []).map((day) => ({ ...day, label: dateLabel(day.date), salesMillions: Number(day.sales) / 1_000_000 }));
+  const averageSale = Number(stats?.todaySalesCount ?? 0) > 0 ? Number(stats?.todaySalesTotal ?? 0) / Number(stats?.todaySalesCount ?? 1) : 0;
 
-  const stats = {
-    todaySalesTotal: Number(dashboardQuery.data?.todaySalesTotal ?? 0),
-    todaySalesCount: Number(dashboardQuery.data?.todaySalesCount ?? 0),
-    lowStockCount: Number(lowStockQuery.data?.length ?? 0),
-    totalCustomerDebt: Number(dashboardQuery.data?.totalCustomerDebt ?? 0),
-  };
+  if (loading) return <div className="flex min-h-[480px] items-center justify-center"><div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-sm"><RefreshCw className="animate-spin text-emerald-600" size={18} />{isFinanceManager ? "Inapakia finance dashboard..." : isCashier ? "Inapakia cashier dashboard..." : "Inapakia operations dashboard..."}</div></div>;
+  if (isCashier) return <RoleOverview role="cashier" stats={stats} lowStockCount={lowStock.length} salesCount={sales.length} />;
+  if (currentUser?.role === "storekeeper") return <RoleOverview role="storekeeper" stats={stats} lowStockCount={lowStock.length} salesCount={sales.length} />;
+  if (currentUser?.role === "machine_operator") return <RoleOverview role="machine_operator" stats={stats} lowStockCount={lowStock.length} salesCount={sales.length} />;
+  if (isAdmin) return <AdminOverview stats={stats} lowStockCount={lowStock.length} salesCount={sales.length} />;
 
-  const recentActivity = salesQuery.data?.slice(0, 5) ?? [];
-  const trackedProducts = lowStockQuery.data ?? [];
+  return <main className="space-y-7 pb-10">
+    <header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#0a2c24] via-[#0d5f49] to-[#16805e] px-6 py-7 text-white shadow-[0_18px_50px_rgba(13,95,73,.18)] sm:px-8 sm:py-8"><div className="absolute -right-12 -top-20 h-52 w-52 rounded-full bg-emerald-200/10 blur-2xl" /><div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div><div className="flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-100"><span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">{isFinanceManager ? "Finance Manager workspace" : isOperationsManager ? "Operations Manager workspace" : isCashier ? "Cashier workspace" : "Office workspace"}</span><span className="inline-flex items-center gap-1.5 text-emerald-100/75"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" />Live database</span></div><h1 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">{isFinanceManager ? "Finance Manager Dashboard" : isOperationsManager ? "Operations Manager Dashboard" : isCashier ? "Cashier Dashboard" : "Dashboard ya Ofisi"}</h1><p className="mt-3 max-w-2xl text-[15px] leading-7 text-emerald-50/75">{isFinanceManager ? "Fuatilia expenses, farmer payments, daily closure, madeni na financial reports. Controls za Boss, Admin na operations zilizozidi jukumu lako zimefichwa." : isOperationsManager ? "Fuatilia mauzo, stock, wateja, mashine na delivery za kila siku. Mfumo umeficha controls za Boss na Admin kwenye workspace hii." : isCashier ? "Fungua POS / Mauzo, chagua bidhaa, pokea malipo na kamilisha invoice bila kuona controls za Admin, Boss au Finance." : "Kituo cha kazi cha mauzo, stock, wateja na delivery kwa Ipuli Milling and Animal Enterprise."}</p></div><div className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-emerald-50"><Activity size={16} className="text-amber-300" />{new Intl.DateTimeFormat("sw-TZ", { weekday: "long", day: "2-digit", month: "long", year: "numeric", timeZone: "Africa/Dar_es_Salaam" }).format(new Date())}</div></div></header>
 
-  if (dashboardQuery.isLoading || lowStockQuery.isLoading || salesQuery.isLoading) {
-    return (
-      <div className="flex min-h-[300px] items-center justify-center gap-3 text-gray-600">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        <span>Loading dashboard...</span>
-      </div>
-    );
-  }
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric href={isFinanceManager ? "/office/reports" : "/office/sales"} label="Mauzo ya leo" value={money(Number(stats?.todaySalesTotal ?? 0))} detail={`${stats?.todaySalesCount ?? 0} transaction zilizorekodiwa`} icon={Wallet} tone="emerald" /><Metric href={isFinanceManager ? "/office/expenses" : "/office/products"} label={isFinanceManager ? "Expenses za kipindi" : "Stock ya chini"} value={isFinanceManager ? money(Number(analytics?.totalExpenses ?? 0)) : `${lowStock.length} bidhaa`} detail={isFinanceManager ? "Fungua expense ledger kwa review" : "Fungua catalog kwa reorder review"} icon={AlertTriangle} tone="amber" /><Metric href="/office/debt" label="Madeni ya wateja" value={money(Number(stats?.totalCustomerDebt ?? 0))} detail="Accounts zinazohitaji follow-up" icon={CreditCard} tone="violet" /><Metric href={isFinanceManager ? "/office/reports" : "/office/stock-in"} label="Stock movement leo" value={`${Number(stats?.stockInKgToday ?? 0).toLocaleString()} kg`} detail={`${Number(stats?.stockOutKgToday ?? 0).toLocaleString()} kg imetoka`} icon={Boxes} tone="blue" /></section>
 
-  return (
-    <div className="space-y-6">
-      {/* Header with Date */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard ya Leo</h1>
-          <p className="text-gray-600 mt-1">{new Date().toLocaleDateString("sw-TZ", { weekday: "long", month: "long", day: "numeric" })}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Saa: {new Date().toLocaleTimeString("sw-TZ")}</p>
-        </div>
-      </div>
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,.75fr)]"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,44,36,.05)] sm:p-6"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><div className="flex items-center gap-2"><BarChart3 size={19} className="text-emerald-700" /><h2 className="text-lg font-black text-slate-950">Mwenendo wa mauzo</h2></div><p className="mt-1 text-[15px] text-slate-500">Siku 7 zilizopita · data ya sales ledger</p></div><span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">Live database</span></div><div className="mt-5 h-[260px]">{chart.length ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={chart} margin={{ top: 10, right: 8, left: -18, bottom: 0 }}><defs><linearGradient id="officeSalesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#059669" stopOpacity={.3} /><stop offset="100%" stopColor="#059669" stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke="#e7efeb" vertical={false} strokeDasharray="3 3" /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 10 }} tickFormatter={(value) => `${value}M`} /><Tooltip formatter={(value) => [`TZS ${Number(value).toFixed(2)}M`, "Mauzo"]} contentStyle={{ borderRadius: 12, border: "1px solid #dbe7e2" }} /><Area type="monotone" dataKey="salesMillions" stroke="#059669" strokeWidth={3} fill="url(#officeSalesFill)" /></AreaChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">Hakuna mauzo ya kutosha kuonyesha graph bado.</div>}</div></div><div className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_8px_28px_rgba(15,44,36,.12)] sm:p-6"><p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Daily pulse</p><h2 className="mt-2 text-xl font-black">Operations kwa leo</h2><div className="mt-6 space-y-4"><div className="flex items-center justify-between border-b border-white/10 pb-4"><span className="text-sm text-slate-300">Wastani wa mauzo</span><strong>{money(averageSale)}</strong></div><div className="flex items-center justify-between border-b border-white/10 pb-4"><span className="text-sm text-slate-300">Inventory value</span><strong>{money(Number(stats?.inventoryValue ?? 0))}</strong></div><div className="flex items-center justify-between"><span className="text-sm text-slate-300">Stock alerts</span><strong className={lowStock.length ? "text-amber-300" : "text-emerald-300"}>{lowStock.length}</strong></div></div><Link href="/office/reports" className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-black text-emerald-950 hover:bg-emerald-400">Fungua reports <ArrowRight size={16} /></Link></div></section>
 
-      {/* Main KPI Cards - Real Image Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Today's Sales - Market Image */}
-        <Link href="/office/sales">
-          <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
-            <Image
-              src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
-              alt="Mauzo ya Leo"
-              fill
-              className="object-cover group-hover:scale-110 transition duration-300"
-            />
-            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-            <div className="absolute inset-0 p-4 flex flex-col justify-end">
-              <p className="text-xs text-gray-300 font-medium">Mauzo ya Leo</p>
-              <p className="text-2xl font-bold text-white">TZS {(stats.todaySalesTotal / 1000000).toFixed(2)}M</p>
-              <p className="text-xs text-gray-200">{stats.todaySalesCount} makali</p>
-            </div>
-          </div>
-        </Link>
+    <section className="grid gap-5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]"><div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><AlertTriangle size={19} className="text-amber-700" /><h2 className="text-lg font-black text-amber-950">Needs attention</h2></div><p className="mt-1 text-sm text-amber-900/70">Bidhaa zinazokaribia reorder threshold</p></div><Link href="/office/products" className="text-xs font-black text-amber-800">Catalog</Link></div><div className="mt-5 space-y-2">{lowStock.length ? lowStock.slice(0, 5).map((product) => <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl bg-white/70 px-3 py-3"><div><p className="text-sm font-bold text-amber-950">{product.name}</p><p className="text-xs text-amber-900/60">{Number(product.currentStock ?? 0).toLocaleString()} kg · min {Number(product.lowStockThreshold ?? 0).toLocaleString()}</p></div><Link href="/office/stock-in" className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-black text-white">Pokea stock</Link></div>) : <p className="rounded-xl bg-white/70 p-4 text-sm font-semibold text-emerald-800">Hakuna low-stock alert kwa sasa.</p>}</div></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,44,36,.05)] sm:p-6"><div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><ClipboardList size={19} className="text-emerald-700" /><h2 className="text-lg font-black text-slate-950">Quick operations</h2></div><p className="mt-1 text-sm text-slate-500">Anza kazi muhimu bila kupoteza muda</p></div></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href={isFinanceManager ? "/office/reports" : "/office/pos"} className="group rounded-xl border border-slate-200 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"><ShoppingCart className="text-emerald-700" size={20} /><p className="mt-3 font-black text-slate-900">{isFinanceManager ? "Finance reports" : isCashier ? "POS / Mauzo" : "Mauzo mapya"}</p><p className="mt-1 text-xs text-slate-500">{isFinanceManager ? "Review sales and financial trends" : isCashier ? "Fungua till na rekodi sale" : "Fungua POS na rekodi sale"}</p></Link><Link href={isFinanceManager ? "/office/expenses" : "/office/stock-in"} className="group rounded-xl border border-slate-200 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"><PackagePlus className="text-emerald-700" size={20} /><p className="mt-3 font-black text-slate-900">{isFinanceManager ? "Expenses" : "Pokea stock"}</p><p className="mt-1 text-xs text-slate-500">{isFinanceManager ? "Review gharama zilizorekodiwa" : "Ongeza incoming inventory"}</p></Link><Link href={isFinanceManager ? "/office/debt" : "/office/customers"} className="group rounded-xl border border-slate-200 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"><Users className="text-emerald-700" size={20} /><p className="mt-3 font-black text-slate-900">{isFinanceManager ? "Customer debt" : "Mteja mpya"}</p><p className="mt-1 text-xs text-slate-500">{isFinanceManager ? "Fuatilia balances na collections" : "Sajili customer account"}</p></Link><Link href={isFinanceManager ? "/office/farmer-approvals" : "/office/deliveries"} className="group rounded-xl border border-slate-200 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"><Truck className="text-emerald-700" size={20} /><p className="mt-3 font-black text-slate-900">{isFinanceManager ? "Farmer payments" : "Deliveries"}</p><p className="mt-1 text-xs text-slate-500">{isFinanceManager ? "Review malipo na approvals" : "Fuatilia dispatch na delivery"}</p></Link></div></div></section>
 
-        {/* Low Stock Alert - Warehouse Image */}
-        <Link href="/office/products">
-          <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
-            <Image
-              src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
-              alt="Stock za Chini"
-              fill
-              className="object-cover group-hover:scale-110 transition duration-300"
-            />
-            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-            <div className="absolute inset-0 p-4 flex flex-col justify-end">
-              <p className="text-xs text-gray-300 font-medium">Stock za Chini</p>
-              <p className="text-2xl font-bold text-white">{stats.lowStockCount}</p>
-              <p className="text-xs text-gray-200">Bidhaa za kubaini</p>
-            </div>
-          </div>
-        </Link>
-
-        {/* Customer Debt - Finance Image */}
-        <Link href="/office/debt">
-          <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
-            <Image
-              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
-              alt="Madeni ya Wateja"
-              fill
-              className="object-cover group-hover:scale-110 transition duration-300"
-            />
-            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-            <div className="absolute inset-0 p-4 flex flex-col justify-end">
-              <p className="text-xs text-gray-300 font-medium">Madeni ya Wateja</p>
-              <p className="text-2xl font-bold text-white">TZS {(stats.totalCustomerDebt / 1000000).toFixed(2)}M</p>
-              <p className="text-xs text-gray-200">Yanahitaji kufuatiliwa</p>
-            </div>
-          </div>
-        </Link>
-
-        {/* Weekly Average - Analytics Image */}
-        <div className="relative h-48 rounded-lg overflow-hidden group cursor-pointer hover:shadow-2xl transition">
-          <Image
-            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
-            alt="Wastani wa Juma"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300 font-medium">Wastani wa Juma</p>
-            <p className="text-2xl font-bold text-white">{trackedProducts.length}</p>
-            <p className="text-xs text-gray-200">Bidhaa zinazohitaji kufuatiliwa</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Two Column Section - Quick Actions & Top Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Quick Actions */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vitendo Vya Haraka</h3>
-          <div className="space-y-2">
-            <Link href="/office/pos">
-              <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2">
-                💰
-                Mauzo Mapya (POS)
-              </button>
-            </Link>
-            <Link href="/office/stock-in">
-              <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center gap-2">
-                📦
-                Jaza Stock
-              </button>
-            </Link>
-            <Link href="/office/customers">
-              <button className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-semibold flex items-center justify-center gap-2">
-                👥
-                Mteja Mpya
-              </button>
-            </Link>
-            <Link href="/office/deliveries">
-              <button className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold flex items-center justify-center gap-2">
-                🚚
-                Uwasilishaji
-              </button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Top Selling Products */}
-        <div className="lg:col-span-2 card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Bidhaa za Kuzunguka</h3>
-          <div className="space-y-3">
-            {trackedProducts.length ? trackedProducts.slice(0, 5).map((product) => (
-              <div key={product.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                <div className="flex-1"><p className="font-medium text-gray-900">{product.name}</p><p className="text-xs text-gray-600">Stock {Number(product.currentStock ?? 0).toLocaleString()} {product.unit}</p></div>
-                <div className="text-right"><p className="font-bold text-amber-600">Reorder</p><p className="text-xs text-gray-500">Threshold {Number(product.lowStockThreshold ?? 0).toLocaleString()}</p></div>
-              </div>
-            )) : <p className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-700">Hakuna bidhaa inayohitaji kufuatiliwa sasa.</p>}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity & Sales Trend */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Activity */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Shughuli za Hivi Karibuni</h3>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {recentActivity.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border-b last:border-b-0 hover:bg-gray-50 transition">
-                <div>
-                  <p className="font-medium text-gray-900">{item.invoiceNumber}</p>
-                  <p className="text-xs text-gray-500">{item.status}</p>
-                </div>
-                <p className="font-bold text-green-600">TZS {(item.totalAmount).toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Sales Metrics */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Takwimu za Mauzo</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-2">
-                <p className="text-sm font-medium text-gray-700">Mnamo Saa Hii</p>
-                <p className="text-sm font-bold text-gray-900">
-                  {Math.round((stats.todaySalesTotal / stats.todaySalesCount) * (stats.todaySalesCount || 1) / 1000)}K avg
-                </p>
-              </div>
-              <div className="bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: "72%" }} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-xs text-gray-600">Wastani kwa Muzo</p>
-                <p className="text-xl font-bold text-blue-600">
-                  TZS {Math.round(stats.todaySalesTotal / Math.max(stats.todaySalesCount, 1) / 1000)}K
-                </p>
-              </div>
-              <div className="bg-purple-50 p-3 rounded-lg">
-                <p className="text-xs text-gray-600">Jumla ya Makali</p>
-                <p className="text-xl font-bold text-purple-600">{stats.todaySalesCount}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_28px_rgba(15,44,36,.05)]"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6"><div><h2 className="text-lg font-black text-slate-950">Recent sales</h2><p className="mt-1 text-[15px] text-slate-500">Miamala ya mwisho iliyoandikwa</p></div><Link href="/office/sales" className="inline-flex items-center gap-1 text-sm font-black text-emerald-700">Tazama zote <ArrowRight size={15} /></Link></div><div className="overflow-x-auto"><table className="min-w-[680px] w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Invoice</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Payment</th><th className="px-5 py-3">Amount</th></tr></thead><tbody className="divide-y divide-slate-100">{sales.slice(0, 6).map((sale) => <tr key={sale.id} className="hover:bg-emerald-50/30"><td className="px-5 py-3.5 font-bold text-emerald-700">{sale.invoiceNumber}</td><td className="px-5 py-3.5 text-slate-600">{sale.status}</td><td className="px-5 py-3.5 capitalize text-slate-600">{sale.paymentMethod || "cash"}</td><td className="px-5 py-3.5 font-bold text-slate-950">{money(Number(sale.totalAmount ?? 0))}</td></tr>)}{sales.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-500">Hakuna mauzo yaliyoandikwa bado.</td></tr>}</tbody></table></div></section>
+  </main>;
 }

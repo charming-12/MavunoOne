@@ -10,13 +10,14 @@ export default function SetupWizardPage() {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>("welcome");
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const [config, setConfig] = useState({
     businessName: "",
     location: "",
     timezone: "Africa/Dar_es_Salaam",
     thermalPrinter: { enabled: false, model: "ESC/POS", connectionType: "network", ipAddress: "", port: "9100", paperWidth: "80mm", autoCut: true },
     scale: { enabled: false, model: "URID" },
-    payment: { enabled: false, provider: "mpesa", merchantNumber: "", apiBaseUrl: "" , apiKey: "" },
+    payment: { enabled: false, provider: "mpesa", merchantName: "", merchantNumber: "", merchantNameMpesa: "", merchantNumberMpesa: "", merchantNameTigo: "", merchantNumberTigo: "", apiBaseUrl: "", apiKey: "" },
     cctv: { enabled: false, brand: "hikvision", protocol: "rtsp", gatewayUrl: "", streamName: "camera_1", host: "", port: "554", username: "", password: "", streamPath: "" },
     gps: { enabled: false, mode: "existing_platform", provider: "teltonika", protocol: "http_webhook", serverUrl: "", webhookToken: "", deviceId: "", vehiclePlateNumber: "", username: "", password: "" },
     notifications: { enabled: false, resendApiKey: "" },
@@ -38,9 +39,10 @@ export default function SetupWizardPage() {
     }
   };
 
-  const handleSaveConfig = async () => {
+  const handleSaveConfig = async (sectionName: string) => {
     try {
       setSaving(true);
+      setSaveMessage("");
       const response = await fetch("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,9 +85,11 @@ export default function SetupWizardPage() {
         if (!secretResponse.ok) throw new Error(`Failed to save ${profile.key}`);
       }
 
+      setSaveMessage(`${sectionName} imehifadhiwa kwa mafanikio. Fields ambazo hazijajazwa bado zimeachwa bila kubadilishwa.`);
       handleNext();
     } catch (error) {
       console.error("Setup wizard config save failed:", error);
+      setSaveMessage("Haikuweza kuhifadhi section hii. Kagua connection kisha jaribu tena.");
     } finally {
       setSaving(false);
     }
@@ -125,6 +129,8 @@ export default function SetupWizardPage() {
             Step {steps.indexOf(step) + 1} of {steps.length}
           </p>
         </div>
+
+        {saveMessage && <div className="mb-4 flex items-start gap-3 rounded-xl border border-emerald-400/40 bg-emerald-500/10 p-4 text-sm text-emerald-100"><CheckCircle size={18} className="mt-0.5 shrink-0 text-emerald-300" /><span>{saveMessage}</span></div>}
 
         <div className="overflow-hidden rounded-2xl border border-emerald-500/30 bg-[#0a1f1a]/80 shadow-2xl">
           {step === "welcome" && (
@@ -191,11 +197,11 @@ export default function SetupWizardPage() {
                   Rudi
                 </button>
                 <button
-                  onClick={handleSaveConfig}
+                  onClick={() => handleSaveConfig("Taarifa za biashara")}
                   disabled={saving}
                   className="flex-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-black text-emerald-950 transition hover:brightness-110 disabled:opacity-60"
                 >
-                  {saving ? "Inahifadhi..." : "Hifadhi na Endelea"}
+                  {saving ? "Inahifadhi section..." : "Hifadhi biashara na endelea"}
                 </button>
               </div>
             </div>
@@ -311,11 +317,11 @@ export default function SetupWizardPage() {
                   Rudi
                 </button>
                 <button
-                  onClick={handleSaveConfig}
+                  onClick={() => handleSaveConfig("Vifaa vya kazi, CCTV na GPS")}
                   disabled={saving}
                   className="flex-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-black text-emerald-950 transition hover:brightness-110 disabled:opacity-60"
                 >
-                  {saving ? "Inahifadhi..." : "Hifadhi na Endelea"}
+                  {saving ? "Inahifadhi section..." : "Hifadhi vifaa na endelea"}
                 </button>
               </div>
             </div>
@@ -335,19 +341,22 @@ export default function SetupWizardPage() {
                 <label className="flex items-center gap-2 text-sm font-semibold text-emerald-100"><input type="checkbox" checked={config.payment.enabled} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, enabled: e.target.checked } })} className="h-4 w-4 accent-amber-400" />Washa malipo ya simu</label>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Provider</label><select value={config.payment.provider} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, provider: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white"><option value="mpesa">Vodacom M-Pesa</option><option value="tigopesa">Tigo Pesa / Mixx by Yas</option><option value="both">M-Pesa na Tigo Pesa</option><option value="other">Other provider</option></select></div>
-                  <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Lipa number</label><input value={config.payment.merchantNumber} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNumber: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Mfano: 07XXXXXXXX" /></div>
+                  {(config.payment.provider === "mpesa" || config.payment.provider === "both") && <div className="sm:col-span-2 rounded-xl border border-red-900/60 bg-red-950/20 p-4"><p className="mb-3 text-sm font-black text-red-200">Vodacom M-Pesa</p><div className="grid gap-4 sm:grid-cols-2"><div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Jina la M-Pesa</label><input value={config.payment.merchantNameMpesa} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNameMpesa: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Mfano: MavunoOne M-Pesa" /></div><div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Lipa Number ya M-Pesa</label><input value={config.payment.merchantNumberMpesa} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNumberMpesa: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="07XXXXXXXX" /></div></div></div>}
+                  {(config.payment.provider === "tigopesa" || config.payment.provider === "both") && <div className="sm:col-span-2 rounded-xl border border-blue-900/60 bg-blue-950/20 p-4"><p className="mb-3 text-sm font-black text-blue-200">Tigo Pesa / Mixx by Yas</p><div className="grid gap-4 sm:grid-cols-2"><div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Jina la Tigo Pesa</label><input value={config.payment.merchantNameTigo} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNameTigo: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Mfano: MavunoOne Tigo Pesa" /></div><div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Lipa Number ya Tigo Pesa</label><input value={config.payment.merchantNumberTigo} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNumberTigo: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="06XXXXXXXX" /></div></div></div>}
+                  {config.payment.provider === "other" && <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2"><div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Jina la payment provider</label><input value={config.payment.merchantName} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantName: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Jina la provider" /></div><div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Merchant number</label><input value={config.payment.merchantNumber} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNumber: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Namba ya provider" /></div></div>}
+                  {config.payment.provider !== "other" && <p className="sm:col-span-2 text-xs text-emerald-200/80">Chagua <strong>Both</strong> kama una namba zote mbili. Kila provider atapata jina na Lipa Number yake tofauti.</p>}
                 </div>
                 <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Provider API base URL (optional)</label><input value={config.payment.apiBaseUrl} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, apiBaseUrl: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Weka tu kama provider amekupa API endpoint" /></div>
                 <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">API key / secret (optional)</label><input type="password" value={config.payment.apiKey} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, apiKey: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Itahifadhiwa kama secret profile" /></div>
-                <p className="text-xs text-amber-100/80">Lipa number itaonekana kwa instructions za mteja. Automatic confirmation inahitaji API credentials na callback/webhook ya provider.</p>
+                <p className="text-xs text-amber-100/80">Jina la Lipa Number na namba vitaonekana kwenye payment instructions za mteja. Automatic confirmation inahitaji API credentials na callback/webhook ya provider.</p>
               </div>
 
               <div className="mt-8 flex gap-4">
                 <button onClick={handleBack} className="flex-1 rounded-lg border border-emerald-700 bg-emerald-950/50 px-4 py-3 font-bold text-emerald-100 hover:bg-emerald-900">
                   Rudi
                 </button>
-                <button onClick={handleSaveConfig} disabled={saving} className="flex-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-black text-emerald-950 hover:brightness-110 disabled:opacity-60">
-                  {saving ? "Inahifadhi..." : "Hifadhi na Endelea"}
+                <button onClick={() => handleSaveConfig("Malipo na Lipa Number")} disabled={saving} className="flex-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-black text-emerald-950 hover:brightness-110 disabled:opacity-60">
+                  {saving ? "Inahifadhi section..." : "Hifadhi malipo na endelea"}
                 </button>
               </div>
             </div>
@@ -370,8 +379,8 @@ export default function SetupWizardPage() {
                 <button onClick={handleBack} className="flex-1 rounded-lg border border-emerald-700 bg-emerald-950/50 px-4 py-3 font-bold text-emerald-100 hover:bg-emerald-900">
                   Rudi
                 </button>
-                <button onClick={handleSaveConfig} disabled={saving} className="flex-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-black text-emerald-950 hover:brightness-110 disabled:opacity-60">
-                  {saving ? "Inahifadhi..." : "Hifadhi na Maliza"}
+                <button onClick={() => handleSaveConfig("Ujumbe na alerts")} disabled={saving} className="flex-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-black text-emerald-950 hover:brightness-110 disabled:opacity-60">
+                  {saving ? "Inahifadhi section..." : "Hifadhi alerts na maliza"}
                 </button>
               </div>
             </div>

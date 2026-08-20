@@ -1,328 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import { AlertTriangle, TrendingDown, Package, Zap } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, BarChart3, Loader2, Package, RefreshCw, TrendingDown, Zap } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
-// Mock inventory data
-const mockInventory = [
-  { id: 1, name: "Mahindi", sku: "CORN-001", quantity: 45, minStock: 50, maxStock: 200, unit: "kg", lastRestocked: "2024-01-15", value: 4500000 },
-  { id: 2, name: "Unga wa Mahindi", sku: "FLOUR-001", quantity: 12, minStock: 30, maxStock: 150, unit: "bags", lastRestocked: "2024-01-10", value: 1800000 },
-  { id: 3, name: "Alizee", sku: "ALI-001", quantity: 8, minStock: 20, maxStock: 100, unit: "bags", lastRestocked: "2024-01-08", value: 1600000 },
-  { id: 4, name: "Sukari", sku: "SUGAR-001", quantity: 95, minStock: 40, maxStock: 200, unit: "kg", lastRestocked: "2024-01-20", value: 2850000 },
-  { id: 5, name: "Chai", sku: "TEA-001", quantity: 320, minStock: 100, maxStock: 500, unit: "pieces", lastRestocked: "2024-01-18", value: 3200000 },
-  { id: 6, name: "Simu ya Kusimika", sku: "GRIND-001", quantity: 2, minStock: 5, maxStock: 15, unit: "units", lastRestocked: "2024-01-12", value: 600000 },
-];
+const money = (value: number) => `TZS ${Math.round(value).toLocaleString("en-TZ")}`;
+
+type StockRow = {
+  id: number;
+  name: string;
+  sku: string;
+  quantity: number;
+  threshold: number;
+  unit: string;
+  value: number;
+};
 
 export default function InventoryAnalyticsPage() {
-  const [inventory] = useState(mockInventory);
+  const productsQuery = trpc.products.list.useQuery();
   const [sortBy, setSortBy] = useState("name");
+  const inventory = useMemo<StockRow[]>(() => (productsQuery.data ?? []).map((product) => {
+    const quantity = Number(product.currentStock ?? 0);
+    const threshold = Number(product.lowStockThreshold ?? 0);
+    return {
+      id: product.id,
+      name: product.name,
+      sku: product.barcode || `PROD-${product.id}`,
+      quantity,
+      threshold,
+      unit: product.unit || "kg",
+      value: quantity * Number(product.costPrice ?? 0),
+    };
+  }), [productsQuery.data]);
 
-  // Calculate inventory metrics
-  const lowStockItems = inventory.filter((item) => item.quantity <= item.minStock);
-  const overstockedItems = inventory.filter((item) => item.quantity > item.maxStock);
+  const lowStockItems = inventory.filter((item) => item.quantity <= item.threshold);
+  const outOfStockItems = inventory.filter((item) => item.quantity <= 0);
   const totalValue = inventory.reduce((sum, item) => sum + item.value, 0);
+  const sortedInventory = useMemo(() => [...inventory].sort((a, b) => {
+    if (sortBy === "stock") return a.quantity - b.quantity;
+    if (sortBy === "value") return b.value - a.value;
+    return a.name.localeCompare(b.name);
+  }), [inventory, sortBy]);
 
-  const getSortedInventory = () => {
-    const sorted = [...inventory];
-    switch (sortBy) {
-      case "stock":
-        return sorted.sort((a, b) => a.quantity - b.quantity);
-      case "value":
-        return sorted.sort((a, b) => b.value - a.value);
-      case "turnover":
-        return sorted.sort((a, b) => {
-          const aTurnover = a.quantity / a.maxStock;
-          const bTurnover = b.quantity / b.maxStock;
-          return aTurnover - bTurnover;
-        });
-      default:
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-    }
-  };
+  if (productsQuery.isLoading) return <div className="flex min-h-[420px] items-center justify-center"><div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-sm"><Loader2 className="animate-spin text-emerald-600" size={18} />Inapakia inventory analytics...</div></div>;
+  if (productsQuery.error) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm font-semibold text-red-700">Inventory analytics haikuweza kupakia data ya bidhaa. Tafadhali jaribu tena.</div>;
 
-  const getStockStatus = (quantity: number, min: number, max: number) => {
-    if (quantity <= min) return "critical";
-    if (quantity >= max) return "overstock";
-    return "optimal";
-  };
+  return <main className="space-y-7 pb-10">
+    <header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#0a2c24] via-[#0d5f49] to-[#16805e] px-6 py-7 text-white shadow-[0_18px_50px_rgba(13,95,73,.18)] sm:px-8 sm:py-8"><div className="absolute -right-12 -top-20 h-52 w-52 rounded-full bg-emerald-200/10 blur-2xl" /><div className="relative flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-100">Inventory intelligence</p><h1 className="mt-3 flex items-center gap-3 text-3xl font-black tracking-tight sm:text-4xl"><BarChart3 className="text-amber-300" size={30} />Uchambuzi wa Stock</h1><p className="mt-3 max-w-2xl text-[15px] leading-7 text-emerald-50/80">Taarifa za stock kutoka catalog halisi ya Ipuli Milling and Animal Enterprise. Hakuna sample products wala picha za mapambo.</p></div><span className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-emerald-50"><RefreshCw size={16} className="text-amber-300" />Live catalog</span></div></header>
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "critical":
-        return "bg-red-100 text-red-800";
-      case "overstock":
-        return "bg-blue-100 text-blue-800";
-      case "optimal":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[15px] font-semibold text-slate-600">Bidhaa active</p><p className="mt-2 text-3xl font-black text-slate-950">{inventory.length}</p><p className="mt-2 text-[13px] text-slate-500">Catalog ya sasa</p></div><Package className="rounded-xl bg-emerald-50 p-2 text-emerald-700" size={38} /></div></div><div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[15px] font-semibold text-amber-800">Stock chini</p><p className="mt-2 text-3xl font-black text-amber-950">{lowStockItems.length}</p><p className="mt-2 text-[13px] text-amber-900/70">Inahitaji review</p></div><AlertTriangle className="rounded-xl bg-white/70 p-2 text-amber-700" size={38} /></div></div><div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[15px] font-semibold text-red-800">Out of stock</p><p className="mt-2 text-3xl font-black text-red-950">{outOfStockItems.length}</p><p className="mt-2 text-[13px] text-red-900/70">Zinahitaji replenishment</p></div><TrendingDown className="rounded-xl bg-white/70 p-2 text-red-700" size={38} /></div></div><div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[15px] font-semibold text-sky-800">Inventory value</p><p className="mt-2 text-2xl font-black text-sky-950">{money(totalValue)}</p><p className="mt-2 text-[13px] text-sky-900/70">Kwa cost price</p></div><BarChart3 className="rounded-xl bg-white/70 p-2 text-sky-700" size={38} /></div></div></section>
 
-  const sortedInventory = getSortedInventory();
+    {lowStockItems.length > 0 && <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm sm:p-6"><div className="flex items-start gap-3"><AlertTriangle className="mt-1 shrink-0 text-amber-700" size={22} /><div><h2 className="text-lg font-black text-amber-950">Stock inayohitaji umakini</h2><p className="mt-1 text-[15px] text-amber-900/75">Bidhaa hizi ziko chini au sawa na threshold iliyowekwa kwenye catalog.</p><div className="mt-4 grid gap-2 sm:grid-cols-2">{lowStockItems.slice(0, 8).map((item) => <div key={item.id} className="flex items-center justify-between rounded-xl bg-white/75 px-4 py-3"><span className="font-bold text-amber-950">{item.name}</span><span className="text-sm font-semibold text-amber-800">{item.quantity.toLocaleString()} {item.unit} · min {item.threshold.toLocaleString()}</span></div>)}</div></div></div></section>}
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          📊
-          Uchambuzi wa Hesabu ya Bidhaa
-        </h1>
-        <p className="text-gray-600 mt-1">Kutazama mienendo na mapendekezo ya kujaza stock</p>
-      </div>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:px-6"><div><h2 className="text-xl font-black text-slate-950">Orodha ya bidhaa na hali ya stock</h2><p className="mt-1 text-[15px] text-slate-500">Panga kwa jina, kiasi kilichopo au thamani ya inventory.</p></div><div className="flex items-center gap-2"><label className="text-[15px] font-semibold text-slate-600" htmlFor="inventory-sort">Panga kwa</label><select id="inventory-sort" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] font-semibold text-slate-700"><option value="name">Jina</option><option value="stock">Stock ndogo kwanza</option><option value="value">Thamani kubwa kwanza</option></select></div></div><div className="overflow-x-auto"><table className="min-w-[760px] w-full text-left text-[15px]"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-4">Bidhaa</th><th className="px-5 py-4">Code</th><th className="px-5 py-4 text-right">Stock</th><th className="px-5 py-4 text-right">Threshold</th><th className="px-5 py-4 text-right">Thamani</th><th className="px-5 py-4">Hali</th></tr></thead><tbody className="divide-y divide-slate-100">{sortedInventory.map((item) => { const critical = item.quantity <= item.threshold; const empty = item.quantity <= 0; return <tr key={item.id} className="hover:bg-emerald-50/30"><td className="px-5 py-4"><span className="flex items-center gap-2 font-bold text-slate-900"><Package size={17} className="text-emerald-700" />{item.name}</span></td><td className="px-5 py-4 font-mono text-sm text-slate-500">{item.sku}</td><td className="px-5 py-4 text-right font-black text-slate-900">{item.quantity.toLocaleString()} {item.unit}</td><td className="px-5 py-4 text-right text-slate-600">{item.threshold.toLocaleString()} {item.unit}</td><td className="px-5 py-4 text-right font-bold text-slate-900">{money(item.value)}</td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${empty ? "bg-red-100 text-red-800" : critical ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{empty ? "Out of stock" : critical ? "Review stock" : "In range"}</span></td></tr>; })}{sortedInventory.length === 0 && <tr><td colSpan={6} className="px-5 py-14 text-center text-[15px] text-slate-500">Hakuna bidhaa active kwenye catalog.</td></tr>}</tbody></table></div></section>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
-          <Image
-            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
-            alt="Jumla ya Bidhaa"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300">Jumla ya Bidhaa</p>
-            <p className="text-2xl font-bold text-white">{inventory.length}</p>
-            <p className="text-xs text-gray-200">Aina za bidhaa</p>
-          </div>
-        </div>
-
-        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
-          <Image
-            src="https://images.unsplash.com/photo-1586528946e3-b5e3d1ba4908?w=600&h=400&fit=crop"
-            alt="Stock za Haraka"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/60 group-hover:bg-black/70 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300">Stock za Haraka</p>
-            <p className="text-2xl font-bold text-white">{lowStockItems.length}</p>
-            <p className="text-xs text-gray-200">Zinahitaji kujazwa</p>
-          </div>
-        </div>
-
-        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
-          <Image
-            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=400&fit=crop"
-            alt="Stock Zaidi"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300">Stock Zaidi</p>
-            <p className="text-2xl font-bold text-white">{overstockedItems.length}</p>
-            <p className="text-xs text-gray-200">Zaidi ya kiwango</p>
-          </div>
-        </div>
-
-        <div className="relative h-32 rounded-lg overflow-hidden group cursor-pointer hover:shadow-lg transition">
-          <Image
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
-            alt="Jumla ya Thamani"
-            fill
-            className="object-cover group-hover:scale-110 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition"></div>
-          <div className="absolute inset-0 p-4 flex flex-col justify-end">
-            <p className="text-xs text-gray-300">Jumla ya Thamani</p>
-            <p className="text-2xl font-bold text-white">
-              TZS {(totalValue / 1000000).toFixed(1)}M
-            </p>
-            <p className="text-xs text-gray-200">Sehemu ya bidhaa</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Critical Stock Alert */}
-      {lowStockItems.length > 0 && (
-        <div className="card bg-red-50 border-l-4 border-red-500">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="text-red-600 flex-shrink-0 mt-1" size={24} />
-            <div>
-              <h3 className="font-semibold text-gray-900">Onyo wa Stock za Haraka!</h3>
-              <p className="text-sm text-gray-700 mt-1">
-                {lowStockItems.length} bidhaa za haraka zinahitaji kujazwa upesi:
-              </p>
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                {lowStockItems.map((item) => (
-                  <li key={item.id} className="ml-4">
-                    • <strong>{item.name}</strong>: Waliopo {item.quantity} {item.unit} (Min: {item.minStock})
-                  </li>
-                ))}
-              </ul>
-              <button className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-semibold">
-                Jaza Stock Sasa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Overstocked Alert */}
-      {overstockedItems.length > 0 && (
-        <div className="card bg-blue-50 border-l-4 border-blue-500">
-          <div className="flex items-start gap-3">
-            <TrendingDown className="text-blue-600 flex-shrink-0 mt-1" size={24} />
-            <div>
-              <h3 className="font-semibold text-gray-900">Stock Zaidi na Kuzuiwa!</h3>
-              <p className="text-sm text-gray-700 mt-1">
-                Bidhaa hii zina stock zaidi ya kiwango cha juu:
-              </p>
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                {overstockedItems.map((item) => (
-                  <li key={item.id} className="ml-4">
-                    • <strong>{item.name}</strong>: Waliopo {item.quantity} {item.unit} (Max: {item.maxStock})
-                  </li>
-                ))}
-              </ul>
-              <button className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-semibold">
-                Kuuza na Kupunguza
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sort Controls */}
-      <div className="card">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Orodha ya Bidhaa</h3>
-          <div className="flex gap-2">
-            <label className="text-sm text-gray-600">Panga kwa:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="form-input text-sm"
-            >
-              <option value="name">Jina</option>
-              <option value="stock">Stock (Chini → Juu)</option>
-              <option value="value">Thamani (Juu → Chini)</option>
-              <option value="turnover">Turnover (Haraka)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Inventory Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100 border-b">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Bidhaa</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">SKU</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Waliopo</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Min | Max</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Thamani</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Hali</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Kujaza Upesi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {sortedInventory.map((item) => {
-                const status = getStockStatus(item.quantity, item.minStock, item.maxStock);
-                const restockDays = status === "critical" ? 1 : status === "optimal" ? 14 : 30;
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-900 flex items-center gap-2">
-                      <Package size={16} className="text-gray-600" />
-                      {item.name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-sm">{item.sku}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">
-                        {item.quantity} {item.unit}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-sm text-gray-600">
-                      {item.minStock} | {item.maxStock}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                      TZS {(item.value / 1000000).toFixed(2)}M
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(status)}`}>
-                        {status === "critical" && "⚠️ Haraka"}
-                        {status === "overstock" && "📦 Zaidi"}
-                        {status === "optimal" && "✅ Sawa"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="text-xs font-semibold text-gray-600">
-                        {restockDays === 1 ? "Sasa!" : `${restockDays} siku`}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Restock Recommendations */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Zap className="text-yellow-600" size={24} />
-          Mapendekezo ya Kujaza
-        </h3>
-        <div className="space-y-3">
-          {lowStockItems.map((item) => {
-            const restockQty = item.maxStock - item.quantity;
-            return (
-              <div key={item.id} className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">{item.name}</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Pendekezo: Jaza {restockQty} {item.unit} kufikia kiwango cha juu ({item.maxStock})
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Mzani wa wakaati wa Kujaza upesi: {restockQty <= 20 ? "SASA" : restockQty <= 50 ? "Leo" : "Wiki hii"}
-                    </p>
-                  </div>
-                  <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition font-semibold text-sm">
-                    Jaza
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Inventory History */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Historia ya Kujaza (Miezi 3 Iliyopita)</h3>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium text-gray-900">Mahindi</p>
-              <p className="text-xs text-gray-600">Kuzungushwa saa 45kg - 2024-01-15</p>
-            </div>
-            <span className="text-green-600 font-semibold">+45 kg</span>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium text-gray-900">Unga wa Mahindi</p>
-              <p className="text-xs text-gray-600">Kuzungushwa saa 30 bags - 2024-01-10</p>
-            </div>
-            <span className="text-green-600 font-semibold">+30 bags</span>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium text-gray-900">Sukari</p>
-              <p className="text-xs text-gray-600">Kuzungushwa saa 60kg - 2024-01-20</p>
-            </div>
-            <span className="text-green-600 font-semibold">+60 kg</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6"><div className="flex items-start gap-3"><Zap className="mt-1 text-emerald-700" size={22} /><div><h2 className="text-lg font-black text-emerald-950">Hatua inayofuata</h2><p className="mt-1 text-[15px] leading-7 text-emerald-900/75">Tumia Stock In kuongeza inventory, au Products kurekebisha threshold na bei. Mfumo hautengenezi picha au bidhaa za kufikirika; analytics inatumia catalog halisi.</p></div></div></section>
+  </main>;
 }
+

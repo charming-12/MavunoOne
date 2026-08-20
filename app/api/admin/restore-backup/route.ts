@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { restoreLatestSampleDataBackup } from "@/lib/backup";
 import { requireAdminUser } from "@/lib/api-auth";
 
+function sampleDataActionsEnabled() {
+  return process.env.NODE_ENV !== "production" && process.env.MAVUNO_ALLOW_SAMPLE_RESET === "true";
+}
+
 export async function POST(request: NextRequest) {
   const user = requireAdminUser(request);
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+  }
+
+  if (!sampleDataActionsEnabled()) {
+    return NextResponse.json({ message: "Sample-data restore is disabled in production." }, { status: 403 });
   }
 
   try {

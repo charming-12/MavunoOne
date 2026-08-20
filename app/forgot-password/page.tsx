@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Phone, ArrowLeft, Loader } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Leaf, Loader, Mail, Phone } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -12,9 +14,10 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
+    setMessage(null);
 
     try {
       const response = await fetch("/api/auth/forgot-password", {
@@ -28,146 +31,81 @@ export default function ForgotPasswordPage() {
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        setMessage({ type: "error", text: data.message });
-      } else {
-        setMessage({ type: "success", text: data.message });
-        setSent(true);
-        // Reset form
-        setTimeout(() => {
-          setEmail("");
-          setPhone("");
-          setSent(false);
-        }, 3000);
+        setMessage({ type: "error", text: data.message || "Ombi halikufanikiwa. Jaribu tena." });
+        return;
       }
+
+      setMessage({ type: "success", text: data.message });
+      if (method === "phone") {
+        router.push("/reset-password?method=sms");
+        return;
+      }
+
+      setSent(true);
+      window.setTimeout(() => {
+        setEmail("");
+        setPhone("");
+        setSent(false);
+      }, 3000);
     } catch {
-      setMessage({ type: "error", text: "Hitilafu inatokea. Jaribu tena." });
+      setMessage({ type: "error", text: "Kuna tatizo la mawasiliano. Jaribu tena baada ya muda mfupi." });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8">
-        {/* Header */}
-        <div className="mb-6">
-          <Link
-            href="/login"
-            className="flex items-center gap-2 text-green-600 hover:text-green-700 mb-4"
-          >
-            <ArrowLeft size={18} />
-            Rudi kwenye kuingia
+    <main className="min-h-screen bg-[#07150f] px-4 py-8 text-white sm:px-6 lg:py-12">
+      <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-6xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="hidden lg:block">
+          <Link href="/" className="inline-flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400 text-[#07150f]"><Leaf size={23} /></span>
+            <span className="text-2xl font-black tracking-tight">Mavuno<span className="text-emerald-400">One</span></span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Kumbuka Neno Lako</h1>
-          <p className="text-gray-600 mt-2">
-            Chagua njia ya kupata neno jipya
-          </p>
-        </div>
+          <p className="mt-20 text-sm font-black uppercase tracking-[0.28em] text-amber-300">Account recovery</p>
+          <h1 className="mt-5 max-w-md text-5xl font-black leading-[1.08] tracking-tight xl:text-6xl">Rudisha usalama wa akaunti yako.</h1>
+          <p className="mt-6 max-w-md text-lg leading-8 text-emerald-100/80">Tutakutumia kiunga cha barua pepe au OTP ya SMS kwenye taarifa iliyothibitishwa ya akaunti yako.</p>
+        </section>
 
-        {/* Message */}
-        {message && (
-          <div
-            className={`mb-4 p-3 rounded-lg text-sm ${
-              message.type === "success"
-                ? "bg-green-50 text-green-800 border border-green-200"
-                : "bg-red-50 text-red-800 border border-red-200"
-            }`}
-          >
-            {message.text}
+        <section className="mx-auto w-full max-w-md">
+          <div className="mb-6 flex items-center justify-between lg:hidden">
+            <Link href="/" className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400 text-[#07150f]"><Leaf size={19} /></span><span className="text-lg font-black">Mavuno<span className="text-emerald-400">One</span></span></Link>
+            <Link href="/login" className="text-base font-bold text-emerald-200/80 hover:text-white">Rudi login</Link>
           </div>
-        )}
 
-        {/* Method Selection */}
-        <div className="space-y-3 mb-6">
-          <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition" style={{borderColor: method === "email" ? "#16a34a" : "#d1d5db"}}>
-            <input
-              type="radio"
-              name="method"
-              value="email"
-              checked={method === "email"}
-              onChange={() => setMethod("email")}
-              className="w-4 h-4"
-            />
-            <Mail size={20} className="ml-3 text-green-600" />
-            <span className="ml-3 font-medium">Kupitia Barua Pepe</span>
-          </label>
-
-          <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition" style={{borderColor: method === "phone" ? "#16a34a" : "#d1d5db"}}>
-            <input
-              type="radio"
-              name="method"
-              value="phone"
-              checked={method === "phone"}
-              onChange={() => setMethod("phone")}
-              className="w-4 h-4"
-            />
-            <Phone size={20} className="ml-3 text-green-600" />
-            <span className="ml-3 font-medium">Kupitia SMS</span>
-          </label>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {method === "email" ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Barua Pepe Yako
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@mavunoone.com"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
+          <div className="rounded-3xl border border-emerald-900/70 bg-[#0a1e18]/95 p-6 shadow-2xl shadow-black/20 sm:p-8">
+            <Link href="/login" className="mb-7 inline-flex items-center gap-2 text-base font-bold text-emerald-300 transition hover:text-white"><ArrowLeft size={18} /> Rudi kwenye login</Link>
+            <div className="mb-7">
+              <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-300">Password recovery</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Weka upya nenosiri</h2>
+              <p className="mt-3 text-base leading-7 text-emerald-100/80">Chagua njia salama ya kupokea maelekezo ya kubadilisha nenosiri.</p>
             </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nambari ya Simu
+
+            {message && <div role="status" className={`mb-5 flex gap-3 rounded-xl border p-4 text-base leading-6 ${message.type === "success" ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100" : "border-red-400/30 bg-red-500/10 text-red-200"}`}>{message.type === "success" ? <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-300" size={20} /> : <AlertCircle className="mt-0.5 shrink-0 text-red-300" size={20} />}<p>{message.text}</p></div>}
+
+            <div className="mb-6 grid gap-3 sm:grid-cols-2">
+              <label className={`cursor-pointer rounded-xl border p-4 transition ${method === "email" ? "border-amber-300 bg-amber-300/10" : "border-emerald-900 bg-[#051511] hover:border-emerald-700"}`}>
+                <input type="radio" name="method" value="email" checked={method === "email"} onChange={() => { setMethod("email"); setMessage(null); }} className="sr-only" />
+                <span className="flex items-center gap-3"><Mail size={21} className={method === "email" ? "text-amber-300" : "text-emerald-300"} /><span><span className="block text-base font-bold">Barua pepe</span><span className="mt-1 block text-sm text-emerald-100/70">Tuma kiunga</span></span></span>
               </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+255700000000"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
+              <label className={`cursor-pointer rounded-xl border p-4 transition ${method === "phone" ? "border-amber-300 bg-amber-300/10" : "border-emerald-900 bg-[#051511] hover:border-emerald-700"}`}>
+                <input type="radio" name="method" value="phone" checked={method === "phone"} onChange={() => { setMethod("phone"); setMessage(null); }} className="sr-only" />
+                <span className="flex items-center gap-3"><Phone size={21} className={method === "phone" ? "text-amber-300" : "text-emerald-300"} /><span><span className="block text-base font-bold">SMS / OTP</span><span className="mt-1 block text-sm text-emerald-100/70">Tuma code ya simu</span></span></span>
+              </label>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading || sent}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader size={18} className="animate-spin" />
-                Inapokea...
-              </>
-            ) : sent ? (
-              "✅ Imechelewakwa"
-            ) : (
-              "Pata Kiunga cha Kuubadilisha"
-            )}
-          </button>
-        </form>
-
-        {/* Footer Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
-          <p className="font-semibold mb-2">💡 Dalili za Usalama:</p>
-          <ul className="space-y-1 text-xs">
-            <li>✓ Kiunga kitaishia baada ya dakika 15</li>
-            <li>✓ Moja tu kiunga kwa akaunti</li>
-            <li>✓ Hainayshi kuashiria kwa mtu mwingine</li>
-          </ul>
-        </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {method === "email" ? (
+                <div><label htmlFor="email" className="mb-2 block text-base font-bold text-emerald-100">Email ya kampuni</label><input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="jina@kampuni.co.tz" autoComplete="email" required className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-4 text-base text-white outline-none transition placeholder:text-emerald-600 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" /></div>
+              ) : (
+                <div><label htmlFor="phone" className="mb-2 block text-base font-bold text-emerald-100">Namba ya simu iliyosajiliwa</label><input id="phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+255 700 000 000" autoComplete="tel" required className="w-full rounded-xl border border-emerald-900 bg-[#051511] px-4 py-4 text-base text-white outline-none transition placeholder:text-emerald-600 focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20" /><p className="mt-2 text-sm text-emerald-100/70">Tumia namba iliyopo kwenye account yako ya MavunoOne.</p></div>
+              )}
+              <button type="submit" disabled={loading || sent} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-amber-500 py-4 text-base font-black text-emerald-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60">{loading ? <><Loader size={19} className="animate-spin" /> Inatuma...</> : sent ? "Ombi limetumwa" : method === "phone" ? "Tuma OTP kwa SMS" : "Tuma kiunga cha recovery"}</button>
+            </form>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

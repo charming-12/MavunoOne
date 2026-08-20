@@ -1,41 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { Home, ShoppingBag, User } from "lucide-react";
+import { Home, PackageSearch, ShoppingBag, User } from "lucide-react";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#07150f] to-[#0a1e18] pb-20">
-      <header className="bg-gradient-to-r from-[#07150f] to-[#0a1e18] border-b border-emerald-900/30 text-white p-5 sticky top-0 z-10 shadow-lg">
-        <h1 className="text-2xl font-black">MavunoOne — Duka</h1>
-        <p className="text-emerald-300 text-sm mt-1 font-semibold">Karibu, kuna bidhaa nzuri!</p>
+      <header className="sticky top-0 z-10 border-b border-emerald-900/30 bg-gradient-to-r from-[#07150f] to-[#0a1e18] p-5 text-white shadow-lg">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <Link href="/" className="group">
+            <h1 className="text-2xl font-black transition group-hover:text-amber-300">Ipuli Milling Shop</h1>
+            <p className="mt-1 text-sm font-semibold text-emerald-300">Ipuli Milling and Animal Enterprise · Tabora, Tanzania</p>
+          </Link>
+          <Link href="/" className="hidden rounded-xl border border-emerald-700 px-3 py-2 text-sm font-bold text-emerald-100 transition hover:bg-emerald-900/60 sm:inline-flex">Home</Link>
+        </div>
       </header>
 
       <main>{children}</main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#07150f]/95 backdrop-blur-md border-t border-emerald-900/30 shadow-2xl">
-        <div className="flex justify-around">
-          <Link
-            href="/shop"
-            className="flex flex-col items-center gap-1 py-4 px-4 text-emerald-400 hover:text-amber-300 transition flex-1 hover:bg-emerald-500/10"
-          >
-            <Home size={22} />
-            <span className="text-xs font-semibold">Nyumbani</span>
+      {/* Public customer navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-emerald-900/30 bg-[#07150f]/95 shadow-2xl backdrop-blur-md">
+        <div className="mx-auto grid max-w-xl grid-cols-4">
+          <Link href="/" className="flex flex-col items-center gap-1 px-2 py-3 text-emerald-400 transition hover:bg-emerald-500/10 hover:text-amber-300">
+            <Home size={21} />
+            <span className="text-[11px] font-semibold">Home</span>
           </Link>
-          <Link
-            href="/shop/order"
-            className="flex flex-col items-center gap-1 py-4 px-4 text-emerald-400 hover:text-amber-300 transition flex-1 hover:bg-emerald-500/10"
-          >
-            <ShoppingBag size={22} />
-            <span className="text-xs font-semibold">Agiza</span>
+          <Link href="/shop" className="flex flex-col items-center gap-1 px-2 py-3 text-emerald-400 transition hover:bg-emerald-500/10 hover:text-amber-300">
+            <ShoppingBag size={21} />
+            <span className="text-[11px] font-semibold">Shop</span>
           </Link>
-          <Link
-            href="/shop/account"
-            className="flex flex-col items-center gap-1 py-4 px-4 text-emerald-400 hover:text-amber-300 transition flex-1 hover:bg-emerald-500/10"
-          >
-            <User size={22} />
-            <span className="text-xs font-semibold">Akaunti</span>
+          <Link href="/shop/order" className="flex flex-col items-center gap-1 px-2 py-3 text-emerald-400 transition hover:bg-emerald-500/10 hover:text-amber-300">
+            <PackageSearch size={21} />
+            <span className="text-[11px] font-semibold">Agiza</span>
+          </Link>
+          <Link href="/shop/account" className="flex flex-col items-center gap-1 px-2 py-3 text-emerald-400 transition hover:bg-emerald-500/10 hover:text-amber-300">
+            <User size={21} />
+            <span className="text-[11px] font-semibold">Akaunti</span>
           </Link>
         </div>
       </nav>

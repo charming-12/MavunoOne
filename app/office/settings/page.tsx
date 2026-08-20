@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [resetting, setResetting] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [lastBackup, setLastBackup] = useState<{ id: number; label: string; createdAt: string } | null>(null);
+  const [sampleDataActionsEnabled, setSampleDataActionsEnabled] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showValues, setShowValues] = useState<Record<string, boolean>>({});
   const [readyState, setReadyState] = useState<{ ready: boolean; missing: string[] }>({
@@ -71,6 +72,7 @@ export default function SettingsPage() {
         if (!response.ok) return;
         const data = await response.json();
         setLastBackup(data.lastBackup ?? null);
+        setSampleDataActionsEnabled(Boolean(data.sampleDataActionsEnabled));
       } catch {
         setLastBackup(null);
       }
@@ -248,31 +250,37 @@ export default function SettingsPage() {
       <div className="mb-8 rounded-lg border border-amber-400/40 bg-[#0a1e18]/70 p-6 backdrop-blur-sm shadow-lg">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl font-black text-amber-300 uppercase tracking-wider">System Safety Tools</h2>
+            <h2 className="text-xl font-black text-amber-300 uppercase tracking-wider">Testing Data Tools</h2>
             <p className="mt-2 text-sm text-emerald-200">
-              Safisha data za majaribio kwa usalama na urejeshe backup ya mwisho ukihitaji.
+              Zana hizi ni za sample/demo data pekee; siyo disaster-recovery backup ya production database.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleResetSampleData}
-              disabled={resetting}
-              className="rounded-lg border border-red-400/50 bg-red-500/15 px-4 py-2 text-sm font-bold text-red-200 transition hover:bg-red-500/25 disabled:opacity-60"
-            >
-              {resetting ? "Inasafisha..." : "Reset Sample Data"}
-            </button>
+          {sampleDataActionsEnabled ? (
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleResetSampleData}
+                disabled={resetting}
+                className="rounded-lg border border-red-400/50 bg-red-500/15 px-4 py-2 text-sm font-bold text-red-200 transition hover:bg-red-500/25 disabled:opacity-60"
+              >
+                {resetting ? "Inasafisha..." : "Reset Sample Data"}
+              </button>
 
-            <button
-              type="button"
-              onClick={handleRestoreLastBackup}
-              disabled={restoring || !lastBackup}
-              className="rounded-lg border border-emerald-400/50 bg-emerald-500/15 px-4 py-2 text-sm font-bold text-emerald-200 transition hover:bg-emerald-500/25 disabled:opacity-50"
-            >
-              {restoring ? "Inarejesha..." : "Restore Last Backup"}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={handleRestoreLastBackup}
+                disabled={restoring || !lastBackup}
+                className="rounded-lg border border-emerald-400/50 bg-emerald-500/15 px-4 py-2 text-sm font-bold text-emerald-200 transition hover:bg-emerald-500/25 disabled:opacity-50"
+              >
+                {restoring ? "Inarejesha..." : "Restore Last Backup"}
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-100">
+              Production data protection is active. Sample reset na restore zimezimwa.
+            </div>
+          )}
         </div>
 
         {lastBackup ? (

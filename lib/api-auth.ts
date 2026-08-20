@@ -14,3 +14,8 @@ export function requireAdminUser(request: NextRequest) {
   const user = getAuthenticatedUser(request);
   return user && ["admin", "owner"].includes(user.role) ? user : null;
 }
+
+export function requireAnalyticsUser(request: NextRequest) {
+  const user = getAuthenticatedUser(request);
+  return user && ["admin", "owner", "manager"].includes(user.role) ? user : null;
+}

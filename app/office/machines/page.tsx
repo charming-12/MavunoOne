@@ -1,72 +1,50 @@
 "use client";
 
-import { Plus, Zap } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
+import { Factory, Plus, RefreshCw, UserRound, Warehouse, Zap } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+
+const money = (value: number) => `TZS ${Math.round(value).toLocaleString("en-TZ")}`;
+const num = (value: unknown) => Number(value ?? 0);
+const units = ["kg", "gunia", "debe", "mfuko", "dumu", "ndoo", "lita", "chupa", "piece"];
+
+type JobForm = { operationType: "customer_service" | "internal_production"; jobType: string; customerId: string; inputProduct: string; inputUnit: string; inputQuantity: string; inputUnitSize: string; outputProduct1: string; outputKg1: string; outputProduct2: string; outputKg2: string; serviceUnit: string; serviceQuantity: string; serviceRate: string; serviceFee: string; paymentMethod: string; notes: string };
+const emptyForm: JobForm = { operationType: "customer_service", jobType: "milling", customerId: "", inputProduct: "", inputUnit: "kg", inputQuantity: "", inputUnitSize: "1", outputProduct1: "", outputKg1: "", outputProduct2: "", outputKg2: "", serviceUnit: "kg", serviceQuantity: "", serviceRate: "", serviceFee: "", paymentMethod: "cash", notes: "" };
 
 export default function MachinesPage() {
-  const machineJobs = [
-    // MAHINDI MILLING JOBS
-    { id: 1, customer: "John Mkwambi", product: "Mahindi → Unga", inputKg: 50, outputKg: 45, efficiency: 90, status: "Completed", date: "2026-08-15 14:30" },
-    { id: 2, customer: "Amina Hassan", product: "Mahindi → Pumba", inputKg: 30, outputKg: 27, efficiency: 90, status: "In Progress", date: "2026-08-15 12:15" },
-    { id: 3, customer: "Emmanuel Kamari", product: "Mahindi → Uduvi", inputKg: 25, outputKg: 20, efficiency: 80, status: "Completed", date: "2026-08-14 16:45" },
-    { id: 4, customer: "Mary Pamba", product: "Mahindi → Kahdarikaa", inputKg: 40, outputKg: 38, efficiency: 95, status: "Completed", date: "2026-08-14 11:20" },
-    // ALIZETI OIL PRODUCTION
-    { id: 5, customer: "Hassan Rashid", product: "Alizeti → Mafuta", inputKg: 100, outputKg: 25, efficiency: 25, status: "Completed", date: "2026-08-13 10:00" },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mashine</h1>
-          <p className="text-gray-600 mt-2">Dhamana ya jobs ya kusindika</p>
-        </div>
-        <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
-          <Plus size={20} />
-          Kazi Mpya
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Mteja</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Bidhaa</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ingizo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Matokeo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ufanisi</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tarehe</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Hali</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {machineJobs.map(job => (
-              <tr key={job.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{job.customer}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.product}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.inputKg} kg</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.outputKg} kg</td>
-                <td className="px-6 py-4 text-sm">
-                  <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded font-medium">
-                    <Zap size={16} />
-                    {job.efficiency}%
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{job.date}</td>
-                <td className="px-6 py-4 text-sm">
-                  <span className={`px-2 py-1 rounded text-sm ${
-                    job.status === "Completed"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-blue-100 text-blue-800"
-                  }`}>
-                    {job.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const utils = trpc.useUtils();
+  const productsQuery = trpc.products.list.useQuery();
+  const customersQuery = trpc.customers.list.useQuery();
+  const jobsQuery = trpc.machineJobs.list.useQuery();
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [form, setForm] = useState<JobForm>(emptyForm);
+  const products = useMemo(() => productsQuery.data ?? [], [productsQuery.data]);
+  const customers = useMemo(() => customersQuery.data ?? [], [customersQuery.data]);
+  const jobs = jobsQuery.data ?? [];
+  const createJob = trpc.machineJobs.create.useMutation({ onSuccess: () => { utils.machineJobs.list.invalidate(); utils.products.list.invalidate(); utils.products.lowStock.invalidate(); setForm(emptyForm); setOpen(false); setMessage(form.operationType === "customer_service" ? "Huduma ya mteja imehifadhiwa; stock ya kampuni haijabadilika." : "Production imehifadhiwa; raw material imepungua na output imeongezwa kwenye stock."); } });
+  const update = (key: keyof JobForm, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const serviceBaseQty = Number(form.serviceQuantity || form.inputQuantity || 0) * Number(form.inputUnitSize || 1);
+  const serviceTotal = Number(form.serviceFee || 0) || Number(form.serviceQuantity || form.inputQuantity || 0) * Number(form.serviceRate || 0);
+  const selectedProduct = products.find((product) => product.name === form.inputProduct);
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const inputQuantity = Number(form.inputQuantity || 0);
+    const inputUnitSize = Number(form.inputUnitSize || 1);
+    const inputKg = form.operationType === "customer_service" ? serviceBaseQty : inputQuantity * inputUnitSize;
+    createJob.mutate({ operationType: form.operationType, customerId: form.customerId ? Number(form.customerId) : undefined, jobType: form.jobType, inputProduct: form.operationType === "customer_service" ? (form.inputProduct || "Mahindi ya mteja") : form.inputProduct, inputKg, inputUnit: form.inputUnit, inputQuantity, inputUnitSize, outputProduct1: form.operationType === "internal_production" ? form.outputProduct1 || undefined : undefined, outputKg1: form.operationType === "internal_production" ? Number(form.outputKg1 || 0) : 0, outputProduct2: form.operationType === "internal_production" ? form.outputProduct2 || undefined : undefined, outputKg2: form.operationType === "internal_production" ? Number(form.outputKg2 || 0) : 0, serviceUnit: form.operationType === "customer_service" ? form.serviceUnit : "kg", serviceQuantity: form.operationType === "customer_service" ? Number(form.serviceQuantity || form.inputQuantity || 0) : undefined, serviceRate: form.operationType === "customer_service" ? Number(form.serviceRate || 0) : 0, serviceFee: form.operationType === "customer_service" ? serviceTotal : 0, paymentMethod: form.paymentMethod, notes: form.notes || undefined });
+  };
+  const totalInput = jobs.reduce((sum, job) => sum + num(job.inputKg), 0);
+  const totalOutput = jobs.filter((job) => job.operationType !== "customer_service").reduce((sum, job) => sum + num(job.outputKg1) + num(job.outputKg2), 0);
+  const serviceRevenue = jobs.filter((job) => job.operationType === "customer_service").reduce((sum, job) => sum + num(job.serviceFee), 0);
+  return <div className="space-y-6 pb-10">
+    <header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#092b23] via-[#0d6049] to-[#16825f] px-6 py-7 text-white shadow-[0_18px_50px_rgba(13,95,73,.18)] sm:px-8"><div className="absolute -right-12 -top-16 h-52 w-52 rounded-full bg-emerald-200/10 blur-2xl" /><div className="relative flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><div className="flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-100"><span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Production &amp; services</span><span className="inline-flex items-center gap-1.5 text-emerald-100/75"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" />Live database</span></div><h1 className="mt-5 flex items-center gap-3 text-3xl font-black tracking-tight sm:text-4xl"><Factory className="text-amber-300" /> Kusaga na Kukoboa</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-50/75">Tenganisha huduma ya mteja na production ya kampuni. Kila entry inaonyesha unit, kiasi, mapato na athari yake kwenye stock.</p></div><div className="flex gap-2"><button onClick={() => { jobsQuery.refetch(); productsQuery.refetch(); }} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white"><RefreshCw size={16} /> Refresh</button><button onClick={() => setOpen((value) => !value)} className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-black text-[#102b25] hover:bg-amber-300"><Plus size={17} /> Kazi mpya</button></div></div></header>
+    {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
+    {createJob.error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{createJob.error.message}</div>}
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Jobs zote" value={jobs.length.toLocaleString()} detail="Production na customer services" /><Metric label="Input iliyorekodiwa" value={`${totalInput.toLocaleString()} kg`} detail="Kwa reporting ya msingi" /><Metric label="Output ya kampuni" value={`${totalOutput.toLocaleString()} kg`} detail="Internal production pekee" /><Metric label="Service revenue" value={money(serviceRevenue)} detail="Huduma za mteja" accent /></div>
+    {open && <form onSubmit={submit} className="grid gap-4 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6"><div className="sm:col-span-2"><label className="label">Aina ya operesheni</label><div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => update("operationType", "customer_service")} className={`rounded-2xl border p-4 text-left ${form.operationType === "customer_service" ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}><UserRound className="text-emerald-700" size={20} /><p className="mt-2 font-black text-slate-950">Huduma ya mteja</p><p className="mt-1 text-xs text-slate-500">Mteja analeta mali yake; stock ya kampuni haiguswi.</p></button><button type="button" onClick={() => update("operationType", "internal_production")} className={`rounded-2xl border p-4 text-left ${form.operationType === "internal_production" ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}><Warehouse className="text-emerald-700" size={20} /><p className="mt-2 font-black text-slate-950">Internal production</p><p className="mt-1 text-xs text-slate-500">Kampuni inatumia raw material na kutengeneza stock mpya.</p></button></div></div><div><label className="label">Aina ya kazi</label><select value={form.jobType} onChange={(e) => update("jobType", e.target.value)} className="input"><option value="milling">Kusaga mahindi</option><option value="shelling">Kukoboa mahindi</option><option value="oil_pressing">Kukamua mafuta</option><option value="animal_feed">Kutengeneza animal feed</option><option value="other">Huduma nyingine</option></select></div>{form.operationType === "customer_service" && <div><label className="label">Mteja</label><select value={form.customerId} onChange={(e) => update("customerId", e.target.value)} className="input"><option value="">Chagua mteja (optional)</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name} · {customer.phone || "no phone"}</option>)}</select></div>}<div><label className="label">Input/description</label>{form.operationType === "internal_production" ? <select required value={form.inputProduct} onChange={(e) => update("inputProduct", e.target.value)} className="input"><option value="">Chagua raw material</option>{products.map((product) => <option key={product.id} value={product.name}>{product.name} · {product.unit}</option>)}</select> : <input value={form.inputProduct} onChange={(e) => update("inputProduct", e.target.value)} className="input" placeholder="Mahindi ya mteja" />}</div><div><label className="label">Unit ya input</label><select value={form.inputUnit} onChange={(e) => { const unit = e.target.value; update("inputUnit", unit); if (form.operationType === "customer_service") update("serviceUnit", unit); }} className="input">{units.map((unit) => <option key={unit}>{unit}</option>)}</select></div><div><label className="label">Idadi ya units</label><input required type="number" min="0.01" step="0.01" value={form.inputQuantity} onChange={(e) => update("inputQuantity", e.target.value)} className="input" placeholder="10" /></div><div><label className="label">Ukubwa wa unit (kg)</label><input required type="number" min="0.001" step="0.001" value={form.inputUnitSize} onChange={(e) => update("inputUnitSize", e.target.value)} className="input" placeholder={selectedProduct?.packageSizeKg ? String(selectedProduct.packageSizeKg) : "100"} /></div>{form.operationType === "customer_service" ? <><div><label className="label">Unit ya kutoza <span className="font-normal text-slate-400">(chagua wewe)</span></label><select value={form.serviceUnit} onChange={(e) => update("serviceUnit", e.target.value)} className="input">{units.map((unit) => <option key={unit}>{unit}</option>)}</select></div><div><label className="label">Quantity ya kutoza</label><input required type="number" min="0.01" step="0.01" value={form.serviceQuantity} onChange={(e) => update("serviceQuantity", e.target.value)} className="input" placeholder="300" /></div><div><label className="label">Bei kwa unit (TZS)</label><input type="number" min="0" value={form.serviceRate} onChange={(e) => update("serviceRate", e.target.value)} className="input" placeholder="200" /></div><div><label className="label">Jumla ya service fee</label><input type="number" min="0" value={form.serviceFee} onChange={(e) => update("serviceFee", e.target.value)} className="input" placeholder={serviceTotal ? String(serviceTotal) : "0"} /><p className="mt-1 text-xs text-slate-500">Ikiwa tupu: quantity × bei ya unit = {money(serviceTotal)}</p></div></> : <><div><label className="label">Output 1</label><select value={form.outputProduct1} onChange={(e) => update("outputProduct1", e.target.value)} className="input"><option value="">Hakuna</option>{products.map((product) => <option key={product.id} value={product.name}>{product.name}</option>)}</select></div><div><label className="label">Output 1 (kg)</label><input type="number" min="0" step="0.01" value={form.outputKg1} onChange={(e) => update("outputKg1", e.target.value)} className="input" /></div><div><label className="label">Output 2</label><select value={form.outputProduct2} onChange={(e) => update("outputProduct2", e.target.value)} className="input"><option value="">Hakuna</option>{products.map((product) => <option key={product.id} value={product.name}>{product.name}</option>)}</select></div><div><label className="label">Output 2 (kg)</label><input type="number" min="0" step="0.01" value={form.outputKg2} onChange={(e) => update("outputKg2", e.target.value)} className="input" /></div></>}<div><label className="label">Njia ya malipo</label><select value={form.paymentMethod} onChange={(e) => update("paymentMethod", e.target.value)} className="input"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="tigopesa">Tigo Pesa</option><option value="credit">Deni</option></select></div><div className="sm:col-span-2"><label className="label">Notes</label><input value={form.notes} onChange={(e) => update("notes", e.target.value)} className="input" placeholder="Mteja, batch, operator, quality notes..." /></div><div className="flex items-end"><button disabled={createJob.isPending || (form.operationType === "internal_production" && products.length === 0)} className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white">{createJob.isPending ? "Inahifadhi..." : form.operationType === "customer_service" ? "Hifadhi huduma ya mteja" : "Hifadhi internal production"}</button></div></form>}
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-5 py-4"><h2 className="text-lg font-black text-slate-950">Milling &amp; service ledger</h2><p className="mt-1 text-sm text-slate-500">Customer services hazipunguzi stock ya kampuni; internal production ina movement ya stock.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left"><thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-4">Aina</th><th className="px-5 py-4">Kazi / customer</th><th className="px-5 py-4">Input</th><th className="px-5 py-4">Output / fee</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Tarehe</th></tr></thead><tbody className="divide-y divide-slate-100">{jobsQuery.isLoading ? <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">Inapakia ledger...</td></tr> : jobs.map((job) => <tr key={job.id} className="hover:bg-slate-50"><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-black ${job.operationType === "customer_service" ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>{job.operationType === "customer_service" ? "Customer service" : "Internal production"}</span></td><td className="px-5 py-4"><p className="font-bold text-slate-950">{job.jobType.replaceAll("_", " ")}</p><p className="text-xs text-slate-500">#{job.id}{job.customerId ? ` · customer #${job.customerId}` : ""}</p></td><td className="px-5 py-4 text-sm font-semibold text-slate-700">{job.inputProduct}<br /><span className="text-xs text-slate-500">{num(job.inputQuantity || job.inputKg).toLocaleString()} {job.inputUnit || "kg"} · {num(job.inputKg).toLocaleString()} kg base</span></td><td className="px-5 py-4 text-sm text-slate-700">{job.operationType === "customer_service" ? <><strong>{money(num(job.serviceFee))}</strong><br /><span className="text-xs text-slate-500">{num(job.serviceQuantity || job.inputKg).toLocaleString()} {job.serviceUnit || "kg"}</span></> : <>{job.outputProduct1 ? `${job.outputProduct1} (${num(job.outputKg1).toLocaleString()} kg)` : "—"}{job.outputProduct2 ? <><br />{job.outputProduct2} ({num(job.outputKg2).toLocaleString()} kg)</> : null}</>}</td><td className="px-5 py-4"><span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700"><Zap size={13} /> {num(job.efficiency).toFixed(1)}%</span></td><td className="px-5 py-4 text-sm text-slate-500">{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(job.createdAt))}</td></tr>)}{!jobsQuery.isLoading && jobs.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">Hakuna milling records bado.</td></tr>}</tbody></table></div></section>
+    <style jsx>{`.label{display:block;margin-bottom:.35rem;font-size:.75rem;font-weight:800;color:#475569}.input{width:100%;border:1px solid #dbe4e0;border-radius:.75rem;background:#fff;padding:.65rem .8rem;font-size:.875rem;color:#0f172a;outline:none}.input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.12)}`}</style>
+  </div>;
 }
+function Metric({ label, value, detail, accent = false }: { label: string; value: string; detail: string; accent?: boolean }) { return <div className={`rounded-2xl border p-5 shadow-sm ${accent ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-white"}`}><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{detail}</p></div>; }

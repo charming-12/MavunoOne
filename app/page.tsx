@@ -1,61 +1,52 @@
 "use client";
 
-import { ArrowRight, Leaf, PackageCheck, BarChart3 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+const WHATSAPP_NUMBER = "255712345678";
+const whatsappHref = (message: string) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
 const stats = [
-  { label: "Mauzo ya kila siku", value: "24/7" },
-  { label: "Hifadhi ya bidhaa", value: "Live" },
-  { label: "Timu + wateja", value: "Unified" },
+  { label: "Bidhaa halisi", value: "Agiza" },
+  { label: "Oda rahisi", value: "Online" },
+  { label: "Huduma ya karibu", value: "Tabora" },
 ];
 
 const productCards = [
   {
-    title: "Mahindi & Alizeti",
-    description: "Track inventory, pricing, and sales across maize and oilseed products.",
-    image:
-      "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80",
+    title: "Mafuta ya Alizeti",
+    description: "Mafuta ya alizeti yaliyoandaliwa kwa matumizi ya nyumbani na biashara.",
+    image: "/images/homepage/sunflower-oil-containers.webp",
   },
   {
-    title: "Mifugo & Feed",
-    description: "Manage animal feed, livestock items, and farm essentials with one dashboard.",
-    image:
-      "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=900&q=80",
+    title: "Mahindi na Unga wa Mahindi",
+    description: "Mahindi na unga wa mahindi kwa manunuzi ya nyumbani na biashara.",
+    image: "/images/homepage/maize-flour-real.webp",
   },
   {
-    title: "Uwasilishaji",
-    description: "Monitor delivery flow, routing, and dispatch updates in real time.",
-    image:
-      "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=900&q=80",
-  },
-];
-
-const platformCards = [
-  {
-    title: "Office Portal",
-    icon: <BarChart3 className="h-7 w-7" />,
-    accent: "bg-emerald-500/10 text-emerald-200 border-emerald-400/30",
-    text: "Operations, stock, customers, costs, and reports in a single control center.",
-    link: "/office",
+    title: "Animal Feeds na By-products",
+    description: "Uduv, mashudu, pumba, chokka na soya kwa mahitaji ya mifugo.",
+    image: "/images/homepage/animal-feeds-source.webp",
   },
   {
-    title: "Boss App",
-    icon: <Leaf className="h-7 w-7" />,
-    accent: "bg-yellow-500/10 text-yellow-200 border-yellow-400/30",
-    text: "Fast summaries, alerts, deliveries, and mobile-first business monitoring.",
-    link: "/boss",
-  },
-  {
-    title: "Shop Portal",
-    icon: <PackageCheck className="h-7 w-7" />,
-    accent: "bg-cyan-500/10 text-cyan-200 border-cyan-400/30",
-    text: "Simple ordering for customers and farmers with clear product availability.",
-    link: "/shop",
+    title: "Ua na Mbegu za Alizeti",
+    description: "Alizeti na mbegu zake kutoka kwenye mnyororo halisi wa kilimo.",
+    image: "/images/homepage/sunflower-field-real.webp",
   },
 ];
 
 export default function LandingPage() {
+  const [publicContent, setPublicContent] = useState<Array<{ id: number; title: string; subtitle: string | null; body: string | null; imageUrl: string | null; ctaLabel: string | null; ctaHref: string | null; contentType: string }>>([]);
+
+  useEffect(() => {
+    fetch("/api/public/content")
+      .then((response) => response.ok ? response.json() : { content: [] })
+      .then((data) => setPublicContent(data.content ?? []))
+      .catch(() => setPublicContent([]));
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#07150f] text-white">
       <div className="relative isolate overflow-hidden">
@@ -65,13 +56,13 @@ export default function LandingPage() {
         <header className="relative z-10 px-6 py-6 md:px-12">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div>
-              <p className="text-2xl font-black tracking-tight md:text-4xl">MavunoOne</p>
-              <p className="text-sm text-amber-200 md:text-base">African agribusiness platform</p>
+              <p className="max-w-[460px] text-xl font-black leading-tight tracking-tight sm:text-2xl md:text-3xl">Ipuli Milling and Animal Enterprise</p>
+              <p className="mt-2 text-sm font-semibold text-amber-200 md:text-base">Tabora, Tanzania · Milling, animal feeds and agribusiness</p>
             </div>
 
             <div className="hidden items-center gap-3 md:flex">
               <a
-                href="https://wa.me/255712345678?text=Habari%20ninaomba%20kusaidika%20kuhusu%20MavunoOne."
+                href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba maelezo kuhusu bidhaa na huduma zenu.")}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-full border border-amber-300/30 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
@@ -92,20 +83,20 @@ export default function LandingPage() {
             <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
               <div>
                 <div className="mb-6 inline-flex items-center rounded-full border border-amber-300/30 bg-amber-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-amber-200">
-                  Built for African commerce
+                  Imeandaliwa kwa biashara za Afrika
                 </div>
 
                 <h1 className="max-w-xl text-4xl font-black tracking-tight text-white md:text-6xl md:leading-[1.05]">
-                  Grow your agribusiness with clarity, speed, and control.
+                  Kuza biashara yako ya kilimo kwa urahisi, kasi na udhibiti.
                 </h1>
 
                 <p className="mt-6 max-w-xl text-base leading-8 text-emerald-50 md:text-lg">
-                  MavunoOne helps agro-businesses track sales, stock, deliveries, farmers, and payments in one connected system designed for real-world growth.
+                  Pata mafuta ya alizeti, mahindi, unga, animal feeds na bidhaa nyingine za kilimo kutoka Tabora. Chagua bidhaa, tuma oda, kisha timu yetu ikusaidie kwa delivery.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                   <a
-                    href="https://wa.me/255712345678?text=Habari%20ninaomba%20kufungua%20mfumo%20wa%20MavunoOne."
+                    href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba msaada wa kuagiza bidhaa.")}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-6 py-3.5 text-base font-black text-emerald-950 shadow-[0_20px_50px_rgba(251,191,36,0.32)] transition hover:bg-amber-300"
@@ -113,12 +104,12 @@ export default function LandingPage() {
                     Tuma WhatsApp
                   </a>
                   <a
-                    href="https://wa.me/255712345678?text=Habari%20ninaomba%20lipa%20kwa%20M-Pesa%20kufungua%20mfumo%20wa%20MavunoOne."
+                    href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba maelekezo ya malipo kupitia M-Pesa au Tigo Pesa kwa oda yangu.")}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-white/10"
                   >
-                    LIPA
+                    Maelekezo ya Malipo
                   </a>
                 </div>
 
@@ -134,7 +125,7 @@ export default function LandingPage() {
 
               <div className="relative h-[540px] overflow-hidden rounded-[30px] border border-white/10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
                 <Image
-                  src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80"
+                  src="/images/homepage/agri-logistics-hero-source.webp"
                   alt="Agriculture and logistics operations"
                   fill
                   className="object-cover"
@@ -142,29 +133,29 @@ export default function LandingPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#07150f] via-[#07150f]/45 to-[#07150f]/10" />
 
-                <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#07150f]/70 p-5 backdrop-blur-md">
-                  <div className="flex items-center justify-between">
+                <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#07150f]/80 p-5 backdrop-blur-md">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Business Overview</p>
-                      <p className="mt-2 text-2xl font-black text-white">MavunoOne Growth</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Ipuli Milling Shop</p>
+                      <p className="mt-2 text-2xl font-black text-white">Bidhaa halisi kutoka Tabora</p>
                     </div>
                     <div className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-                      +18.4%
+                      Tabora, Tanzania
                     </div>
                   </div>
 
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     <div className="rounded-xl bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Sales</p>
-                      <p className="mt-2 text-lg font-black text-white">TZS 9.2M</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Bidhaa</p>
+                      <p className="mt-2 text-sm font-bold text-white">Halisi</p>
                     </div>
                     <div className="rounded-xl bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Stock</p>
-                      <p className="mt-2 text-lg font-black text-white">1,420</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Oda</p>
+                      <p className="mt-2 text-sm font-bold text-white">Rahisi</p>
                     </div>
                     <div className="rounded-xl bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Deliveries</p>
-                      <p className="mt-2 text-lg font-black text-white">89</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-amber-200">Delivery</p>
+                      <p className="mt-2 text-sm font-bold text-white">Iliyopangwa</p>
                     </div>
                   </div>
                 </div>
@@ -176,8 +167,8 @@ export default function LandingPage() {
             <div className="mx-auto max-w-7xl">
               <div className="mb-8 flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Core solutions</p>
-                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Built for the full agri-commerce cycle</h2>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Huduma na bidhaa zetu kuu</p>
+                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Mfumo wa mnyororo mzima wa biashara ya kilimo</h2>
                 </div>
               </div>
 
@@ -205,26 +196,39 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section className="px-6 py-14 md:px-12 md:py-20">
-            <div className="mx-auto max-w-7xl">
-              <div className="mb-10 text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Platform access</p>
-                <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Choose the workflow you need</h2>
-              </div>
+          {publicContent.length > 0 && <section className="px-6 py-10 md:px-12 md:py-14"><div className="mx-auto max-w-7xl"><div className="mb-7"><p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Taarifa kutoka Ipuli Milling</p><h2 className="mt-3 text-3xl font-black text-white md:text-4xl">Habari na ofa za hivi karibuni</h2></div><div className="grid gap-5 md:grid-cols-2">{publicContent.map((item) => <article key={item.id} className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">{item.imageUrl && <div className="relative h-48 overflow-hidden"><Image src={item.imageUrl} alt={item.title} fill className="object-cover" /></div>}<div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{item.contentType.replace("_", " ")}</p><h3 className="mt-2 text-2xl font-black text-white">{item.title}</h3>{item.subtitle && <p className="mt-2 font-semibold text-emerald-100">{item.subtitle}</p>}{item.body && <p className="mt-3 text-sm leading-7 text-emerald-100/75">{item.body}</p>}{item.ctaLabel && item.ctaHref && <Link href={item.ctaHref} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-amber-300">{item.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>}</div></article>)}</div></div></section>}
 
-              <div className="grid gap-6 md:grid-cols-3">
-                {platformCards.map((card) => (
-                  <Link key={card.title} href={card.link} className="group block rounded-[28px] border border-white/10 bg-white/5 p-6 transition hover:border-emerald-400/40 hover:bg-white/10">
-                    <div className={`mb-5 inline-flex rounded-2xl border p-3 ${card.accent}`}>
-                      {card.icon}
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">{card.title}</h3>
-                    <p className="mt-4 text-sm leading-7 text-emerald-100">{card.text}</p>
-                    <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-300">
-                      Open portal <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                    </div>
+          <section className="px-6 py-14 md:px-12 md:py-20">
+            <div className="mx-auto max-w-7xl rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.22)] md:p-10">
+              <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/70">Ipuli Milling</p>
+                  <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Anza kununua kwa urahisi</h2>
+                  <p className="mt-5 max-w-md text-base leading-8 text-emerald-100 md:text-lg">
+                    Pata bidhaa za kilimo unazohitaji kutoka Tabora, Tanzania. Chagua bidhaa, tuma oda na timu yetu itakusaidia na delivery.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold text-emerald-100">
+                    <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2">Tabora, Tanzania</span>
+                    <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2">Oda online</span>
+                  </div>
+                  <Link href="/shop" className="mt-8 inline-flex items-center gap-3 rounded-xl bg-amber-400 px-6 py-3.5 text-base font-black text-emerald-950 shadow-[0_15px_35px_rgba(251,191,36,0.2)] transition hover:bg-amber-300">
+                    Fungua Shop <ArrowRight className="h-5 w-5" />
                   </Link>
-                ))}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {productCards.slice(0, 3).map((card) => (
+                    <Link key={card.title} href="/shop" className="group overflow-hidden rounded-2xl border border-white/10 bg-[#07150f]/70 transition hover:-translate-y-1 hover:border-amber-300/50">
+                      <div className="relative h-44 overflow-hidden">
+                        <Image src={card.image} alt={card.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-105" />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="text-base font-black text-white">{card.title}</h3>
+                        <p className="mt-2 text-xs leading-5 text-emerald-200">Tazama bidhaa</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
@@ -233,16 +237,16 @@ export default function LandingPage() {
             <div className="mx-auto max-w-6xl rounded-[32px] border border-emerald-400/20 bg-[linear-gradient(135deg,_rgba(16,185,129,0.12),_rgba(9,9,11,0.4))] p-8 md:p-12">
               <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Why teams choose us</p>
-                  <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">One system for farm operations, sales, and delivery.</h2>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">Kwa nini uchague Ipuli Milling</p>
+                  <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">Mfumo mmoja kwa shughuli za kilimo, mauzo na usafirishaji.</h2>
                   <p className="mt-5 max-w-xl text-base leading-8 text-emerald-50 md:text-lg">
-                    From daily stock movement to customer follow-up and dispatch coordination, everything stays connected so operations remain efficient and profitable.
+                    Kuanzia movement ya stock ya kila siku hadi ufuatiliaji wa wateja na uratibu wa usafirishaji, kila kitu kinaunganishwa ili biashara ifanye kazi kwa ufanisi na faida.
                   </p>
                 </div>
 
                 <div className="rounded-[28px] border border-white/10 bg-[#07150f]/70 p-6 shadow-[0_25px_60px_rgba(0,0,0,0.25)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-200">Get started</p>
-                  <h3 className="mt-3 text-3xl font-black text-white">Start with a quick call</h3>
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-200">Anza hapa</p>
+                  <h3 className="mt-3 text-3xl font-black text-white">Anza kwa mazungumzo mafupi</h3>
 
                   <div className="mt-6 space-y-3">
                     <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
@@ -256,7 +260,7 @@ export default function LandingPage() {
                   </div>
 
                   <a
-                    href="https://wa.me/255712345678?text=Habari%20ninaomba%20kufungua%20mfumo%20wa%20MavunoOne%20kwa%20biashara%20yangu."
+                    href={whatsappHref("Habari Ipuli Milling and Animal Enterprise, naomba maelezo ya bidhaa, bei na namna ya kuagiza.")}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-5 py-3.5 text-base font-black text-emerald-950 transition hover:bg-yellow-300"
@@ -271,7 +275,7 @@ export default function LandingPage() {
 
         <footer className="relative z-10 border-t border-white/10 px-6 py-8 md:px-12">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center text-sm text-emerald-100 md:flex-row md:text-left">
-            <p>© 2026 MavunoOne</p>
+            <p>© 2026 Ipuli Milling and Animal Enterprise</p><p className="mt-1 text-xs text-emerald-300/70">Powered by MavunoOne</p>
             <p>Mahindi • Alizeti • Mifugo • Uwasilishaji • Business Intelligence</p>
           </div>
         </footer>

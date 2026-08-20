@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+import { sendSms } from "./sms";
+
 let resend: Resend | null = null;
 
 function getResendClient() {
@@ -206,31 +208,13 @@ export async function sendPasswordResetEmail(
 }
 
 export async function sendSMSNotification(phoneNumber: string, message: string) {
-  try {
-    // Using NextSMS that's already configured
-    const response = await fetch("https://api.nextsms.com/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.NEXTSMS_TOKEN}`,
-      },
-      body: JSON.stringify({
-        to: phoneNumber,
-        text: message,
-        from: process.env.NEXTSMS_SENDER_ID || "MavunoOne",
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`SMS API error: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    console.log("✅ SMS notification sent:", result);
-    return result;
-  } catch (error) {
-    console.error("❌ Failed to send SMS notification:", error);
+  const result = await sendSms({ phone: phoneNumber, message, senderID: process.env.NEXTSMS_SENDER_ID });
+  if (result.success) {
+    console.log("SMS notification sent:", result.messageID);
+  } else {
+    console.error("Failed to send SMS notification:", result.error);
   }
+  return result;
 }
 
 function escapeHtml(text: string): string {
@@ -242,4 +226,56 @@ function escapeHtml(text: string): string {
     "'": "&#039;",
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
+export async function sendStaffInvitationEmail(
+  userEmail: string,
+  setupLink: string,
+  userName: string,
+  roleLabel: string,
+) {
+  try {
+    const client = getResendClient();
+    if (!client) {
+      console.warn("Resend client not initialized - staff invitation email skipped");
+      return { sent: false, reason: "email_not_configured" };
+    }
+
+    const emailBody = `
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8" /><style>
+    body { font-family: Arial, sans-serif; color: #183a32; background: #f5f8f6; }
+    .container { max-width: 600px; margin: 0 auto; padding: 28px 20px; }
+    .card { background: white; border-radius: 18px; padding: 28px; box-shadow: 0 8px 30px rgba(16,45,38,.08); }
+    .header { background: #071a18; color: white; padding: 20px; border-radius: 14px; }
+    .button { display: inline-block; background: #eab308; color: #102b25; padding: 13px 22px; border-radius: 10px; text-decoration: none; font-weight: 700; margin: 18px 0; }
+    .note { background: #f0fdf4; border-radius: 10px; padding: 14px; font-size: 13px; line-height: 1.6; }
+    .footer { color: #64748b; font-size: 12px; margin-top: 22px; }
+  </style></head>
+  <body><div class="container"><div class="card">
+    <div class="header"><h2>Karibu Ipuli Milling and Animal Enterprise</h2></div>
+    <p>Habari ${escapeHtml(userName)},</p>
+    <p>Account yako ya <strong>${escapeHtml(roleLabel)}</strong> imeundwa. Ili kuanza kutumia mfumo, bofya kitufe hapa chini na uweke password yako mwenyewe.</p>
+    <p style="text-align:center"><a class="button" href="${escapeHtml(setupLink)}">Weka password yako</a></p>
+    <div class="note"><strong>Usalama:</strong> Kiungo hiki ni cha matumizi ya mara moja na kitaisha baada ya saa 24. Hakuna password iliyotumwa kwenye email hii. Usimpe mtu mwingine kiungo hiki.</div>
+    <p class="footer">© ${new Date().getFullYear()} Ipuli Milling and Animal Enterprise · Tabora, Tanzania</p>
+  </div></div></body>
+</html>`;
+
+    const result = await client.emails.send({
+      from: `${APP_NAME} <noreply@resend.dev>`,
+      to: userEmail,
+      subject: `${APP_NAME} — Weka password ya account yako`,
+      html: emailBody,
+    });
+    if (result.error) {
+      console.error("Staff invitation email failed:", result.error);
+      return { sent: false, reason: "email_send_failed" };
+    }
+    return { sent: true, id: result.data?.id ?? null };
+  } catch (error) {
+    console.error("Staff invitation email error:", error);
+    return { sent: false, reason: "email_send_failed" };
+  }
 }

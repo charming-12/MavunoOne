@@ -3,11 +3,11 @@
  * Handles safe, concise SMS notifications for MavunoOne.
  */
 
-const NEXTSMS_USERNAME = process.env.NEXTSMS_USERNAME || "josiahmarco93.e9b";
+const NEXTSMS_USERNAME = process.env.NEXTSMS_USERNAME;
 const NEXTSMS_PASSWORD = process.env.NEXTSMS_PASSWORD;
 const NEXTSMS_TOKEN = process.env.NEXTSMS_TOKEN || process.env.NEXTSMS_API_TOKEN;
 const NEXTSMS_API_URL = process.env.NEXTSMS_API_URL || "https://api.nextsms.com/sms/send";
-const DEFAULT_SENDER_ID = process.env.NEXTSMS_SENDER_ID || "MAVUNO";
+const DEFAULT_SENDER_ID = process.env.NEXTSMS_SENDER_ID;
 
 export interface SendSmsParams {
   phone: string;
@@ -81,8 +81,12 @@ export async function sendSms(params: SendSmsParams): Promise<SmsResponse> {
       };
     }
 
+    if (!NEXTSMS_USERNAME || (!NEXTSMS_TOKEN && !NEXTSMS_PASSWORD) || !(params.senderID || DEFAULT_SENDER_ID)) {
+      return { success: false, error: "SMS provider is not fully configured" };
+    }
+
     const normalizedPhone = normalizePhoneNumber(params.phone);
-    const senderID = params.senderID || DEFAULT_SENDER_ID;
+    const senderID = params.senderID || DEFAULT_SENDER_ID!;
     const messageText = shortenMessage(params.message);
 
     const headers: Record<string, string> = {
@@ -181,7 +185,7 @@ export function buildSalesReceiptSms({
   const tail = items.length > 2 ? "..." : "";
 
   return shortenMessage(
-    `Habari ${customerName}! Rejesta ${invoiceNumber}: ${summary}${tail}. Total TZS ${formatCurrency(totalAmount)}. Asante kwa kununua na MavunoOne.`
+    `Habari ${customerName}, MavunoOne imethibitisha manunuzi yako. Risiti ${invoiceNumber}: ${summary}${tail}. Jumla TZS ${formatCurrency(totalAmount)}. Asante kwa kutuamini.`
   );
 }
 
@@ -218,7 +222,7 @@ export async function sendSaleConfirmationSms(
 
 export function buildDebtReminderSms({ customerName, remainingBalance }: { customerName: string; remainingBalance: number }): string {
   return shortenMessage(
-    `Habari ${customerName}! Deni lako lililobaki ni TZS ${formatCurrency(remainingBalance)}. Tafadhali lipa haraka. - MavunoOne`
+    `Kumbusho kwa ${customerName}: Deni lako la MavunoOne lililobaki ni TZS ${formatCurrency(remainingBalance)}. Tafadhali lipa ili huduma zako ziendelee vizuri. Asante.`
   );
 }
 
@@ -242,7 +246,7 @@ export async function sendDebtReminderSms(
 
 export function buildWelcomeSms(customerName: string): string {
   return shortenMessage(
-    `Karibu ${customerName}! Umejiunga na MavunoOne. Tunakutumikia kwa haraka na uaminifu. Asante.`
+    `Karibu ${customerName} kwenye MavunoOne. Akaunti yako imefunguliwa kwa mafanikio. Tuko tayari kukuhudumia kwa uaminifu na haraka.`
   );
 }
 
@@ -268,7 +272,7 @@ export function buildVehicleDispatchSms({
   driverPhone: string;
 }): string {
   return shortenMessage(
-    `Dispatch ${invoiceNumber}: Destination ${destination}. Vehicle ${vehicleNumber}. Driver ${driverName}. Phone ${driverPhone}.`
+    `MavunoOne: Order ${invoiceNumber} imetumwa kwenda ${destination}. Gari ${vehicleNumber}, dereva ${driverName} (${driverPhone}). Tutakujulisha hatua inayofuata.`
   );
 }
 
@@ -304,7 +308,7 @@ export async function sendVehicleDispatchSms({
 
 export function buildLowStockAlertSms({ productName, currentStock }: { productName: string; currentStock: number }): string {
   return shortenMessage(
-    `Alert: ${productName} imepungua stock. Imebaki ${currentStock} units. Jaza haraka.`
+    `Tahadhari ya stock: ${productName} imefika ${currentStock} kg, chini ya kiwango cha usalama. Tafadhali panga replenishment mapema.`
   );
 }
 
@@ -329,7 +333,7 @@ export async function sendPaymentReceivedSms(
   remainingBalance: number
 ): Promise<SmsResponse> {
   const message = shortenMessage(
-    `Habari ${customerName}! Tulipokea TZS ${formatCurrency(paymentAmount)}. Deni lililobaki ni TZS ${formatCurrency(remainingBalance)}.`
+    `Habari ${customerName}, tumepokea malipo yako ya TZS ${formatCurrency(paymentAmount)} kwa MavunoOne. Salio lililobaki ni TZS ${formatCurrency(remainingBalance)}. Asante.`
   );
 
   return sendSms({
@@ -337,4 +341,20 @@ export async function sendPaymentReceivedSms(
     message,
     senderID: "MAVUNO-PAY",
   });
+}
+
+export function buildMachineServiceSms({ customerName, jobType, inputKg, outputSummary, fee }: { customerName: string; jobType: string; inputKg: number; outputSummary: string; fee: number }) {
+  return shortenMessage(`Habari ${customerName}, huduma ya ${jobType} imekamilika. Input ${inputKg} kg; output ${outputSummary}. Ada TZS ${formatCurrency(fee)}. MavunoOne inakushukuru.`);
+}
+
+export async function sendMachineServiceSms(phone: string, customerName: string, jobType: string, inputKg: number, outputSummary: string, fee: number): Promise<SmsResponse> {
+  return sendSms({ phone, message: buildMachineServiceSms({ customerName, jobType, inputKg, outputSummary, fee }), senderID: "MAVUNO-MILL" });
+}
+
+export function buildFarmerPaymentSms({ farmerName, productName, amount, balance }: { farmerName: string; productName: string; amount: number; balance: number }) {
+  return shortenMessage(`Mpendwa ${farmerName}, MavunoOne imesajili malipo ya TZS ${formatCurrency(amount)} kwa ${productName}. Salio lako lililobaki ni TZS ${formatCurrency(balance)}. Asante kwa ushirikiano.`);
+}
+
+export async function sendFarmerPaymentSms(phone: string, farmerName: string, productName: string, amount: number, balance: number): Promise<SmsResponse> {
+  return sendSms({ phone, message: buildFarmerPaymentSms({ farmerName, productName, amount, balance }), senderID: "MAVUNO-FARM" });
 }

@@ -1,128 +1,33 @@
 "use client";
 
-import { User, TrendingUp, Clock } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { ArrowRight, Clock3, Home, LockKeyhole, MapPin, PackageSearch, Phone, Search, ShoppingBag, UserRound } from "lucide-react";
 
 export default function ShopAccountPage() {
-  const customerInfo = {
-    name: "John Mkwambi",
-    phone: "+255718123456",
-    type: "Wholesale Customer",
-    creditLimit: 1000000,
-    currentDebt: 450000,
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleTrack = (event: React.FormEvent) => {
+    event.preventDefault();
+    setMessage(phone.trim() ? "Timu yetu itatumia namba hii kuthibitisha oda yako. Order history itaonekana baada ya customer verification." : "Weka namba ya simu uliyoitumia kwenye oda.");
   };
 
-  const orders = [
-    { id: "ORD-001", date: "2026-08-15", items: "Mahindi (50kg)", amount: 450000, status: "Delivered" },
-    { id: "ORD-002", date: "2026-08-14", items: "Ndizi (20kg), Mchele (30kg)", amount: 100000, status: "Delivered" },
-    { id: "ORD-003", date: "2026-08-12", items: "Maharage (25kg)", amount: 100000, status: "Paid" },
-  ];
-
-  const availableCredit = customerInfo.creditLimit - customerInfo.currentDebt;
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4 space-y-4">
-      {/* Profile Card */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white text-2xl">
-            <User size={32} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{customerInfo.name}</h2>
-            <p className="text-sm text-gray-600">{customerInfo.type}</p>
-            <p className="text-sm text-gray-600">{customerInfo.phone}</p>
-          </div>
-        </div>
-      </div>
+    <main className="min-h-screen bg-[#07150f] text-white">
+      <header className="border-b border-emerald-900/50 bg-[#0a1e18]/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 md:px-8"><div><p className="text-xs font-black uppercase tracking-[0.3em] text-amber-300">MavunoOne Shop</p><h1 className="mt-2 text-2xl font-black md:text-3xl">Akaunti ya mteja</h1><p className="mt-1 text-sm text-emerald-200">Fuatilia oda zako kwa urahisi kutoka Tabora</p></div><div className="flex gap-2"><Link href="/" className="inline-flex items-center gap-2 rounded-xl border border-emerald-700 px-3 py-2 text-sm font-bold text-emerald-100 hover:bg-emerald-900/60"><Home size={16} /> Home</Link><Link href="/shop" className="rounded-xl bg-amber-400 px-4 py-2 text-sm font-black text-emerald-950 hover:bg-amber-300">Shop</Link></div></div>
+      </header>
 
-      {/* Credit Info */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <p className="text-gray-600 text-sm">Limit ya Deni</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">
-            TZS {customerInfo.creditLimit.toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <p className="text-gray-600 text-sm">Deni Halisi</p>
-          <p className="text-2xl font-bold text-red-600 mt-2">
-            TZS {customerInfo.currentDebt.toLocaleString()}
-          </p>
-        </div>
-      </div>
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-12">
+        <section className="overflow-hidden rounded-[32px] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.16),transparent_35%),linear-gradient(135deg,rgba(16,185,129,0.16),rgba(255,255,255,0.03))] p-6 md:p-10"><div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center"><div><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400 text-emerald-950"><UserRound size={26} /></div><p className="mt-7 text-xs font-black uppercase tracking-[0.25em] text-amber-300">Customer space</p><h2 className="mt-3 max-w-xl text-3xl font-black leading-tight md:text-5xl">Karibu kwenye akaunti yako ya MavunoOne</h2><p className="mt-5 max-w-xl text-base leading-8 text-emerald-100/75">Tumia namba ya simu uliyoandika wakati wa kuagiza ili timu yetu ikusaidie kufuatilia oda na uthibitisho wa malipo.</p></div><form onSubmit={handleTrack} className="rounded-3xl border border-white/10 bg-[#06120d]/70 p-5 md:p-6"><div className="flex items-center gap-3"><PackageSearch className="text-amber-300" size={23} /><div><p className="text-xs font-black uppercase tracking-widest text-emerald-300">Order tracking</p><h3 className="mt-1 text-xl font-black">Fuatilia oda</h3></div></div><label className="mt-6 block"><span className="mb-2 block text-sm font-bold text-emerald-100">Namba ya simu</span><input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0712 345 678" className="w-full rounded-xl border border-emerald-900 bg-[#07150f] px-4 py-3 text-white outline-none focus:border-amber-300" /></label><button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 font-black text-emerald-950 hover:bg-amber-300"><Search size={17} /> Angalia status</button>{message && <p className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-xs leading-5 text-emerald-100">{message}</p>}</form></div></section>
 
-      {/* Available Credit */}
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-gray-600 text-sm">Mkopo Unaoweza Kutumia</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">
-              TZS {availableCredit.toLocaleString()}
-            </p>
-          </div>
-          <TrendingUp className="text-green-600" size={32} />
-        </div>
+        <section className="mt-8 grid gap-4 md:grid-cols-3"><div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5"><Clock3 className="text-amber-300" size={24} /><h3 className="mt-5 font-black">Oda zako</h3><p className="mt-2 text-sm leading-6 text-emerald-100/60">Order history itaonekana baada ya namba ya simu kuthibitishwa.</p></div><div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5"><MapPin className="text-emerald-300" size={24} /><h3 className="mt-5 font-black">Delivery</h3><p className="mt-2 text-sm leading-6 text-emerald-100/60">Timu itawasiliana nawe kuhusu eneo na muda wa delivery.</p></div><div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5"><LockKeyhole className="text-cyan-300" size={24} /><h3 className="mt-5 font-black">Privacy ya mteja</h3><p className="mt-2 text-sm leading-6 text-emerald-100/60">Taarifa zako zinalindwa na hutumika kukusaidia kufuatilia oda na delivery yako.</p></div></section>
 
-        {/* Progress Bar */}
-        <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
-          <div
-            className="bg-red-600 h-3"
-            style={{ width: `${(customerInfo.currentDebt / customerInfo.creditLimit) * 100}%` }}
-          ></div>
-        </div>
-        <p className="text-xs text-gray-600 mt-2">
-          {((customerInfo.currentDebt / customerInfo.creditLimit) * 100).toFixed(0)}% ya mkopo uliotumika
-        </p>
-      </div>
+        <section className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-6 md:p-8"><div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div><p className="text-xs font-black uppercase tracking-widest text-amber-300">Unahitaji msaada?</p><h2 className="mt-2 text-2xl font-black">Timu ya MavunoOne iko tayari kusaidia</h2><p className="mt-2 text-sm text-emerald-100/65">Wasiliana nasi kuhusu bidhaa, malipo au delivery kutoka Tabora.</p></div><div className="flex flex-wrap gap-3"><a href="tel:+255712345678" className="inline-flex items-center gap-2 rounded-xl border border-emerald-700 px-4 py-3 text-sm font-black text-emerald-100 hover:bg-emerald-900/50"><Phone size={17} /> Piga simu</a><Link href="/shop/order" className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-black text-white hover:bg-emerald-400">Anza oda <ArrowRight size={17} /></Link></div></div></section>
 
-      {/* Recent Orders */}
-      <div className="bg-white p-4 rounded-lg shadow">
-        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <Clock size={20} />
-          Agizo za Hivi Karibuni
-        </h3>
-        <div className="space-y-3">
-          {orders.map(order => (
-            <div key={order.id} className="border-b pb-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-medium text-gray-900 text-sm">{order.id}</p>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  order.status === "Paid"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-blue-100 text-blue-800"
-                }`}>
-                  {order.status}
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 mb-2">{order.items}</p>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-600">{order.date}</p>
-                <p className="font-semibold text-green-600">TZS {order.amount.toLocaleString()}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <div className="mt-8 flex flex-wrap justify-center gap-3"><Link href="/shop" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-bold text-emerald-100 hover:bg-white/10"><ShoppingBag size={17} /> Tazama Shop</Link><Link href="/" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-bold text-emerald-100 hover:bg-white/10"><Home size={17} /> Rudi Home</Link></div>
       </div>
-
-      {/* Action Buttons */}
-      <div className="space-y-2">
-        <a
-          href="https://wa.me/255718123456?text=Habari%20nina%20lipa%20deni%20langu%20na%20ninaomba%20maelezo%20ya%20malipo."
-          target="_blank"
-          rel="noreferrer"
-          className="block w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 text-center"
-        >
-          Lipa Sasa
-        </a>
-        <a
-          href="https://wa.me/255718123456?text=Habari%20ninaomba%20kusaidika%20kuhusu%20bidhaa%20na%20mauzo."
-          target="_blank"
-          rel="noreferrer"
-          className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 text-center"
-        >
-          Wasiliana Nasi
-        </a>
-      </div>
-    </div>
+    </main>
   );
 }

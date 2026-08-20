@@ -36,22 +36,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate secure token
+    // Generate secure token and an independent six-digit phone OTP.
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const tokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const otp = String(crypto.randomInt(100000, 1000000));
+    const otpCodeHash = crypto.createHash("sha256").update(otp).digest("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    // Save token to database
     await db.insert(passwordResetTokens).values({
       userId: user.id,
       token: tokenHash,
+      otpCodeHash,
       expiresAt,
     });
 
-    // Generate reset link
     const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
 
     // Send via email
@@ -65,8 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Send via SMS
     if (method === "sms" && user.phone) {
-      const otp = resetToken.substring(0, 6).toUpperCase();
-      const smsMessage = `MavunoOne: Nambari yako ya kuubadilisha neno: ${otp}. Itaishia baada ya dakika 15.`;
+      const smsMessage = `MavunoOne: OTP yako ya kubadilisha password ni ${otp}. Itaisha baada ya dakika 15. Usimpe mtu mwingine.`;
       await sendSMSNotification(user.phone, smsMessage);
       return NextResponse.json(
         { message: "OTP imetumwa kwenye simu yako", method: "sms" },

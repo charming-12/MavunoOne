@@ -43,6 +43,32 @@ export function getClientId(request: NextRequest): string {
 /**
  * Check if request exceeds rate limit
  */
+export function getRateLimitStatus(
+  clientId: string,
+  config: RateLimitConfig
+): { allowed: boolean; remaining: number; resetTime: number } {
+  const now = Date.now();
+  const key = `rate-limit:${clientId}`;
+  const entry = rateLimitStore[key];
+  if (!entry || now > entry.resetTime) return { allowed: true, remaining: config.limit, resetTime: now + config.window };
+  return { allowed: entry.count < config.limit, remaining: Math.max(0, config.limit - entry.count), resetTime: entry.resetTime };
+}
+
+export function recordRateLimitFailure(
+  clientId: string,
+  config: RateLimitConfig
+): { allowed: boolean; remaining: number; resetTime: number } {
+  const now = Date.now();
+  const key = `rate-limit:${clientId}`;
+  const entry = rateLimitStore[key];
+  if (!entry || now > entry.resetTime) {
+    rateLimitStore[key] = { count: 1, resetTime: now + config.window };
+    return { allowed: true, remaining: config.limit - 1, resetTime: now + config.window };
+  }
+  entry.count++;
+  return { allowed: entry.count <= config.limit, remaining: Math.max(0, config.limit - entry.count), resetTime: entry.resetTime };
+}
+
 export function checkRateLimit(
   clientId: string,
   config: RateLimitConfig
