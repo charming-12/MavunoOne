@@ -10,10 +10,13 @@ if (!isPreview || !isStaging) {
   throw new Error("Refusing to seed: this script is allowed only on a Vercel Preview with MAVUNO_ENVIRONMENT=staging.");
 }
 
-const password = process.env.MAVUNO_STAGING_TEST_PASSWORD;
-if (!password || password.length < 12) {
-  throw new Error("MAVUNO_STAGING_TEST_PASSWORD must be configured and at least 12 characters long.");
-}
+const getStagingPassword = () => {
+  const value = process.env.MAVUNO_STAGING_TEST_PASSWORD;
+  if (!value || value.length < 12) {
+    throw new Error("MAVUNO_STAGING_TEST_PASSWORD must be configured and at least 12 characters long.");
+  }
+  return value;
+};
 
 const roleUsers = [
   { name: "Staging Boss", email: "boss.staging@mavunoone.test", phone: "+255700000101", jobTitle: "Boss", role: "boss" as const },
@@ -31,7 +34,7 @@ const categories = [
 ];
 
 async function main() {
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await hashPassword(getStagingPassword());
 
   await db.transaction(async (tx) => {
     // This reset is intentionally limited to the isolated Preview database.
@@ -53,14 +56,19 @@ async function main() {
     await tx.insert(schema.users).values(roleUsers.map((user) => ({ ...user, passwordHash, isActive: true })));
     const insertedCategories = await tx.insert(schema.categories).values(categories).returning();
     const categoryByName = new Map(insertedCategories.map((category) => [category.name, category.id]));
+    const categoryId = (name: string) => {
+      const id = categoryByName.get(name);
+      if (id === undefined) throw new Error(`Missing staging category: ${name}`);
+      return id;
+    };
 
     await tx.insert(schema.products).values([
-      { name: "Mahindi", productType: "raw_material", categoryId: categoryByName.get("Mahindi"), unit: "kg", packageSizeKg: "1", costPrice: "800", sellPrice: "1200", wholesalePrice: "1000", lowStockThreshold: "50", currentStock: "500", isActive: true, isPublic: true, imageUrl: "/products/maize-cobs-commons.jpg" },
-      { name: "Unga wa Mahindi", productType: "finished_goods", categoryId: categoryByName.get("Mahindi"), unit: "kg", packageSizeKg: "1", costPrice: "1200", sellPrice: "1800", wholesalePrice: "1500", lowStockThreshold: "30", currentStock: "200", isActive: true, isPublic: true, imageUrl: "/products/maize-flour.jpg" },
-      { name: "Alizeti", productType: "raw_material", categoryId: categoryByName.get("Alizeti"), unit: "kg", packageSizeKg: "1", costPrice: "3000", sellPrice: "4500", wholesalePrice: "4000", lowStockThreshold: "20", currentStock: "150", isActive: true, isPublic: true, imageUrl: "/products/sunflower-flower-commons.jpg" },
-      { name: "Mafuta ya Alizeti", productType: "finished_goods", categoryId: categoryByName.get("Mafuta"), unit: "litre", packageSizeKg: "0.92", costPrice: "8000", sellPrice: "12000", wholesalePrice: "10000", lowStockThreshold: "10", currentStock: "80", isActive: true, isPublic: true, imageUrl: "/products/sunflower-oil-sizes.jpg" },
-      { name: "Uduvi / Fishmeal", productType: "animal_feed", categoryId: categoryByName.get("Animal Feeds"), unit: "kg", packageSizeKg: "1", costPrice: "4000", sellPrice: "6000", wholesalePrice: "5500", lowStockThreshold: "15", currentStock: "90", isActive: true, isPublic: true, imageUrl: "/products/uduv-fishmeal-neutral.jpg" },
-      { name: "Chokaa ya Animal Feed", productType: "animal_feed", categoryId: categoryByName.get("Animal Feeds"), unit: "kg", packageSizeKg: "1", costPrice: "500", sellPrice: "800", wholesalePrice: "700", lowStockThreshold: "40", currentStock: "300", isActive: true, isPublic: true, imageUrl: "/products/chokaa-feed-grade.jpg" },
+      { name: "Mahindi", productType: "raw_material", categoryId: categoryId("Mahindi"), unit: "kg", packageSizeKg: "1", costPrice: "800", sellPrice: "1200", wholesalePrice: "1000", lowStockThreshold: "50", currentStock: "500", isActive: true, isPublic: true, imageUrl: "/products/maize-cobs-commons.jpg" },
+      { name: "Unga wa Mahindi", productType: "finished_goods", categoryId: categoryId("Mahindi"), unit: "kg", packageSizeKg: "1", costPrice: "1200", sellPrice: "1800", wholesalePrice: "1500", lowStockThreshold: "30", currentStock: "200", isActive: true, isPublic: true, imageUrl: "/products/maize-flour.jpg" },
+      { name: "Alizeti", productType: "raw_material", categoryId: categoryId("Alizeti"), unit: "kg", packageSizeKg: "1", costPrice: "3000", sellPrice: "4500", wholesalePrice: "4000", lowStockThreshold: "20", currentStock: "150", isActive: true, isPublic: true, imageUrl: "/products/sunflower-flower-commons.jpg" },
+      { name: "Mafuta ya Alizeti", productType: "finished_goods", categoryId: categoryId("Mafuta"), unit: "litre", packageSizeKg: "0.92", costPrice: "8000", sellPrice: "12000", wholesalePrice: "10000", lowStockThreshold: "10", currentStock: "80", isActive: true, isPublic: true, imageUrl: "/products/sunflower-oil-sizes.jpg" },
+      { name: "Uduvi / Fishmeal", productType: "animal_feed", categoryId: categoryId("Animal Feeds"), unit: "kg", packageSizeKg: "1", costPrice: "4000", sellPrice: "6000", wholesalePrice: "5500", lowStockThreshold: "15", currentStock: "90", isActive: true, isPublic: true, imageUrl: "/products/uduv-fishmeal-neutral.jpg" },
+      { name: "Chokaa ya Animal Feed", productType: "animal_feed", categoryId: categoryId("Animal Feeds"), unit: "kg", packageSizeKg: "1", costPrice: "500", sellPrice: "800", wholesalePrice: "700", lowStockThreshold: "40", currentStock: "300", isActive: true, isPublic: true, imageUrl: "/products/chokaa-feed-grade.jpg" },
     ]);
   });
 
