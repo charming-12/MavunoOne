@@ -10,7 +10,7 @@ if (!isPreview || !isStaging) {
   throw new Error("Refusing to seed: this script is allowed only on a Vercel Preview with MAVUNO_ENVIRONMENT=staging.");
 }
 
-const CLEAN_START_MARKER = "staging.training-clean-start.v1";
+const CLEAN_START_MARKER = "staging.training-zero-state.v2";
 const protectedUsers = [
   { name: "Staging Boss", email: "boss.staging@mavunoone.test", phone: "+255700000101", jobTitle: "Boss", role: "boss" as const },
   { name: "Staging Admin", email: "admin.staging@mavunoone.test", phone: "+255700000102", jobTitle: "Administrator", role: "admin" as const },
@@ -120,7 +120,7 @@ async function main() {
         sellPrice: "6000",
         wholesalePrice: "5500",
         lowStockThreshold: "15",
-        currentStock: "90",
+        currentStock: "0",
         isActive: true,
       });
     }
