@@ -63,12 +63,12 @@ async function main() {
     };
 
     const productRows: Array<typeof schema.products.$inferInsert> = [
-      { name: "Mahindi", productType: "raw_material", categoryId: categoryId("Mahindi"), unit: "kg", packageSizeKg: "1", costPrice: "800", sellPrice: "1200", wholesalePrice: "1000", lowStockThreshold: "50", currentStock: "500", isActive: true, isPublic: true, imageUrl: "/products/maize-cobs-commons.jpg" },
-      { name: "Unga wa Mahindi", productType: "finished_goods", categoryId: categoryId("Mahindi"), unit: "kg", packageSizeKg: "1", costPrice: "1200", sellPrice: "1800", wholesalePrice: "1500", lowStockThreshold: "30", currentStock: "200", isActive: true, isPublic: true, imageUrl: "/products/maize-flour.jpg" },
-      { name: "Alizeti", productType: "raw_material", categoryId: categoryId("Alizeti"), unit: "kg", packageSizeKg: "1", costPrice: "3000", sellPrice: "4500", wholesalePrice: "4000", lowStockThreshold: "20", currentStock: "150", isActive: true, isPublic: true, imageUrl: "/products/sunflower-flower-commons.jpg" },
-      { name: "Mafuta ya Alizeti", productType: "finished_goods", categoryId: categoryId("Mafuta"), unit: "litre", packageSizeKg: "0.92", costPrice: "8000", sellPrice: "12000", wholesalePrice: "10000", lowStockThreshold: "10", currentStock: "80", isActive: true, isPublic: true, imageUrl: "/products/sunflower-oil-sizes.jpg" },
-      { name: "Uduvi / Fishmeal", productType: "animal_feed", categoryId: categoryId("Animal Feeds"), unit: "kg", packageSizeKg: "1", costPrice: "4000", sellPrice: "6000", wholesalePrice: "5500", lowStockThreshold: "15", currentStock: "90", isActive: true, isPublic: true, imageUrl: "/products/uduv-fishmeal-neutral.jpg" },
-      { name: "Chokaa ya Animal Feed", productType: "animal_feed", categoryId: categoryId("Animal Feeds"), unit: "kg", packageSizeKg: "1", costPrice: "500", sellPrice: "800", wholesalePrice: "700", lowStockThreshold: "40", currentStock: "300", isActive: true, isPublic: true, imageUrl: "/products/chokaa-feed-grade.jpg" },
+      { name: "Mahindi", categoryId: categoryId("Mahindi"), unit: "kg", costPrice: "800", sellPrice: "1200", wholesalePrice: "1000", lowStockThreshold: "50", currentStock: "500", isActive: true },
+      { name: "Unga wa Mahindi", categoryId: categoryId("Mahindi"), unit: "kg", costPrice: "1200", sellPrice: "1800", wholesalePrice: "1500", lowStockThreshold: "30", currentStock: "200", isActive: true },
+      { name: "Alizeti", categoryId: categoryId("Alizeti"), unit: "kg", costPrice: "3000", sellPrice: "4500", wholesalePrice: "4000", lowStockThreshold: "20", currentStock: "150", isActive: true },
+      { name: "Mafuta ya Alizeti", categoryId: categoryId("Mafuta"), unit: "litre", costPrice: "8000", sellPrice: "12000", wholesalePrice: "10000", lowStockThreshold: "10", currentStock: "80", isActive: true },
+      { name: "Uduvi / Fishmeal", categoryId: categoryId("Animal Feeds"), unit: "kg", costPrice: "4000", sellPrice: "6000", wholesalePrice: "5500", lowStockThreshold: "15", currentStock: "90", isActive: true },
+      { name: "Chokaa ya Animal Feed", categoryId: categoryId("Animal Feeds"), unit: "kg", costPrice: "500", sellPrice: "800", wholesalePrice: "700", lowStockThreshold: "40", currentStock: "300", isActive: true },
     ];
     await tx.insert(schema.products).values(productRows);
   });
