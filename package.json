@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx scripts/seed-production.ts",
+    "seed:staging": "npx tsx scripts/seed-staging.ts",
     "seed:api": "pwsh scripts/seed-api.ps1"
   },
   "dependencies": {
