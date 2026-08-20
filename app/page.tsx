@@ -6,6 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 
 const WHATSAPP_NUMBER = "255712345678";
+const isStaging = process.env.MAVUNO_ENVIRONMENT === "staging";
+const TIGOPESA_NUMBER = process.env.MAVUNO_TIGOPESA_NUMBER || (isStaging ? "TEST-MERCHANT-001" : "16477957");
+const TIGOPESA_NAME = isStaging ? "Ipuli Milling and Animal Enterprise (TEST)" : "Ipuli Milling and Animal Enterprise";
 const whatsappHref = (message: string) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
 const stats = [
@@ -254,8 +257,9 @@ export default function LandingPage() {
                       <a href="https://wa.me/255712345678" target="_blank" rel="noreferrer" className="mt-2 block text-lg font-bold text-white">+255 712 345 678</a>
                     </div>
                     <div className="rounded-2xl border border-yellow-400/20 bg-yellow-500/10 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-yellow-200">M-Pesa</p>
-                      <p className="mt-2 text-lg font-bold text-white">+255 712 345 678</p>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-yellow-200">Tigo Pesa {isStaging ? "— Simulated Test" : ""}</p>
+                      <p className="mt-2 text-lg font-bold text-white">{TIGOPESA_NUMBER}</p>
+                      <p className="mt-1 text-xs font-semibold text-yellow-100/80">{TIGOPESA_NAME}</p>
                     </div>
                   </div>
 

@@ -355,6 +355,8 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (input.items.length === 0) throw new Error("Sale lazima iwe na bidhaa angalau moja");
+        const isSimulatedTigo = process.env.MAVUNO_ENVIRONMENT === "staging" && input.paymentMethod === "tigo_simulated";
+        if (input.paymentMethod === "tigo_simulated" && !isSimulatedTigo) throw new Error("Simulated Tigo Pesa inaruhusiwa kwenye staging pekee");
         const normalizedItems = [] as Array<{ item: (typeof input.items)[number]; product: typeof products.$inferSelect; baseQuantity: number; unitPrice: number; lineTotal: number }>;
         for (const item of input.items) {
           if (item.quantity <= 0) throw new Error("Quantity lazima iwe zaidi ya sifuri");
@@ -381,9 +383,9 @@ export const appRouter = router({
           taxAmount: decimalString(taxAmount),
           totalAmount: decimalString(totalAmount),
           paymentMethod: input.paymentMethod,
-          paymentStatus: input.paymentMethod === "cash" ? "paid" : "pending",
-          paidAmount: decimalString(input.paymentMethod === "cash" ? totalAmount : 0),
-          balance: decimalString(input.paymentMethod === "cash" ? 0 : totalAmount),
+          paymentStatus: input.paymentMethod === "cash" || isSimulatedTigo ? "paid" : "pending",
+          paidAmount: decimalString(input.paymentMethod === "cash" || isSimulatedTigo ? totalAmount : 0),
+          balance: decimalString(input.paymentMethod === "cash" || isSimulatedTigo ? 0 : totalAmount),
           cashierId: ctx.user?.id,
         }).returning();
 
@@ -480,7 +482,7 @@ export const appRouter = router({
           console.error("[SMS] Failed to send sale-related notifications:", smsError);
         }
 
-        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentMethod: input.paymentMethod, itemCount: input.items.length } });
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentMethod: input.paymentMethod, paymentStatus: newSale.paymentStatus, simulated: isSimulatedTigo, itemCount: input.items.length } });
         return { success: true, saleId: newSale.id, invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentStatus: newSale.paymentStatus };
       }),
   }),

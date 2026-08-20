@@ -51,9 +51,16 @@ async function main() {
     await tx.delete(schema.customers);
     await tx.delete(schema.products);
     await tx.delete(schema.categories);
-    await tx.delete(schema.users);
+    // Keep all existing users. The seed only ensures the protected staging Boss/Admin accounts exist;
+    // staff accounts created by the Staging Admin must survive future Preview redeploys.
+    const protectedUsers = roleUsers.filter((user) => user.role === "boss" || user.role === "admin");
 
-    await tx.insert(schema.users).values(roleUsers.map((user) => ({ ...user, passwordHash, isActive: true })));
+    for (const user of protectedUsers) {
+      await tx.insert(schema.users).values({ ...user, passwordHash, isActive: true }).onConflictDoUpdate({
+        target: schema.users.email,
+        set: { name: user.name, phone: user.phone, jobTitle: user.jobTitle, role: user.role, passwordHash, isActive: true, passwordResetToken: null, passwordResetExpires: null },
+      });
+    }
     const insertedCategories = await tx.insert(schema.categories).values(categories).returning();
     const categoryByName = new Map(insertedCategories.map((category) => [category.name, category.id]));
     const categoryId = (name: string) => {
@@ -73,7 +80,7 @@ async function main() {
     await tx.insert(schema.products).values(productRows);
   });
 
-  console.log("Staging seed complete: 5 role users, 4 categories, 6 products.");
+  console.log("Staging seed complete: 2 protected users, 4 categories, 6 products. Staff accounts are created by Admin.");
   console.log("Test emails:", roleUsers.map((user) => user.email).join(", "));
 }
 
