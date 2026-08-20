@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 const WHATSAPP_NUMBER = "255712345678";
-const isStaging = process.env.MAVUNO_ENVIRONMENT === "staging";
+const isStaging = process.env.NEXT_PUBLIC_MAVUNO_ENVIRONMENT === "staging";
 const TIGOPESA_NUMBER = process.env.MAVUNO_TIGOPESA_NUMBER || (isStaging ? "TEST-MERCHANT-001" : "16477957");
 const TIGOPESA_NAME = isStaging ? "Ipuli Milling and Animal Enterprise (TEST)" : "Ipuli Milling and Animal Enterprise";
 const whatsappHref = (message: string) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
