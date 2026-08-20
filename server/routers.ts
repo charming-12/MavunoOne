@@ -10,6 +10,7 @@ import {
 import { desc, eq, and, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { recordAuditLog } from "@/lib/audit";
+import { calculateTax, getTaxSettings } from "@/lib/tax";
 
 const decimalString = (value?: number | string | null, fallback = "0") => {
   if (value === undefined || value === null || Number.isNaN(Number(value))) {
@@ -133,6 +134,8 @@ export const appRouter = router({
           unit: products.unit,
           packageSizeKg: products.packageSizeKg,
           sellPrice: products.sellPrice,
+          currentStock: products.currentStock,
+          lowStockThreshold: products.lowStockThreshold,
           imageUrl: products.imageUrl,
           available: sql<boolean>`${products.currentStock} > 0`,
         })
@@ -317,6 +320,7 @@ export const appRouter = router({
       for (const item of itemRows) itemCounts.set(item.saleId, (itemCounts.get(item.saleId) ?? 0) + 1);
       const customerNames = new Map(customerRows.map((customer) => [customer.id, customer.name]));
       const productNames = new Map(productRows.map((product) => [product.id, product.name]));
+      const productUnits = new Map(productRows.map((product) => [product.id, { unit: product.unit, packageSizeKg: product.packageSizeKg }]));
       return saleRows.map((sale) => ({
         ...sale,
         itemCount: itemCounts.get(sale.id) ?? 0,
@@ -325,6 +329,8 @@ export const appRouter = router({
           productId: item.productId,
           productName: productNames.get(item.productId) ?? "Product",
           quantity: item.quantity,
+          unit: productUnits.get(item.productId)?.unit ?? "unit",
+          packageSizeKg: productUnits.get(item.productId)?.packageSizeKg ?? "1",
           unitPrice: item.unitPrice,
           total: item.total,
         })),
@@ -349,38 +355,47 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (input.items.length === 0) throw new Error("Sale lazima iwe na bidhaa angalau moja");
-        const normalizedItems = [] as Array<{ item: (typeof input.items)[number]; product: typeof products.$inferSelect; baseQuantity: number }>;
+        const normalizedItems = [] as Array<{ item: (typeof input.items)[number]; product: typeof products.$inferSelect; baseQuantity: number; unitPrice: number; lineTotal: number }>;
         for (const item of input.items) {
           if (item.quantity <= 0) throw new Error("Quantity lazima iwe zaidi ya sifuri");
           const product = await db.query.products.findFirst({ where: and(eq(products.id, item.productId), eq(products.isActive, true)) });
           if (!product) throw new Error(`Product haipatikani: ${item.productId}`);
           const baseQuantity = item.quantity * Number(product.packageSizeKg || 1);
-          if (Number(product.currentStock) < baseQuantity) throw new Error(`Stock haitoshi kwa ${product.name}. Inayohitajika: ${baseQuantity} kg; iliyopo: ${product.currentStock} kg`);
-          normalizedItems.push({ item, product, baseQuantity });
+          if (Number(product.currentStock) < baseQuantity) throw new Error(`Stock haitoshi kwa ${product.name}. Inayohitajika: ${baseQuantity} ${product.unit}; iliyopo: ${product.currentStock} kg base`);
+          const unitPrice = Number(product.sellPrice || 0);
+          const discount = Math.max(0, Math.min(Number(item.discount || 0), unitPrice * item.quantity));
+          const lineTotal = (unitPrice * item.quantity) - discount;
+          normalizedItems.push({ item, product, baseQuantity, unitPrice, lineTotal });
         }
         const invoiceNumber = `INV-${Date.now()}`;
-        
+        const subtotal = normalizedItems.reduce((sum, entry) => sum + entry.lineTotal, 0);
+        const taxSettings = await getTaxSettings();
+        const { taxAmount, totalAmount } = calculateTax(subtotal, taxSettings);
+
         const [newSale] = await db.insert(sales).values({
           invoiceNumber,
           customerId: input.customerId,
           customerType: input.customerType,
-          totalAmount: decimalString(input.totalAmount),
+          subtotal: decimalString(subtotal),
+          taxRate: taxSettings.enabled ? decimalString(taxSettings.rate) : "0",
+          taxAmount: decimalString(taxAmount),
+          totalAmount: decimalString(totalAmount),
           paymentMethod: input.paymentMethod,
           paymentStatus: input.paymentMethod === "cash" ? "paid" : "pending",
-          paidAmount: decimalString(input.paymentMethod === "cash" ? (input.paidAmount ?? input.totalAmount) : 0),
-          balance: decimalString(input.paymentMethod === "cash" ? 0 : input.totalAmount),
+          paidAmount: decimalString(input.paymentMethod === "cash" ? totalAmount : 0),
+          balance: decimalString(input.paymentMethod === "cash" ? 0 : totalAmount),
           cashierId: ctx.user?.id,
         }).returning();
 
-        for (const { item, product, baseQuantity } of normalizedItems) {
+        for (const { item, product, baseQuantity, unitPrice, lineTotal } of normalizedItems) {
           await db.insert(saleItems).values({
             saleId: newSale.id,
             productId: item.productId,
             quantity: decimalString(item.quantity),
             baseQuantity: decimalString(baseQuantity),
-            unitPrice: decimalString(item.unitPrice),
-            discount: decimalString(item.discount),
-            total: decimalString(item.total),
+            unitPrice: decimalString(unitPrice),
+            discount: decimalString(Math.max(0, Math.min(Number(item.discount || 0), unitPrice * item.quantity))),
+            total: decimalString(lineTotal),
           });
 
           const [updatedProduct] = await db.update(products)
@@ -465,8 +480,8 @@ export const appRouter = router({
           console.error("[SMS] Failed to send sale-related notifications:", smsError);
         }
 
-        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, totalAmount: input.totalAmount, paymentMethod: input.paymentMethod, itemCount: input.items.length } });
-        return { success: true, saleId: newSale.id, invoiceNumber, paymentStatus: newSale.paymentStatus };
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentMethod: input.paymentMethod, itemCount: input.items.length } });
+        return { success: true, saleId: newSale.id, invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentStatus: newSale.paymentStatus };
       }),
   }),
 

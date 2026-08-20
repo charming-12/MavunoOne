@@ -6,6 +6,7 @@ import { customers, products, saleItems, sales } from "@/drizzle/schema";
 import { db } from "@/lib/db";
 import { recordAuditLog } from "@/lib/audit";
 import { checkRateLimit, formatResetTime, getClientId, RATE_LIMITS } from "@/lib/rate-limit";
+import { calculateTax, getTaxSettings } from "@/lib/tax";
 
 const orderSchema = z.object({
   fullName: z.string().trim().min(2).max(256),
@@ -42,8 +43,8 @@ export async function POST(request: NextRequest) {
       return { item, product, packageSizeKg, baseQuantity, unitPrice, total: unitPrice * item.quantity };
     });
     const subtotal = pricedItems.reduce((sum, entry) => sum + entry.total, 0);
-    const tax = subtotal * 0.18;
-    const totalAmount = subtotal + tax;
+    const taxSettings = await getTaxSettings();
+    const { taxAmount, totalAmount } = calculateTax(subtotal, taxSettings);
     const invoiceNumber = `SHOP-${Date.now()}-${randomInt(100, 1000)}`;
 
     const result = await db.transaction(async (tx) => {
@@ -62,6 +63,9 @@ export async function POST(request: NextRequest) {
         invoiceNumber,
         customerId: customer?.id,
         customerType: "shop",
+        subtotal: subtotal.toFixed(2),
+        taxRate: taxSettings.enabled ? taxSettings.rate.toFixed(2) : "0",
+        taxAmount: taxAmount.toFixed(2),
         totalAmount: totalAmount.toFixed(2),
         paymentMethod: input.paymentMethod,
         paymentStatus: "pending",
@@ -94,6 +98,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       orderNumber: result.invoiceNumber,
+      subtotal,
+      taxRate: taxSettings.enabled ? taxSettings.rate : 0,
+      taxAmount,
       totalAmount: result.totalAmount,
       status: "pending",
       message: "Oda limepokelewa. Timu ya MavunoOne itawasiliana nawe kuthibitisha stock, delivery na malipo.",

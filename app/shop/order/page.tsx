@@ -6,14 +6,17 @@ import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, MapPin, Package, Shiel
 
 type CartLine = { id: number; name: string; price: number; quantity: number; unit: string; packageSizeKg: number; image?: string };
 type ProviderInstruction = { name: string | null; number: string | null };
+type TaxSettings = { enabled: boolean; rate: number; label: string };
 type PaymentInstructions = { enabled: boolean; mpesa: ProviderInstruction | null; tigopesa: ProviderInstruction | null };
 
 const emptyPayments: PaymentInstructions = { enabled: false, mpesa: null, tigopesa: null };
+const defaultTax: TaxSettings = { enabled: false, rate: 0, label: "VAT" };
 
 export default function OrderPage() {
   const [step, setStep] = useState(1);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentInstructions, setPaymentInstructions] = useState<PaymentInstructions>(emptyPayments);
+  const [taxSettings, setTaxSettings] = useState<TaxSettings>(defaultTax);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -27,6 +30,13 @@ export default function OrderPage() {
   }, []);
 
   useEffect(() => {
+    fetch("/api/public/tax", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : defaultTax)
+      .then((data) => setTaxSettings(data as TaxSettings))
+      .catch(() => setTaxSettings(defaultTax));
+  }, []);
+
+  useEffect(() => {
     fetch("/api/payment/instructions")
       .then((response) => response.ok ? response.json() : emptyPayments)
       .then((data) => setPaymentInstructions(data))
@@ -34,7 +44,7 @@ export default function OrderPage() {
   }, []);
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-  const tax = subtotal * 0.18;
+  const tax = taxSettings.enabled ? subtotal * (taxSettings.rate / 100) : 0;
   const total = subtotal + tax;
   const activePayment = formData.paymentMethod === "mpesa" ? paymentInstructions.mpesa : formData.paymentMethod === "tigopesa" ? paymentInstructions.tigopesa : null;
   const paymentOptions = [
@@ -92,7 +102,7 @@ export default function OrderPage() {
             <div className="flex gap-3">{step > 1 && <button type="button" onClick={() => setStep((current) => current - 1)} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-3.5 font-bold text-emerald-100 hover:bg-white/10"><ArrowLeft size={17} /> Nyuma</button>}<button type="submit" className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3.5 font-black text-emerald-950 hover:bg-amber-300">{step < 3 ? "Endelea" : "Thibitisha oda"}<ArrowRight size={17} /></button></div>
           </form>
 
-          <aside className="space-y-5 lg:sticky lg:top-6"><section className="rounded-[28px] border border-emerald-400/20 bg-emerald-500/[0.08] p-6 md:p-7"><div className="flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-widest text-amber-300">Order summary</p><h2 className="mt-2 text-2xl font-black">Muhtasari wa oda</h2></div><Package className="text-amber-300" size={26} /></div>{cart.length === 0 ? <div className="mt-7 rounded-2xl border border-white/10 bg-black/10 p-5 text-sm text-emerald-100/70">Kikapu chako hakina bidhaa. <Link href="/shop" className="font-black text-amber-300">Rudi Shop</Link></div> : <div className="mt-6 space-y-4">{cart.map((item) => <div key={item.id} className="flex items-start justify-between gap-3 border-b border-white/10 pb-4"><div><p className="font-bold text-white">{item.name}</p><p className="mt-1 text-xs text-emerald-100/60">{item.quantity} × {item.unit}{item.packageSizeKg > 1 ? ` · ${item.packageSizeKg} kg` : ""}</p></div><p className="whitespace-nowrap font-black text-amber-300">TZS {(item.price * item.quantity).toLocaleString()}</p></div>)}<div className="space-y-3 pt-2 text-sm"><div className="flex justify-between text-emerald-100/70"><span>Jumla ya bidhaa</span><span>TZS {subtotal.toLocaleString()}</span></div><div className="flex justify-between text-emerald-100/70"><span>VAT (18%)</span><span>TZS {tax.toLocaleString()}</span></div><div className="flex justify-between border-t border-white/15 pt-4 text-lg font-black"><span>Jumla</span><span className="text-amber-300">TZS {total.toLocaleString()}</span></div></div></div>}</section><section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><div className="flex gap-3"><ShieldCheck className="shrink-0 text-emerald-300" size={21} /><div><p className="font-black text-white">Mchakato salama</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Taarifa zako zinalindwa na hutumika kuchakata oda, malipo na delivery yako kwa usalama.</p></div></div></section><Link href="/shop" className="inline-flex w-full items-center justify-center gap-2 text-sm font-bold text-emerald-200 hover:text-white"><ShoppingBag size={16} /> Endelea kuangalia bidhaa</Link></aside>
+          <aside className="space-y-5 lg:sticky lg:top-6"><section className="rounded-[28px] border border-emerald-400/20 bg-emerald-500/[0.08] p-6 md:p-7"><div className="flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-widest text-amber-300">Order summary</p><h2 className="mt-2 text-2xl font-black">Muhtasari wa oda</h2></div><Package className="text-amber-300" size={26} /></div>{cart.length === 0 ? <div className="mt-7 rounded-2xl border border-white/10 bg-black/10 p-5 text-sm text-emerald-100/70">Kikapu chako hakina bidhaa. <Link href="/shop" className="font-black text-amber-300">Rudi Shop</Link></div> : <div className="mt-6 space-y-4">{cart.map((item) => <div key={item.id} className="flex items-start justify-between gap-3 border-b border-white/10 pb-4"><div><p className="font-bold text-white">{item.name}</p><p className="mt-1 text-xs text-emerald-100/60">{item.quantity} × {item.unit}{item.packageSizeKg > 1 ? ` · ${item.packageSizeKg} kg/unit` : ""}</p></div><p className="whitespace-nowrap font-black text-amber-300">TZS {(item.price * item.quantity).toLocaleString()}</p></div>)}<div className="space-y-3 pt-2 text-sm"><div className="flex justify-between text-emerald-100/70"><span>Jumla ya bidhaa</span><span>TZS {subtotal.toLocaleString()}</span></div>{taxSettings.enabled && <div className="flex justify-between text-emerald-100/70"><span>{taxSettings.label} ({taxSettings.rate}%)</span><span>TZS {tax.toLocaleString()}</span></div>}<div className="flex justify-between border-t border-white/15 pt-4 text-lg font-black"><span>Jumla</span><span className="text-amber-300">TZS {total.toLocaleString()}</span></div></div></div>}</section><section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><div className="flex gap-3"><ShieldCheck className="shrink-0 text-emerald-300" size={21} /><div><p className="font-black text-white">Mchakato salama</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Taarifa zako zinalindwa na hutumika kuchakata oda, malipo na delivery yako kwa usalama.</p></div></div></section><Link href="/shop" className="inline-flex w-full items-center justify-center gap-2 text-sm font-bold text-emerald-200 hover:text-white"><ShoppingBag size={16} /> Endelea kuangalia bidhaa</Link></aside>
         </div>
       </div>
     </main>
