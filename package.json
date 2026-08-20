@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "next build && npm run seed:staging",
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx scripts/seed-production.ts",
