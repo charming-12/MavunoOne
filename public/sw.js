@@ -1,124 +1,107 @@
-// Service Worker for offline support and image caching
-const CACHE_NAME = 'mavunoone-v1';
-const IMAGE_CACHE_NAME = 'mavunoone-images-v1';
-const RUNTIME_CACHE_NAME = 'mavunoone-runtime-v1';
+const VERSION = 'v2';
+const APP_SHELL_CACHE = `mavunoone-app-shell-${VERSION}`;
+const RUNTIME_CACHE = `mavunoone-runtime-${VERSION}`;
+const IMAGE_CACHE = `mavunoone-images-${VERSION}`;
 
-const STATIC_ASSETS = [
+const APP_SHELL = [
   '/',
+  '/login',
   '/manifest.json',
-  '/icons/',
+  '/offline.html',
+  '/favicon.ico',
 ];
 
-// Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {
-        // Ignore failures for optional assets
-      });
-    })
+    caches.open(APP_SHELL_CACHE)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .catch(() => undefined)
   );
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (
-            cacheName !== CACHE_NAME &&
-            cacheName !== IMAGE_CACHE_NAME &&
-            cacheName !== RUNTIME_CACHE_NAME
-          ) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then((keys) => Promise.all(
+      keys
+        .filter((key) => ![APP_SHELL_CACHE, RUNTIME_CACHE, IMAGE_CACHE].includes(key))
+        .map((key) => caches.delete(key))
+    ))
   );
   self.clients.claim();
 });
 
-// Fetch event - cache strategy
+function isCacheable(response) {
+  return response && (response.status === 200 || response.type === 'opaque');
+}
+
+function cacheFirst(request, cacheName) {
+  return caches.open(cacheName).then(async (cache) => {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+
+    const response = await fetch(request);
+    if (isCacheable(response)) await cache.put(request, response.clone());
+    return response;
+  });
+}
+
+function networkFirst(request, fallbackPath = '/offline.html') {
+  return caches.open(RUNTIME_CACHE).then(async (cache) => {
+    try {
+      const response = await fetch(request);
+      if (isCacheable(response)) await cache.put(request, response.clone());
+      return response;
+    } catch {
+      return (await cache.match(request)) ||
+        (await caches.match(request)) ||
+        (await caches.match(fallbackPath));
+    }
+  });
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (request.method !== 'GET') return;
+
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(cacheFirst(request, APP_SHELL_CACHE));
     return;
   }
 
-  // Handle image requests
-  if (
-    request.destination === 'image' ||
-    url.pathname.includes('/images/') ||
-    url.pathname.endsWith('.jpg') ||
-    url.pathname.endsWith('.png') ||
-    url.pathname.endsWith('.gif') ||
-    url.pathname.endsWith('.webp')
-  ) {
-    event.respondWith(
-      caches.open(IMAGE_CACHE_NAME).then((cache) => {
-        return cache.match(request).then((response) => {
-          if (response) {
-            return response;
-          }
-
-          return fetch(request).then((response) => {
-            if (!response || response.status !== 200) {
-              return response;
-            }
-
-            const responseToCache = response.clone();
-            cache.put(request, responseToCache);
-            return response;
-          });
-        });
-      }).catch(() => {
-        // Return a placeholder or offline image
-        return new Response(
-          '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="#f0f0f0" width="400" height="300"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="16" fill="#999">Offline - Image Not Available</text></svg>',
-          { headers: { 'Content-Type': 'image/svg+xml' } }
-        );
-      })
-    );
+  if (request.destination === 'style' || request.destination === 'script' || request.destination === 'font') {
+    event.respondWith(cacheFirst(request, APP_SHELL_CACHE));
     return;
   }
 
-  // Handle API and document requests with network-first strategy
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (!response || response.status !== 200) {
-          return response;
-        }
+  if (request.destination === 'image' || /\.(png|jpg|jpeg|gif|webp|svg|ico)$/i.test(url.pathname)) {
+    event.respondWith(cacheFirst(request, IMAGE_CACHE).catch(() => caches.match('/favicon.ico')));
+    return;
+  }
 
-        const responseToCache = response.clone();
-        caches.open(RUNTIME_CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache);
-        });
+  if (url.pathname.startsWith('/api/')) {
+    // Do not cache authenticated or financial API responses.
+    return;
+  }
 
-        return response;
-      })
-      .catch(() => {
-        return caches.match(request).then((response) => {
-          return response || new Response('Offline - Resource not available', {
-            status: 503,
-            statusText: 'Service Unavailable',
-          });
-        });
-      })
-  );
+  if (request.mode === 'navigate' || request.destination === 'document') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  event.respondWith(networkFirst(request));
 });
 
-// Handle messages from clients
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    caches.delete(IMAGE_CACHE_NAME).then(() => {
-      event.ports[0].postMessage({ success: true });
-    });
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data?.type === 'CLEAR_CACHE') {
+    event.waitUntil(Promise.all([
+      caches.delete(APP_SHELL_CACHE),
+      caches.delete(RUNTIME_CACHE),
+      caches.delete(IMAGE_CACHE),
+    ]));
   }
 });
