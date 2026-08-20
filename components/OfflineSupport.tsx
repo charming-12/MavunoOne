@@ -1,30 +1,53 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { registerServiceWorker, onOnlineStatusChange } from '@/lib/service-worker';
 
-/**
- * Component to initialize offline support and service worker
- * Add this to your root layout.tsx
- */
 export function OfflineSupport() {
+  const [isOnline, setIsOnline] = useState(true);
+  const [showBackOnline, setShowBackOnline] = useState(false);
+
   useEffect(() => {
-    // Register service worker
+    setIsOnline(navigator.onLine);
     registerServiceWorker();
 
-    // Listen for online/offline status changes
-    const unsubscribe = onOnlineStatusChange((isOnline) => {
-      if (isOnline) {
-        console.log('App is now online');
-      } else {
-        console.log('App is now offline - cached resources will be used');
+    const unsubscribe = onOnlineStatusChange((online) => {
+      setIsOnline(online);
+      if (online) {
+        setShowBackOnline(true);
+        const timer = window.setTimeout(() => setShowBackOnline(false), 4000);
+        return () => window.clearTimeout(timer);
       }
+      setShowBackOnline(false);
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
-  return null;
+  if (isOnline && !showBackOnline) return null;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        padding: '8px 16px',
+        textAlign: 'center',
+        fontSize: 13,
+        fontWeight: 700,
+        color: isOnline ? '#dffbea' : '#fff4d6',
+        background: isOnline ? '#12633f' : '#6b4b12',
+        boxShadow: '0 2px 12px rgba(0,0,0,.18)',
+      }}
+    >
+      {isOnline
+        ? 'Umerudi online — taarifa zinaweza kusawazishwa sasa.'
+        : 'Offline mode — muonekano umehifadhiwa; malipo, SMS na taarifa za mwisho zitasubiri internet.'}
+    </div>
+  );
 }
