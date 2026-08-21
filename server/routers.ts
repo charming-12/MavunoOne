@@ -19,6 +19,15 @@ const decimalString = (value?: number | string | null, fallback = "0") => {
   return String(value);
 };
 
+const parsePackageWeights = (value?: string) => {
+  if (!value?.trim()) return [];
+  const weights = value.split(",").map((part) => Number(part.trim()));
+  if (weights.some((weight) => !Number.isFinite(weight) || weight <= 0)) {
+    throw new Error("Package weights lazima ziwe namba kubwa kuliko sifuri, zikitenganishwa kwa koma.");
+  }
+  return weights;
+};
+
 async function notifyRoles(roles: Array<typeof users.$inferSelect.role>, type: string, title: string, message: string) {
   const recipients = await db.select({ id: users.id }).from(users).where(inArray(users.role, roles));
   if (recipients.length === 0) return;
@@ -507,6 +516,9 @@ export const appRouter = router({
           receivedBy: z.string().trim().optional(),
           qualityStatus: z.enum(["accepted", "hold", "rejected"]).default("accepted"),
           costPerUnit: z.number().nonnegative().default(0),
+          packageCount: z.number().positive().optional(),
+          packageWeightKg: z.number().positive().optional(),
+          packageWeightsKg: z.string().trim().optional(),
           notes: z.string().trim().optional(),
         }))
         .mutation(async ({ input, ctx }) => {
@@ -514,8 +526,18 @@ export const appRouter = router({
           if (!product) throw new Error("Product haipatikani");
           const packageSizeKg = Number(product.packageSizeKg || 1);
           if (!Number.isFinite(packageSizeKg) || packageSizeKg <= 0) throw new Error("Package size ya bidhaa si sahihi");
-          const baseQuantity = input.entryUnit === "kg" ? input.quantity : input.quantity * packageSizeKg;
+          const packageWeights = parsePackageWeights(input.packageWeightsKg);
+          if (packageWeights.length > 0 && input.packageCount !== undefined && packageWeights.length !== Math.round(input.packageCount)) {
+            throw new Error(`Umeweka uzito wa magunia ${packageWeights.length}, lakini package count ni ${input.packageCount}.`);
+          }
+          const packageCount = input.packageCount ?? (input.entryUnit === "kg" ? undefined : input.quantity);
+          const baseQuantity = packageWeights.length > 0
+            ? packageWeights.reduce((sum, weight) => sum + weight, 0)
+            : packageCount !== undefined && input.packageWeightKg !== undefined
+              ? packageCount * input.packageWeightKg
+              : input.entryUnit === "kg" ? input.quantity : input.quantity * packageSizeKg;
           const totalCost = input.quantity * input.costPerUnit;
+          const packageSummary = packageCount !== undefined ? ` Packages: ${packageCount}${input.packageWeightKg ? ` × ${input.packageWeightKg} kg` : ""}${packageWeights.length > 0 ? ` [${packageWeights.join(", ")} kg]` : ""}.` : "";
           const receivedBy = input.receivedBy || ctx.user?.name || ctx.user?.email || "Office user";
           const [savedStockIn] = await db.transaction(async (tx) => {
             const [created] = await tx.insert(stockIn).values({
@@ -523,6 +545,9 @@ export const appRouter = router({
               quantity: decimalString(input.quantity),
               entryUnit: input.entryUnit,
               baseQuantity: decimalString(baseQuantity),
+              packageCount: packageCount === undefined ? null : decimalString(packageCount),
+              packageWeightKg: input.packageWeightKg === undefined ? null : decimalString(input.packageWeightKg),
+              packageWeightsKg: packageWeights.length > 0 ? packageWeights.join(",") : null,
               supplierName: input.supplierName,
               supplierPhone: input.supplierPhone,
               sourceType: input.sourceType,
@@ -534,7 +559,7 @@ export const appRouter = router({
               qualityStatus: input.qualityStatus,
               costPerUnit: decimalString(input.costPerUnit),
               totalCost: decimalString(totalCost),
-              notes: `${input.notes || ""} Received: ${input.quantity} ${input.entryUnit} = ${baseQuantity} kg`.trim(),
+              notes: `${input.notes || ""} Received: ${input.quantity} ${input.entryUnit} = ${baseQuantity} kg.${packageSummary}`.trim(),
             }).returning();
             if (input.qualityStatus !== "rejected") {
               await tx.update(products)
@@ -558,7 +583,10 @@ export const appRouter = router({
       create: officeProcedure
         .input(z.object({
           productId: z.number(),
-          quantity: z.number(),
+          quantity: z.number().positive(),
+          packageCount: z.number().positive().optional(),
+          packageWeightKg: z.number().positive().optional(),
+          packageWeightsKg: z.string().trim().optional(),
           reason: z.string().default("sale"),
           notes: z.string().optional(),
         }))
@@ -566,7 +594,14 @@ export const appRouter = router({
           if (!["admin", "owner", "storekeeper"].includes(ctx.user.role) && !(ctx.user.role === "manager" && ctx.user.jobTitle !== "finance")) throw new Error("Stock out haikuruhusiwi kwa role hii");
           const product = await db.query.products.findFirst({ where: eq(products.id, input.productId) });
           if (!product) throw new Error("Product haipatikani");
-          const baseQuantity = input.quantity * Number(product.packageSizeKg || 1);
+          const packageWeights = parsePackageWeights(input.packageWeightsKg);
+          if (packageWeights.length > 0 && input.packageCount !== undefined && packageWeights.length !== Math.round(input.packageCount)) {
+            throw new Error(`Umeweka uzito wa magunia ${packageWeights.length}, lakini package count ni ${input.packageCount}.`);
+          }
+          const packageCount = input.packageCount ?? input.quantity;
+          const baseQuantity = packageWeights.length > 0
+            ? packageWeights.reduce((sum, weight) => sum + weight, 0)
+            : input.packageWeightKg !== undefined ? packageCount * input.packageWeightKg : input.quantity * Number(product.packageSizeKg || 1);
           const [updatedProduct] = await db.update(products)
             .set({ currentStock: sql`${products.currentStock} - ${baseQuantity}` })
             .where(and(eq(products.id, input.productId), gte(products.currentStock, decimalString(baseQuantity))))
@@ -576,8 +611,11 @@ export const appRouter = router({
             productId: input.productId,
             quantity: decimalString(input.quantity),
             baseQuantity: decimalString(baseQuantity),
+            packageCount: decimalString(packageCount),
+            packageWeightKg: input.packageWeightKg === undefined ? null : decimalString(input.packageWeightKg),
+            packageWeightsKg: packageWeights.length > 0 ? packageWeights.join(",") : null,
             reason: input.reason,
-            notes: `${input.notes || ""} Issued: ${input.quantity} ${product.unit} = ${baseQuantity} kg`.trim(),
+            notes: `${input.notes || ""} Issued: ${input.quantity} ${product.unit} = ${baseQuantity} kg.${packageWeights.length > 0 ? ` Packages: ${packageCount} [${packageWeights.join(", ")} kg].` : input.packageWeightKg ? ` Packages: ${packageCount} × ${input.packageWeightKg} kg.` : ""}`.trim(),
           }).returning();
           await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "stock_out", recordId: savedStockOut.id, newValue: { productId: input.productId, quantity: input.quantity, unit: product.unit, baseQuantity, reason: input.reason } });
           if (Number(updatedProduct.currentStock) <= Number(product.lowStockThreshold)) {
