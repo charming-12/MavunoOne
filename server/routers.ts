@@ -259,6 +259,7 @@ export const appRouter = router({
     lowStock: protectedProcedure.query(async () => {
       return await db.query.products.findMany({
         where: and(
+          gt(products.currentStock, "0"),
           lte(products.currentStock, products.lowStockThreshold),
           eq(products.isActive, true)
         ),
@@ -891,6 +892,7 @@ export const appRouter = router({
 
       const lowStock = await db.query.products.findMany({
         where: and(
+          gt(products.currentStock, "0"),
           lte(products.currentStock, products.lowStockThreshold),
           eq(products.isActive, true)
         ),
