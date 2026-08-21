@@ -11,7 +11,13 @@ const sql = postgres(databaseUrl, {
 });
 try {
   await sql`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "isPublic" boolean NOT NULL DEFAULT true`;
-  console.log("Database schema ready: products.isPublic is available.");
+  await sql`ALTER TABLE "stock_in" ADD COLUMN IF NOT EXISTS "packageCount" numeric(12,2)`;
+  await sql`ALTER TABLE "stock_in" ADD COLUMN IF NOT EXISTS "packageWeightKg" numeric(12,3)`;
+  await sql`ALTER TABLE "stock_in" ADD COLUMN IF NOT EXISTS "packageWeightsKg" text`;
+  await sql`ALTER TABLE "stock_out" ADD COLUMN IF NOT EXISTS "packageCount" numeric(12,2)`;
+  await sql`ALTER TABLE "stock_out" ADD COLUMN IF NOT EXISTS "packageWeightKg" numeric(12,3)`;
+  await sql`ALTER TABLE "stock_out" ADD COLUMN IF NOT EXISTS "packageWeightsKg" text`;
+  console.log("Database schema ready: product visibility and package-level inventory fields are available.");
 } finally {
   await sql.end({ timeout: 5 });
 }
