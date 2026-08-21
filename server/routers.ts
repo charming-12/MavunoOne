@@ -140,11 +140,11 @@ export const appRouter = router({
           available: sql<boolean>`${products.currentStock} > 0`,
         })
         .from(products)
-        .where(eq(products.isActive, true))
+        .where(and(eq(products.isActive, true), eq(products.isPublic, true)))
         .orderBy(desc(products.name))
         .limit(500);
     }),
-    
+
     create: officeProcedure
       .input(z.object({
         name: z.string().trim().min(1).max(160),
@@ -159,6 +159,7 @@ export const appRouter = router({
         wholesalePrice: z.number().nonnegative().optional(),
         lowStockThreshold: z.number().nonnegative().default(10),
         currentStock: z.number().nonnegative().default(0),
+        isPublic: z.boolean().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!["admin", "manager"].includes(ctx.user?.role ?? "")) {
@@ -174,6 +175,7 @@ export const appRouter = router({
           wholesalePrice: input.wholesalePrice !== undefined ? decimalString(input.wholesalePrice) : undefined,
           lowStockThreshold: decimalString(input.lowStockThreshold),
           currentStock: decimalString(input.currentStock * input.packageSizeKg),
+          isPublic: input.isPublic && ["admin", "owner"].includes(ctx.user?.role ?? ""),
         }).returning();
         await recordAuditLog({
           userId: ctx.user?.id,

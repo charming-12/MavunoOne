@@ -122,7 +122,20 @@ async function main() {
         lowStockThreshold: "15",
         currentStock: "0",
         isActive: true,
+        isPublic: true,
       });
+    }
+
+    const internalProducts: Array<typeof schema.products.$inferInsert> = [
+      { name: "Mahindi", productType: "raw_material", unit: "kg", packageSizeKg: "1", costPrice: "0", sellPrice: "0", wholesalePrice: "0", lowStockThreshold: "0", currentStock: "0", isActive: true, isPublic: false },
+      { name: "Unga wa Mahindi", productType: "finished_goods", unit: "kg", packageSizeKg: "1", costPrice: "0", sellPrice: "0", wholesalePrice: "0", lowStockThreshold: "0", currentStock: "0", isActive: true, isPublic: false },
+      { name: "Alizeti", productType: "raw_material", unit: "kg", packageSizeKg: "1", costPrice: "0", sellPrice: "0", wholesalePrice: "0", lowStockThreshold: "0", currentStock: "0", isActive: true, isPublic: false },
+      { name: "Mafuta ya Alizeti", productType: "finished_goods", unit: "litre", packageSizeKg: "1", costPrice: "0", sellPrice: "0", wholesalePrice: "0", lowStockThreshold: "0", currentStock: "0", isActive: true, isPublic: false },
+      { name: "Chokaa ya Animal Feed", productType: "animal_feed", unit: "kg", packageSizeKg: "1", costPrice: "0", sellPrice: "0", wholesalePrice: "0", lowStockThreshold: "0", currentStock: "0", isActive: true, isPublic: false },
+    ];
+    for (const product of internalProducts) {
+      const existing = await tx.select({ id: schema.products.id }).from(schema.products).where(eq(schema.products.name, product.name)).limit(1);
+      if (existing.length === 0) await tx.insert(schema.products).values(product);
     }
 
     if (needsCleanStart) {

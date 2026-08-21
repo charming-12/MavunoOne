@@ -46,6 +46,7 @@ export const products = pgTable("products", {
   lowStockThreshold: decimal("lowStockThreshold", { precision: 10, scale: 2 }).default("10").notNull(),
   currentStock: decimal("currentStock", { precision: 12, scale: 2 }).default("0").notNull(),
   isActive: boolean("isActive").default(true).notNull(),
+  isPublic: boolean("isPublic").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
