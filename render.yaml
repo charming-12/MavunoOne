@@ -3,7 +3,7 @@ services:
     name: mavuno-one
     env: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run db:ensure && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV

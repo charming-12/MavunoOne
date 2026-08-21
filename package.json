@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "db:ensure": "tsx scripts/ensure-schema.ts",
+    "build": "npm run db:ensure && next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx scripts/seed-production.ts",
