@@ -171,7 +171,7 @@ export const appRouter = router({
         isPublic: z.boolean().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (!["admin", "manager"].includes(ctx.user?.role ?? "")) {
+        if (!["admin", "owner", "manager"].includes(ctx.user?.role ?? "")) {
           throw new Error("Product catalog hairuhusiwi kwa role hii");
         }
         const [created] = await db.insert(products).values({
