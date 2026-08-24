@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "db:ensure": "tsx scripts/run-ensure-schema.ts",
-    "build": "npm run db:ensure && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx scripts/seed-production.ts",
