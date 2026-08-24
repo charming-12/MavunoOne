@@ -46,6 +46,7 @@ export const products = pgTable("products", {
   lowStockThreshold: decimal("lowStockThreshold", { precision: 10, scale: 2 }).default("10").notNull(),
   currentStock: decimal("currentStock", { precision: 12, scale: 2 }).default("0").notNull(),
   isActive: boolean("isActive").default(true).notNull(),
+  isPublic: boolean("isPublic").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -184,6 +185,7 @@ export const deliveries = pgTable("deliveries", {
   driverName: varchar("driverName", { length: 128 }),
   driverPhone: varchar("driverPhone", { length: 32 }),
   destination: text("destination"),
+  invoiceNumber: varchar("invoiceNumber", { length: 128 }),
   totalWeight: decimal("totalWeight", { precision: 12, scale: 2 }).default("0"),
   departureTime: timestamp("departureTime"),
   arrivalTime: timestamp("arrivalTime"),

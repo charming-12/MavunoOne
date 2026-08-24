@@ -149,11 +149,11 @@ export const appRouter = router({
           available: sql<boolean>`${products.currentStock} > 0`,
         })
         .from(products)
-        .where(eq(products.isActive, true))
+        .where(and(eq(products.isActive, true), eq(products.isPublic, true)))
         .orderBy(desc(products.name))
         .limit(500);
     }),
-    
+
     create: officeProcedure
       .input(z.object({
         name: z.string().trim().min(1).max(160),
@@ -168,6 +168,7 @@ export const appRouter = router({
         wholesalePrice: z.number().nonnegative().optional(),
         lowStockThreshold: z.number().nonnegative().default(10),
         currentStock: z.number().nonnegative().default(0),
+        isPublic: z.boolean().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!["admin", "manager"].includes(ctx.user?.role ?? "")) {
@@ -183,6 +184,7 @@ export const appRouter = router({
           wholesalePrice: input.wholesalePrice !== undefined ? decimalString(input.wholesalePrice) : undefined,
           lowStockThreshold: decimalString(input.lowStockThreshold),
           currentStock: decimalString(input.currentStock * input.packageSizeKg),
+          isPublic: input.isPublic && ["admin", "owner"].includes(ctx.user?.role ?? ""),
         }).returning();
         await recordAuditLog({
           userId: ctx.user?.id,
@@ -192,6 +194,19 @@ export const appRouter = router({
           newValue: { ...input, currentStockKg: input.currentStock * input.packageSizeKg },
         });
         return created;
+      }),
+
+    setVisibility: officeProcedure
+      .input(z.object({ id: z.number().int().positive(), isPublic: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || !["admin", "owner"].includes(ctx.user.role)) {
+          throw new Error("Kuweka product kwenye public shop kunaruhusiwa kwa Admin au Owner pekee");
+        }
+        const before = await db.query.products.findFirst({ where: eq(products.id, input.id) });
+        if (!before) throw new Error("Product haipatikani");
+        const [updated] = await db.update(products).set({ isPublic: input.isPublic, updatedAt: new Date() }).where(eq(products.id, input.id)).returning();
+        await recordAuditLog({ userId: ctx.user.id, action: "update", tableName: "products", recordId: updated.id, oldValue: { isPublic: before.isPublic }, newValue: { isPublic: updated.isPublic } });
+        return updated;
       }),
 
     byBarcode: protectedProcedure.input(z.object({ barcode: z.string().min(3) })).query(async ({ input }) => {
@@ -266,6 +281,7 @@ export const appRouter = router({
     lowStock: protectedProcedure.query(async () => {
       return await db.query.products.findMany({
         where: and(
+          gt(products.currentStock, "0"),
           lte(products.currentStock, products.lowStockThreshold),
           eq(products.isActive, true)
         ),
@@ -364,6 +380,8 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (input.items.length === 0) throw new Error("Sale lazima iwe na bidhaa angalau moja");
+        const isSimulatedTigo = process.env.MAVUNO_ENVIRONMENT === "staging" && input.paymentMethod === "tigo_simulated";
+        if (input.paymentMethod === "tigo_simulated" && !isSimulatedTigo) throw new Error("Simulated Tigo Pesa inaruhusiwa kwenye staging pekee");
         const normalizedItems = [] as Array<{ item: (typeof input.items)[number]; product: typeof products.$inferSelect; baseQuantity: number; unitPrice: number; lineTotal: number }>;
         for (const item of input.items) {
           if (item.quantity <= 0) throw new Error("Quantity lazima iwe zaidi ya sifuri");
@@ -390,9 +408,9 @@ export const appRouter = router({
           taxAmount: decimalString(taxAmount),
           totalAmount: decimalString(totalAmount),
           paymentMethod: input.paymentMethod,
-          paymentStatus: input.paymentMethod === "cash" ? "paid" : "pending",
-          paidAmount: decimalString(input.paymentMethod === "cash" ? totalAmount : 0),
-          balance: decimalString(input.paymentMethod === "cash" ? 0 : totalAmount),
+          paymentStatus: input.paymentMethod === "cash" || isSimulatedTigo ? "paid" : "pending",
+          paidAmount: decimalString(input.paymentMethod === "cash" || isSimulatedTigo ? totalAmount : 0),
+          balance: decimalString(input.paymentMethod === "cash" || isSimulatedTigo ? 0 : totalAmount),
           cashierId: ctx.user?.id,
         }).returning();
 
@@ -489,7 +507,7 @@ export const appRouter = router({
           console.error("[SMS] Failed to send sale-related notifications:", smsError);
         }
 
-        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentMethod: input.paymentMethod, itemCount: input.items.length } });
+        await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentMethod: input.paymentMethod, paymentStatus: newSale.paymentStatus, simulated: isSimulatedTigo, itemCount: input.items.length } });
         return { success: true, saleId: newSale.id, invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentStatus: newSale.paymentStatus };
       }),
 
@@ -778,15 +796,20 @@ export const appRouter = router({
   }),
 
   deliveries: router({
+    list: officeProcedure.query(async () => {
+      return await db.query.deliveries.findMany({ orderBy: desc(deliveries.createdAt), limit: 200 });
+    }),
+
     create: officeProcedure
       .input(z.object({
         vehicleId: z.number().optional(),
-        driverName: z.string(),
-        driverPhone: z.string(),
-        destination: z.string(),
-        totalWeight: z.number().default(0),
-        invoiceNumber: z.string().optional(),
-        recipientPhone: z.string().optional(),
+        driverName: z.string().trim().min(2).max(128),
+        driverPhone: z.string().trim().min(7).max(32),
+        destination: z.string().trim().min(2).max(500),
+        totalWeight: z.number().nonnegative().default(0),
+        invoiceNumber: z.string().trim().max(128).optional(),
+        recipientPhone: z.string().trim().max(32).optional(),
+        notes: z.string().trim().max(2000).optional(),
       }))
       .mutation(async ({ input }) => {
         const [savedDelivery] = await db.insert(deliveries).values({
@@ -794,9 +817,11 @@ export const appRouter = router({
           driverName: input.driverName,
           driverPhone: input.driverPhone,
           destination: input.destination,
+          invoiceNumber: input.invoiceNumber || undefined,
           totalWeight: decimalString(input.totalWeight),
           departureTime: new Date(),
           status: "scheduled",
+          notes: input.notes || undefined,
         }).returning();
 
         try {
@@ -945,6 +970,7 @@ export const appRouter = router({
 
       const lowStock = await db.query.products.findMany({
         where: and(
+          gt(products.currentStock, "0"),
           lte(products.currentStock, products.lowStockThreshold),
           eq(products.isActive, true)
         ),
