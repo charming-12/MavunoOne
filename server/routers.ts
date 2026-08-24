@@ -525,7 +525,7 @@ export const appRouter = router({
         .input(z.object({
           productId: z.number(),
           quantity: z.number().positive(),
-          entryUnit: z.enum(["kg", "debe", "gunia", "unit"]).default("kg"),
+          entryUnit: z.enum(["kg", "litre", "debe", "gunia", "unit"]).default("kg"),
           supplierName: z.string().trim().optional(),
           supplierPhone: z.string().trim().optional(),
           sourceType: z.enum(["supplier", "farmer", "production", "return", "other"]).default("supplier"),
