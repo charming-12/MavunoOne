@@ -17,7 +17,7 @@ export default function SetupWizardPage() {
     timezone: "Africa/Dar_es_Salaam",
     thermalPrinter: { enabled: false, model: "ESC/POS", connectionType: "network", ipAddress: "", port: "9100", paperWidth: "80mm", autoCut: true },
     scale: { enabled: false, model: "URID" },
-    payment: { enabled: false, provider: "mpesa", merchantName: "", merchantNumber: "", merchantNameMpesa: "", merchantNumberMpesa: "", merchantNameTigo: "", merchantNumberTigo: "", apiBaseUrl: "", apiKey: "" },
+    payment: { enabled: false, provider: "mpesa", integrationMode: "manual", environment: "sandbox", merchantName: "", merchantNumber: "", merchantNameMpesa: "", merchantNumberMpesa: "", merchantNameTigo: "", merchantNumberTigo: "", apiBaseUrl: "", apiKey: "", apiSecret: "", webhookSecret: "", webhookUrl: "" },
     cctv: { enabled: false, brand: "hikvision", protocol: "rtsp", gatewayUrl: "", streamName: "camera_1", host: "", port: "554", username: "", password: "", streamPath: "" },
     gps: { enabled: false, mode: "existing_platform", provider: "teltonika", protocol: "http_webhook", serverUrl: "", webhookToken: "", deviceId: "", vehiclePlateNumber: "", username: "", password: "" },
     notifications: { enabled: false, resendApiKey: "" },
@@ -41,6 +41,23 @@ export default function SetupWizardPage() {
 
   const handleSaveConfig = async (sectionName: string) => {
     try {
+      if (sectionName === "Malipo na Lipa Number" && config.payment.enabled) {
+        const p = config.payment;
+        const merchantReady = p.provider === "both"
+          ? Boolean(p.merchantNameMpesa.trim() && p.merchantNumberMpesa.trim() && p.merchantNameTigo.trim() && p.merchantNumberTigo.trim())
+          : p.provider === "mpesa"
+            ? Boolean(p.merchantNameMpesa.trim() && p.merchantNumberMpesa.trim())
+            : p.provider === "tigopesa"
+              ? Boolean(p.merchantNameTigo.trim() && p.merchantNumberTigo.trim())
+              : Boolean(p.merchantName.trim() && p.merchantNumber.trim());
+        if (!merchantReady) throw new Error("Jaza jina na Lipa Number ya provider uliyochagua kwanza.");
+        if (p.integrationMode === "gateway" && (!p.apiBaseUrl.trim() || !p.apiKey.trim() || !p.apiSecret.trim() || !p.webhookSecret.trim())) {
+          throw new Error("Gateway mode inahitaji API base URL, API key, API secret na webhook signing secret.");
+        }
+        if (p.integrationMode === "gateway" && p.environment === "production" && !p.webhookUrl.trim().startsWith("https://")) {
+          throw new Error("Production gateway inahitaji webhook URL inayoanza na https://.");
+        }
+      }
       setSaving(true);
       setSaveMessage("");
       const response = await fetch("/api/config", {
@@ -50,7 +67,7 @@ export default function SetupWizardPage() {
           key: "SETUP_WIZARD_CONFIG",
           value: JSON.stringify({
             ...config,
-            payment: { ...config.payment, apiKey: undefined },
+            payment: { ...config.payment, apiKey: undefined, apiSecret: undefined, webhookSecret: undefined },
             cctv: { ...config.cctv, password: undefined },
             gps: { ...config.gps, password: undefined },
             notifications: { ...config.notifications, resendApiKey: undefined },
@@ -65,7 +82,7 @@ export default function SetupWizardPage() {
       }
 
       const secretProfiles = [
-        { key: "PAYMENT_PROVIDER_SECRETS", value: { apiKey: config.payment.apiKey } },
+        { key: "PAYMENT_PROVIDER_SECRETS", value: { apiKey: config.payment.apiKey, apiSecret: config.payment.apiSecret, webhookSecret: config.payment.webhookSecret } },
         { key: "CCTV_CONNECTION_SECRETS", value: { username: config.cctv.username, password: config.cctv.password } },
         { key: "GPS_CONNECTION_SECRETS", value: { username: config.gps.username, password: config.gps.password, webhookToken: config.gps.webhookToken } },
         { key: "NOTIFICATION_SECRETS", value: { resendApiKey: config.notifications.resendApiKey } },
@@ -89,7 +106,7 @@ export default function SetupWizardPage() {
       handleNext();
     } catch (error) {
       console.error("Setup wizard config save failed:", error);
-      setSaveMessage("Haikuweza kuhifadhi section hii. Kagua connection kisha jaribu tena.");
+      setSaveMessage(error instanceof Error ? error.message : "Haikuweza kuhifadhi section hii. Kagua connection kisha jaribu tena.");
     } finally {
       setSaving(false);
     }
@@ -339,6 +356,16 @@ export default function SetupWizardPage() {
               </div>
               <div className="space-y-4">
                 <label className="flex items-center gap-2 text-sm font-semibold text-emerald-100"><input type="checkbox" checked={config.payment.enabled} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, enabled: e.target.checked } })} className="h-4 w-4 accent-amber-400" />Washa malipo ya simu</label>
+                <div className="grid gap-4 rounded-xl border border-emerald-800 bg-[#041915] p-4 sm:grid-cols-2">
+                  <div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Njia ya malipo</label><select value={config.payment.integrationMode} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, integrationMode: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="manual">Manual Lipa Number — Finance athibitishe</option><option value="gateway">API Gateway — automatic callback</option></select></div>
+                  <div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Environment</label><select value={config.payment.environment} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, environment: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white"><option value="sandbox">Sandbox / Testing — hakuna fedha halisi</option><option value="production">Production — fedha halisi</option></select></div>
+                  {config.payment.integrationMode === "gateway" && <>
+                    <div className="sm:col-span-2 rounded-lg border border-sky-700/60 bg-sky-500/10 p-3 text-xs leading-5 text-sky-100"><p className="font-black">Gateway setup</p><p className="mt-1">Provider atakupa API base URL, API key/secret na webhook secret. MavunoOne itatumia HTTPS callback hii kuunganisha payment na order:</p><p className="mt-1 break-all font-mono text-sky-200">{typeof window !== "undefined" ? `${window.location.origin}/api/payment/webhook` : "/api/payment/webhook"}</p><p className="mt-1">Usiweke API secret kwenye maelezo ya kawaida; itaenda kwenye encrypted secret profile.</p></div>
+                    <div className="sm:col-span-2"><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Webhook URL (copy kwa provider)</label><input value={config.payment.webhookUrl || (typeof window !== "undefined" ? `${window.location.origin}/api/payment/webhook` : "/api/payment/webhook")} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, webhookUrl: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white" /></div>
+                    <div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">API secret</label><input type="password" value={config.payment.apiSecret} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, apiSecret: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Provider API secret" /></div>
+                    <div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Webhook signing secret</label><input type="password" value={config.payment.webhookSecret} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, webhookSecret: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#071f19] px-3 py-2 text-sm text-white placeholder-emerald-600" placeholder="Webhook secret" /></div>
+                  </>}
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Provider</label><select value={config.payment.provider} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, provider: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white"><option value="mpesa">Vodacom M-Pesa</option><option value="tigopesa">Tigo Pesa / Mixx by Yas</option><option value="both">M-Pesa na Tigo Pesa</option><option value="other">Other provider</option></select></div>
                   {(config.payment.provider === "mpesa" || config.payment.provider === "both") && <div className="sm:col-span-2 rounded-xl border border-red-900/60 bg-red-950/20 p-4"><p className="mb-3 text-sm font-black text-red-200">Vodacom M-Pesa</p><div className="grid gap-4 sm:grid-cols-2"><div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Jina la M-Pesa</label><input value={config.payment.merchantNameMpesa} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNameMpesa: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Mfano: MavunoOne M-Pesa" /></div><div><label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-200">Lipa Number ya M-Pesa</label><input value={config.payment.merchantNumberMpesa} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, merchantNumberMpesa: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="07XXXXXXXX" /></div></div></div>}
@@ -348,7 +375,7 @@ export default function SetupWizardPage() {
                 </div>
                 <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">Provider API base URL (optional)</label><input value={config.payment.apiBaseUrl} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, apiBaseUrl: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Weka tu kama provider amekupa API endpoint" /></div>
                 <div><label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-emerald-200">API key / secret (optional)</label><input type="password" value={config.payment.apiKey} onChange={(e) => setConfig({ ...config, payment: { ...config.payment, apiKey: e.target.value } })} className="w-full rounded-lg border border-emerald-800 bg-[#041915] px-4 py-3 text-white placeholder-emerald-600" placeholder="Itahifadhiwa kama secret profile" /></div>
-                <p className="text-xs text-amber-100/80">Jina la Lipa Number na namba vitaonekana kwenye payment instructions za mteja. Automatic confirmation inahitaji API credentials na callback/webhook ya provider.</p>
+                <p className="text-xs text-amber-100/80">Jina la Lipa Number na namba vitaonekana kwenye payment instructions za mteja. Ukiweka Gateway, bado automatic confirmation itaanza tu baada ya provider ku-approve account, webhook iwe configured, na sandbox test ipite.</p>
               </div>
 
               <div className="mt-8 flex gap-4">
