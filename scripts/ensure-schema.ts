@@ -1,7 +1,6 @@
 import postgres from "postgres";
 
 async function ensureSchema() {
-  if (!process.argv.includes("--run")) return;
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required to ensure the application schema.");
   const sql = postgres(databaseUrl, {
