@@ -196,6 +196,19 @@ export const appRouter = router({
         return created;
       }),
 
+    setVisibility: officeProcedure
+      .input(z.object({ id: z.number().int().positive(), isPublic: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || !["admin", "owner"].includes(ctx.user.role)) {
+          throw new Error("Kuweka product kwenye public shop kunaruhusiwa kwa Admin au Owner pekee");
+        }
+        const before = await db.query.products.findFirst({ where: eq(products.id, input.id) });
+        if (!before) throw new Error("Product haipatikani");
+        const [updated] = await db.update(products).set({ isPublic: input.isPublic, updatedAt: new Date() }).where(eq(products.id, input.id)).returning();
+        await recordAuditLog({ userId: ctx.user.id, action: "update", tableName: "products", recordId: updated.id, oldValue: { isPublic: before.isPublic }, newValue: { isPublic: updated.isPublic } });
+        return updated;
+      }),
+
     byBarcode: protectedProcedure.input(z.object({ barcode: z.string().min(3) })).query(async ({ input }) => {
       return await db.query.products.findFirst({ where: and(eq(products.barcode, input.barcode.trim()), eq(products.isActive, true)) });
     }),
@@ -783,15 +796,20 @@ export const appRouter = router({
   }),
 
   deliveries: router({
+    list: officeProcedure.query(async () => {
+      return await db.query.deliveries.findMany({ orderBy: desc(deliveries.createdAt), limit: 200 });
+    }),
+
     create: officeProcedure
       .input(z.object({
         vehicleId: z.number().optional(),
-        driverName: z.string(),
-        driverPhone: z.string(),
-        destination: z.string(),
-        totalWeight: z.number().default(0),
-        invoiceNumber: z.string().optional(),
-        recipientPhone: z.string().optional(),
+        driverName: z.string().trim().min(2).max(128),
+        driverPhone: z.string().trim().min(7).max(32),
+        destination: z.string().trim().min(2).max(500),
+        totalWeight: z.number().nonnegative().default(0),
+        invoiceNumber: z.string().trim().max(128).optional(),
+        recipientPhone: z.string().trim().max(32).optional(),
+        notes: z.string().trim().max(2000).optional(),
       }))
       .mutation(async ({ input }) => {
         const [savedDelivery] = await db.insert(deliveries).values({
@@ -799,9 +817,11 @@ export const appRouter = router({
           driverName: input.driverName,
           driverPhone: input.driverPhone,
           destination: input.destination,
+          invoiceNumber: input.invoiceNumber || undefined,
           totalWeight: decimalString(input.totalWeight),
           departureTime: new Date(),
           status: "scheduled",
+          notes: input.notes || undefined,
         }).returning();
 
         try {

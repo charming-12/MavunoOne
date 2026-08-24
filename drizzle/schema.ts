@@ -185,6 +185,7 @@ export const deliveries = pgTable("deliveries", {
   driverName: varchar("driverName", { length: 128 }),
   driverPhone: varchar("driverPhone", { length: 32 }),
   destination: text("destination"),
+  invoiceNumber: varchar("invoiceNumber", { length: 128 }),
   totalWeight: decimal("totalWeight", { precision: 12, scale: 2 }).default("0"),
   departureTime: timestamp("departureTime"),
   arrivalTime: timestamp("arrivalTime"),
