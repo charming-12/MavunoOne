@@ -199,8 +199,8 @@ export const appRouter = router({
     setVisibility: officeProcedure
       .input(z.object({ id: z.number().int().positive(), isPublic: z.boolean() }))
       .mutation(async ({ input, ctx }) => {
-        if (!ctx.user || !["admin", "owner"].includes(ctx.user.role)) {
-          throw new Error("Kuweka product kwenye public shop kunaruhusiwa kwa Admin au Owner pekee");
+        if (!ctx.user || (!["admin", "owner"].includes(ctx.user.role) && ctx.user.canPublishCatalog !== true)) {
+          throw new Error("Kuweka product kwenye public shop kunaruhusiwa kwa Admin, Owner au staff aliyeteuliwa na Admin pekee");
         }
         const before = await db.query.products.findFirst({ where: eq(products.id, input.id) });
         if (!before) throw new Error("Product haipatikani");

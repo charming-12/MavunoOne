@@ -11,6 +11,7 @@ const sql = postgres(databaseUrl, {
 });
 try {
   await sql`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "isPublic" boolean NOT NULL DEFAULT true`;
+  await sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "canPublishCatalog" boolean NOT NULL DEFAULT false`;
   await sql`ALTER TABLE "stock_in" ADD COLUMN IF NOT EXISTS "packageCount" numeric(12,2)`;
   await sql`ALTER TABLE "stock_in" ADD COLUMN IF NOT EXISTS "packageWeightKg" numeric(12,3)`;
   await sql`ALTER TABLE "stock_in" ADD COLUMN IF NOT EXISTS "packageWeightsKg" text`;

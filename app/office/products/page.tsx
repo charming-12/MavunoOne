@@ -40,7 +40,7 @@ export default function ProductsPage() {
   const products = productsQuery.data ?? [];
   const filtered = products.filter((product) => `${product.name} ${product.barcode ?? ""}`.toLowerCase().includes(search.toLowerCase()) && (group === "all" || product.productType === group));
   const canEditPricing = currentUser ? ["admin", "owner"].includes(currentUser.role) || (currentUser.role === "manager" && currentUser.jobTitle === "finance") : false;
-  const canManagePublicCatalog = currentUser ? ["admin", "owner"].includes(currentUser.role) : false;
+  const canManagePublicCatalog = currentUser ? ["admin", "owner"].includes(currentUser.role) || currentUser.canPublishCatalog === true : false;
   const latestAuditFor = (productId: number) => auditQuery.data?.find((entry) => entry.recordId === productId);
   const selectProductForPricing = (value: string) => {
     setSelectedProductId(value);

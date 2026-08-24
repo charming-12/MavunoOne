@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 320 }).unique().notNull(),
   phone: varchar("phone", { length: 32 }),
   jobTitle: varchar("jobTitle", { length: 128 }),
+  canPublishCatalog: boolean("canPublishCatalog").default(false).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }),
   role: roleEnum("role").default("customer").notNull(),
   isActive: boolean("isActive").default(true).notNull(),

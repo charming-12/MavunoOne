@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const actor = requireAdminUser(request);
   if (!actor) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   const records = await db.query.users.findMany({ orderBy: (table, { desc }) => desc(table.createdAt), limit: 500 });
-  return NextResponse.json({ users: records.map((user) => ({ id: user.id, name: user.name, email: user.email, phone: user.phone, jobTitle: user.jobTitle, role: user.role, isActive: user.isActive, createdAt: user.createdAt })) });
+  return NextResponse.json({ users: records.map((user) => ({ id: user.id, name: user.name, email: user.email, phone: user.phone, jobTitle: user.jobTitle, role: user.role, canPublishCatalog: user.canPublishCatalog, isActive: user.isActive, createdAt: user.createdAt })) });
 }
 
 export async function DELETE(request: NextRequest) {
@@ -71,7 +71,7 @@ export async function DELETE(request: NextRequest) {
     if (removable.length === 0) return NextResponse.json({ message: "Hakuna account active inayoweza kuondolewa kwenye chaguo hilo.", removedCount: 0 });
     await db.transaction(async (tx) => {
       for (const user of removable) {
-        await tx.update(users).set({ isActive: false, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, user.id));
+        await tx.update(users).set({ isActive: false, canPublishCatalog: false, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, user.id));
         await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
         await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "deactivate", tableName: "users", recordId: user.id, oldValueJson: JSON.stringify({ name: user.name, email: user.email, role: user.role, isActive: true }), newValueJson: JSON.stringify({ isActive: false, reason: "admin_account_removal" }) });
       }
@@ -80,6 +80,33 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error("Staff removal failed:", error);
     return NextResponse.json({ message: "Staff account(s) could not be removed" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const actor = requireAdminUser(request);
+  if (!actor || !["admin", "owner"].includes(actor.role)) return NextResponse.json({ message: "Only Admin or Owner can assign staff responsibilities" }, { status: 403 });
+  try {
+    const body = await request.json() as { userId?: unknown; canPublishCatalog?: unknown };
+    const userId = Number(body.userId);
+    if (!Number.isInteger(userId) || userId <= 0 || typeof body.canPublishCatalog !== "boolean") return NextResponse.json({ message: "User na permission vinahitajika kwa usahihi." }, { status: 400 });
+    const canPublishCatalog = body.canPublishCatalog === true;
+    const target = await db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!target) return NextResponse.json({ message: "Staff account haipatikani." }, { status: 404 });
+    if (!target.isActive || protectedRoles.has(target.role)) return NextResponse.json({ message: "Permission hii inaweza kupewa active staff account pekee." }, { status: 400 });
+    const currentAssignee = canPublishCatalog ? await db.query.users.findFirst({ where: eq(users.canPublishCatalog, true) }) : null;
+    await db.transaction(async (tx) => {
+      if (currentAssignee && currentAssignee.id !== target.id) {
+        await tx.update(users).set({ canPublishCatalog: false }).where(eq(users.id, currentAssignee.id));
+        await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "update", tableName: "users", recordId: currentAssignee.id, oldValueJson: JSON.stringify({ canPublishCatalog: true }), newValueJson: JSON.stringify({ canPublishCatalog: false, reason: "single_designated_catalog_manager" }) });
+      }
+      await tx.update(users).set({ canPublishCatalog }).where(eq(users.id, target.id));
+      await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "update", tableName: "users", recordId: target.id, oldValueJson: JSON.stringify({ canPublishCatalog: target.canPublishCatalog }), newValueJson: JSON.stringify({ canPublishCatalog, responsibility: "public_catalog_manager" }) });
+    });
+    return NextResponse.json({ message: canPublishCatalog ? `${target.name} amepewa jukumu la Public Catalog Manager.` : `${target.name} ameondolewa jukumu la Public Catalog Manager.`, canPublishCatalog });
+  } catch (error) {
+    console.error("Staff responsibility assignment failed:", error);
+    return NextResponse.json({ message: "Staff responsibility could not be updated" }, { status: 500 });
   }
 }
 
@@ -93,7 +120,7 @@ export async function POST(request: NextRequest) {
       const removable = candidates.filter((user) => seededMockEmails.has(user.email.toLowerCase()) && !protectedRoles.has(user.role) && user.id !== actor.id && user.isActive);
       await db.transaction(async (tx) => {
         for (const user of removable) {
-          await tx.update(users).set({ isActive: false, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, user.id));
+          await tx.update(users).set({ isActive: false, canPublishCatalog: false, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, user.id));
           await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
           await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "deactivate", tableName: "users", recordId: user.id, oldValueJson: JSON.stringify({ email: user.email, role: user.role, isActive: true }), newValueJson: JSON.stringify({ isActive: false, reason: "seeded_mock_cleanup" }) });
         }
@@ -113,7 +140,7 @@ export async function POST(request: NextRequest) {
       const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       await db.transaction(async (tx) => {
-        await tx.update(users).set({ name, phone, jobTitle, role, isActive: true, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, existing.id));
+        await tx.update(users).set({ name, phone, jobTitle, role, canPublishCatalog: false, isActive: true, passwordHash: null, passwordResetToken: null, passwordResetExpires: null }).where(eq(users.id, existing.id));
         await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, existing.id));
         await tx.insert(passwordResetTokens).values({ userId: existing.id, token: tokenHash, expiresAt });
         await tx.insert(auditLogs).values({ userId: actor.id ?? null, action: "reactivate", tableName: "users", recordId: existing.id, oldValueJson: JSON.stringify({ isActive: false }), newValueJson: JSON.stringify({ name, email, phone, role, invitation: true }) });

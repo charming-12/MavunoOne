@@ -14,6 +14,7 @@ export type StoredUser = {
   email: string;
   role: AppUserRole;
   jobTitle?: string | null;
+  canPublishCatalog?: boolean;
 };
 
 const USER_STORAGE_KEY = "mavunoone-user";
