@@ -78,6 +78,8 @@ export const sales = pgTable("sales", {
   paymentStatus: varchar("paymentStatus", { length: 32 }).default("paid").notNull(),
   paidAmount: decimal("paidAmount", { precision: 12, scale: 2 }).default("0").notNull(),
   balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  paymentReference: varchar("paymentReference", { length: 128 }),
+  paymentTransactionId: varchar("paymentTransactionId", { length: 128 }),
   cashierId: integer("cashierId"),
   status: varchar("status", { length: 32 }).default("completed").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

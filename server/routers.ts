@@ -497,6 +497,26 @@ export const appRouter = router({
         await recordAuditLog({ userId: ctx.user?.id, action: "create", tableName: "sales", recordId: newSale.id, newValue: { invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentMethod: input.paymentMethod, paymentStatus: newSale.paymentStatus, simulated: isSimulatedTigo, itemCount: input.items.length } });
         return { success: true, saleId: newSale.id, invoiceNumber, subtotal, taxRate: taxSettings.enabled ? taxSettings.rate : 0, taxAmount, totalAmount, paymentStatus: newSale.paymentStatus };
       }),
+
+    confirmPayment: financeProcedure
+      .input(z.object({
+        saleId: z.number().int().positive(),
+        paymentReference: z.string().trim().min(2).max(128),
+        paymentTransactionId: z.string().trim().min(2).max(128).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const [updated] = await db.update(sales).set({
+          paymentStatus: "paid",
+          paidAmount: sql`${sales.totalAmount}`,
+          balance: "0",
+          paymentReference: input.paymentReference,
+          paymentTransactionId: input.paymentTransactionId || null,
+          status: "completed",
+        }).where(and(eq(sales.id, input.saleId), eq(sales.paymentStatus, "pending"))).returning();
+        if (!updated) throw new Error("Sale haipo, au payment tayari imethibitishwa");
+        await recordAuditLog({ userId: ctx.user.id, action: "confirm_payment", tableName: "sales", recordId: updated.id, newValue: { paymentReference: input.paymentReference, paymentTransactionId: input.paymentTransactionId || null, paymentStatus: "paid" } });
+        return { success: true, saleId: updated.id, invoiceNumber: updated.invoiceNumber, paymentStatus: updated.paymentStatus };
+      }),
   }),
 
   // ===== STOCK =====

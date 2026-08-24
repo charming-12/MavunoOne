@@ -4,24 +4,28 @@ import { useEffect, useState } from 'react';
 import { registerServiceWorker, onOnlineStatusChange } from '@/lib/service-worker';
 
 export function OfflineSupport() {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [showBackOnline, setShowBackOnline] = useState(false);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
     registerServiceWorker();
+    let timer: number | undefined;
 
     const unsubscribe = onOnlineStatusChange((online) => {
       setIsOnline(online);
+      if (timer !== undefined) window.clearTimeout(timer);
       if (online) {
         setShowBackOnline(true);
-        const timer = window.setTimeout(() => setShowBackOnline(false), 4000);
-        return () => window.clearTimeout(timer);
+        timer = window.setTimeout(() => setShowBackOnline(false), 4000);
+      } else {
+        setShowBackOnline(false);
       }
-      setShowBackOnline(false);
     });
 
-    return unsubscribe;
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      unsubscribe();
+    };
   }, []);
 
   if (isOnline && !showBackOnline) return null;

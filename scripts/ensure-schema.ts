@@ -17,7 +17,9 @@ try {
   await sql`ALTER TABLE "stock_out" ADD COLUMN IF NOT EXISTS "packageCount" numeric(12,2)`;
   await sql`ALTER TABLE "stock_out" ADD COLUMN IF NOT EXISTS "packageWeightKg" numeric(12,3)`;
   await sql`ALTER TABLE "stock_out" ADD COLUMN IF NOT EXISTS "packageWeightsKg" text`;
-  console.log("Database schema ready: product visibility and package-level inventory fields are available.");
+  await sql`ALTER TABLE "sales" ADD COLUMN IF NOT EXISTS "paymentReference" varchar(128)`;
+  await sql`ALTER TABLE "sales" ADD COLUMN IF NOT EXISTS "paymentTransactionId" varchar(128)`;
+  console.log("Database schema ready: product visibility, package-level inventory, and payment reference fields are available.");
 } finally {
   await sql.end({ timeout: 5 });
 }
