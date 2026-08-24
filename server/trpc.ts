@@ -2,7 +2,7 @@ import { initTRPC } from "@trpc/server";
 import { getSessionUserFromHeader } from "@/lib/session";
 
 export type AppContext = {
-  user?: { id?: number; email: string; role: string; name?: string; jobTitle?: string | null };
+  user?: { id?: number; email: string; role: string; name?: string; jobTitle?: string | null; canPublishCatalog?: boolean };
 };
 
 export const createContext = async (req?: Request): Promise<AppContext> => ({

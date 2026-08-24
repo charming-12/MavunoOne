@@ -6,6 +6,7 @@ export type SessionUser = {
   email: string;
   role: string;
   jobTitle?: string | null;
+  canPublishCatalog?: boolean;
 };
 
 export const SESSION_ABSOLUTE_TIMEOUT_SECONDS = 60 * 60 * 8;
@@ -59,7 +60,7 @@ export function verifySessionToken(token: string | undefined): SessionUser | nul
     const now = Math.floor(Date.now() / 1000);
     const lastActivity = payload.lastActivity ?? payload.iat;
     if (!payload.email || !payload.role || payload.exp <= now || now - lastActivity > SESSION_IDLE_TIMEOUT_SECONDS) return null;
-    return { id: payload.id, name: payload.name, email: payload.email, role: payload.role, jobTitle: payload.jobTitle ?? null };
+    return { id: payload.id, name: payload.name, email: payload.email, role: payload.role, jobTitle: payload.jobTitle ?? null, canPublishCatalog: payload.canPublishCatalog === true };
   } catch {
     return null;
   }
