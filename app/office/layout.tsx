@@ -42,7 +42,7 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 const roleLabels: Record<string, string> = { admin: "System Admin / Developer", owner: "Owner", manager: "Operations Manager", cashier: "Cashier", storekeeper: "Storekeeper", machine_operator: "Machine Operator", boss: "Executive View" };
-const financeManagerHrefs = new Set(["/office", "/office/customers", "/office/debt", "/office/products", "/office/farmer-approvals", "/office/expenses", "/office/maintenance", "/office/closures", "/office/reports", "/office/advanced-analytics", "/office/notifications", "/shop"]);
+const financeManagerHrefs = new Set(["/office", "/office/customers", "/office/debt", "/office/farmer-approvals", "/office/expenses", "/office/maintenance", "/office/closures", "/office/reports", "/office/advanced-analytics", "/office/notifications", "/shop"]);
 
 export default function OfficeLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
